@@ -2663,6 +2663,12 @@ window.otvorModalPridaniaVidea = function() {
     const kolo = document.getElementById('koloInput').value.trim();
     const datumacas = document.getElementById('datumacasInput').value.trim();
     let timestamps = {};
+
+    if (!videoId) {
+      messageDiv.textContent = '❌ Prosím, zadajte ID videa.';
+      messageDiv.style.color = 'red';
+      return;
+    }
     
     // Parse timestamps
     const tsText = document.getElementById('timestampsInput').value.trim();
