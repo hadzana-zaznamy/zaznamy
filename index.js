@@ -43,6 +43,7 @@ const appCheck = initializeAppCheck(app, {
 
 // YouTube embed URL
 const YOUTUBE_EMBED_URL = 'https://www.youtube.com/embed/';
+const YOUTUBE_THUMBNAIL_URL = 'https://img.youtube.com/vi/';
 
 // Pridať globálny štýl pre full-width layout
 const style = document.createElement('style');
@@ -364,6 +365,86 @@ style.textContent = `
     color: #333;
   }
   
+  /* Video card styles */
+  .video-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .video-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+  
+  .video-thumbnail {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    background: #000;
+    cursor: pointer;
+  }
+  
+  .video-thumbnail img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .video-thumbnail .play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 0, 0, 0.8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+  }
+  
+  .video-thumbnail .play-button:hover {
+    background: rgba(255, 0, 0, 1);
+  }
+  
+  .video-thumbnail .play-button svg {
+    width: 30px;
+    height: 30px;
+    fill: white;
+    margin-left: 4px;
+  }
+  
+  .video-info {
+    padding: 15px;
+  }
+  
+  .video-info h4 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+  }
+  
+  .video-info p {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .video-info .video-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #999;
+  }
+  
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -475,6 +556,16 @@ style.textContent = `
     .modal-box .modal-buttons button {
       padding: 8px 16px;
       font-size: 13px;
+    }
+    
+    .video-thumbnail .play-button {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .video-thumbnail .play-button svg {
+      width: 20px;
+      height: 20px;
     }
   }
 `;
@@ -809,7 +900,11 @@ function inicializujAplikaciu() {
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
-        zobrazPouzivatelov(pouzivatelia);
+        // Only update users list if admin panel is visible
+        if (document.getElementById('adminPanel').style.display !== 'none' && 
+            document.getElementById('usersList')) {
+          zobrazPouzivatelov(pouzivatelia);
+        }
       }, (error) => {
         console.error('Chyba v real-time listeneri:', error);
       });
@@ -1134,7 +1229,10 @@ function prerenderujPodlaStavu(user) {
     if (contentDiv) {
       contentDiv.style.display = jeSchvaleny || jeAdmin ? 'block' : 'none';
       if (jeSchvaleny || jeAdmin) {
-        zobrazVideaPouzivatelom();
+        // Only show videos if not in admin panel
+        if (document.getElementById('adminPanel').style.display === 'none') {
+          zobrazVideaPouzivatelom();
+        }
       }
     }
     
@@ -1150,12 +1248,11 @@ function prerenderujPodlaStavu(user) {
         window.app.spustiRealTimeListener();
       }
       
-      window.app.nacitajVsetkychPouzivatelov().then(() => {
-        zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      });
-      
-      if (adminPanel) {
-        adminPanel.style.display = 'none';
+      // Only load users if admin panel is visible
+      if (adminPanel.style.display !== 'none') {
+        window.app.nacitajVsetkychPouzivatelov().then(() => {
+          zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+        });
       }
       
       if (adminButtons) {
@@ -1433,6 +1530,40 @@ function extrahujVideoId(url) {
   return null;
 }
 
+// Vytvorenie HTML pre video kartu s miniaturou
+function vytvorVideoKartu(video, sOdstranenim = false) {
+  const embedUrl = `${YOUTUBE_EMBED_URL}${video.videoId}`;
+  const thumbnailUrl = `${YOUTUBE_THUMBNAIL_URL}${video.videoId}/hqdefault.jpg`;
+  
+  return `
+    <div class="video-card">
+      <div class="video-thumbnail" onclick="window.open('${embedUrl}', '_blank')">
+        <img src="${thumbnailUrl}" alt="${video.nazov || 'Video'}" loading="lazy">
+        <div class="play-button">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="video-info">
+        <h4>${video.nazov || 'Video'}</h4>
+        ${video.popis ? `<p>${video.popis}</p>` : ''}
+        <div class="video-meta">
+          <span>Pridané: ${formatujDatum(video.createdAt)}</span>
+          ${sOdstranenim ? 
+            `<button onclick="odstranVideo('${video.id}')" 
+                    class="btn-remove-user"
+                    style="padding:4px 10px;font-size:11px;">
+              🗑️ Odstrániť
+            </button>` : 
+            ''
+          }
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // Zobrazenie videí pre používateľov
 async function zobrazVideaPouzivatelom() {
   const container = document.getElementById('videaPrePouzivatelov');
@@ -1454,27 +1585,7 @@ async function zobrazVideaPouzivatelom() {
   html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">';
   
   videa.forEach((video) => {
-    const embedUrl = `${YOUTUBE_EMBED_URL}${video.videoId}`;
-    html += `
-      <div style="background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;">
-        <div style="position:relative;padding-bottom:56.25%;height:0;">
-          <iframe 
-            src="${embedUrl}" 
-            style="position:absolute;top:0;left:0;width:100%;height:100%;"
-            frameborder="0" 
-            allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" 
-            allowfullscreen>
-          </iframe>
-        </div>
-        <div style="padding:15px;">
-          <h4 style="margin:0 0 5px 0;font-size:16px;">${video.nazov || 'Video'}</h4>
-          ${video.popis ? `<p style="margin:0 0 10px 0;font-size:14px;color:#666;">${video.popis}</p>` : ''}
-          <div style="font-size:12px;color:#999;">
-            Pridané: ${formatujDatum(video.createdAt)}
-          </div>
-        </div>
-      </div>
-    `;
+    html += vytvorVideoKartu(video, false);
   });
   
   html += '</div>';
@@ -1507,32 +1618,7 @@ function zobrazVideaAdmin(videa) {
   let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">';
   
   videa.forEach((video) => {
-    const embedUrl = `${YOUTUBE_EMBED_URL}${video.videoId}`;
-    html += `
-      <div style="background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;">
-        <div style="position:relative;padding-bottom:56.25%;height:0;">
-          <iframe 
-            src="${embedUrl}" 
-            style="position:absolute;top:0;left:0;width:100%;height:100%;"
-            frameborder="0" 
-            allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" 
-            allowfullscreen>
-          </iframe>
-        </div>
-        <div style="padding:15px;">
-          <h4 style="margin:0 0 5px 0;font-size:16px;">${video.nazov || 'Video'}</h4>
-          ${video.popis ? `<p style="margin:0 0 10px 0;font-size:14px;color:#666;">${video.popis}</p>` : ''}
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#999;">
-            <span>Pridané: ${formatujDatum(video.createdAt)}</span>
-            <button onclick="odstranVideo('${video.id}')" 
-                    class="btn-remove-user"
-                    style="padding:4px 10px;font-size:11px;">
-              🗑️ Odstrániť
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
+    html += vytvorVideoKartu(video, true);
   });
   
   html += '</div>';
@@ -1751,9 +1837,19 @@ window.otvorModalPridaniaVidea = function() {
 
 // Zobrazenie správy videí (admin)
 window.zobrazSpravuVidei = function() {
-  document.getElementById('contentArea').style.display = 'none';
-  document.getElementById('adminPanel').style.display = 'block';
+  const contentArea = document.getElementById('contentArea');
+  const adminPanel = document.getElementById('adminPanel');
+  const usersList = document.getElementById('usersList');
+  const videaList = document.getElementById('videaList');
   
+  contentArea.style.display = 'none';
+  adminPanel.style.display = 'block';
+  
+  // Skryť zoznam používateľov, zobraziť zoznam videí
+  if (usersList) usersList.style.display = 'none';
+  if (videaList) videaList.style.display = 'block';
+  
+  // Aktualizovať tlačidlá
   document.getElementById('btnVidea').style.backgroundColor = '#1976D2';
   document.getElementById('btnVidea').style.color = 'white';
   document.getElementById('btnAplikacia').style.backgroundColor = '#e0e0e0';
@@ -1766,9 +1862,13 @@ window.zobrazSpravuVidei = function() {
 };
 
 window.zobrazAplikaciu = function() {
-  document.getElementById('contentArea').style.display = 'block';
-  document.getElementById('adminPanel').style.display = 'none';
+  const contentArea = document.getElementById('contentArea');
+  const adminPanel = document.getElementById('adminPanel');
   
+  contentArea.style.display = 'block';
+  adminPanel.style.display = 'none';
+  
+  // Aktualizovať tlačidlá
   document.getElementById('btnAplikacia').style.backgroundColor = '#1976D2';
   document.getElementById('btnAplikacia').style.color = 'white';
   document.getElementById('btnPouzivatelia').style.backgroundColor = '#e0e0e0';
@@ -1781,9 +1881,19 @@ window.zobrazAplikaciu = function() {
 };
 
 window.zobrazPouzivatelovAdmin = function() {
-  document.getElementById('contentArea').style.display = 'none';
-  document.getElementById('adminPanel').style.display = 'block';
+  const contentArea = document.getElementById('contentArea');
+  const adminPanel = document.getElementById('adminPanel');
+  const usersList = document.getElementById('usersList');
+  const videaList = document.getElementById('videaList');
   
+  contentArea.style.display = 'none';
+  adminPanel.style.display = 'block';
+  
+  // Skryť zoznam videí, zobraziť zoznam používateľov
+  if (usersList) usersList.style.display = 'block';
+  if (videaList) videaList.style.display = 'none';
+  
+  // Aktualizovať tlačidlá
   document.getElementById('btnPouzivatelia').style.backgroundColor = '#1976D2';
   document.getElementById('btnPouzivatelia').style.color = 'white';
   document.getElementById('btnAplikacia').style.backgroundColor = '#e0e0e0';
@@ -1917,7 +2027,9 @@ function vytvorLoggedInContainer() {
   adminPanel.id = 'adminPanel';
   adminPanel.style.display = 'none';
   
+  // Admin title
   const adminTitle = document.createElement('h3');
+  adminTitle.id = 'adminPanelTitle';
   adminTitle.textContent = 'Správa používateľov';
   adminTitle.style.margin = '0 0 15px 0';
   adminTitle.style.color = '#e65100';
@@ -1925,6 +2037,7 @@ function vytvorLoggedInContainer() {
   
   // Tlačidlo na pridanie videa v admin paneli
   const addVideoBtn = document.createElement('button');
+  addVideoBtn.id = 'addVideoBtn';
   addVideoBtn.textContent = '➕ Pridať nové video';
   addVideoBtn.style.padding = '12px 24px';
   addVideoBtn.style.backgroundColor = '#4CAF50';
@@ -1941,11 +2054,13 @@ function vytvorLoggedInContainer() {
   // Kontajner pre zoznam videí v admin paneli
   const videaList = document.createElement('div');
   videaList.id = 'videaList';
+  videaList.style.display = 'none'; // Initially hidden
   adminPanel.appendChild(videaList);
   
   // Kontajner pre zoznam používateľov
   const usersList = document.createElement('div');
   usersList.id = 'usersList';
+  usersList.style.display = 'block'; // Initially visible
   adminPanel.appendChild(usersList);
   
   container.appendChild(adminPanel);
