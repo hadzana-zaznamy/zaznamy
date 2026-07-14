@@ -937,7 +937,7 @@ function inicializujAplikaciu() {
       } catch (error) {
         return { success: false, error: error.message };
       }
-    }
+    },
     
     maPristup: function() {
       return this.aktualnyPouzivatel && this.aktualnyPouzivatelApproved === true;
