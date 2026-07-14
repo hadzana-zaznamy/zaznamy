@@ -598,6 +598,7 @@ function inicializujAplikaciu() {
     vsetciPouzivatelia: [],
     zobrazenieAdmin: 'aplikacia',
     unsubscribeUsers: null,
+    unsubscribeUser: null, // Nový listener pre aktuálneho používateľa
     
     pridajZaznam: function(data) {
       this.zaznamy.push(data);
@@ -613,6 +614,33 @@ function inicializujAplikaciu() {
     
     aktualizujZoznam: function() {
       // Tu neskôr pridáme vykreslenie zoznamu
+    },
+    
+    // Nová metóda pre real-time listener na aktuálneho používateľa
+    spustiRealTimeListenerPrePouzivatela: function(userId) {
+      if (this.unsubscribeUser) {
+        this.unsubscribeUser();
+      }
+      
+      const userRef = doc(db, 'users', userId);
+      this.unsubscribeUser = onSnapshot(userRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const userData = docSnapshot.data();
+          const predoslyApproved = this.aktualnyPouzivatelApproved;
+          const predoslaRole = this.aktualnyPouzivatelRole;
+          
+          this.aktualnyPouzivatelApproved = userData.approved || false;
+          this.aktualnyPouzivatelRole = userData.role || 'user';
+          
+          // Ak sa zmenil status alebo rola, prerenderujeme UI
+          if (predoslyApproved !== this.aktualnyPouzivatelApproved || 
+              predoslaRole !== this.aktualnyPouzivatelRole) {
+            prerenderujPodlaStavu(this.aktualnyPouzivatel);
+          }
+        }
+      }, (error) => {
+        console.error('Chyba v listeneri používateľa:', error);
+      });
     },
     
     jePrvyPouzivatel: async function() {
@@ -697,10 +725,14 @@ function inicializujAplikaciu() {
         await signOut(auth);
         this.aktualnyPouzivatelRole = null;
         this.aktualnyPouzivatelApproved = null;
-        // Odhlásiť real-time listener
+        // Odhlásiť real-time listenery
         if (this.unsubscribeUsers) {
           this.unsubscribeUsers();
           this.unsubscribeUsers = null;
+        }
+        if (this.unsubscribeUser) {
+          this.unsubscribeUser();
+          this.unsubscribeUser = null;
         }
         return { success: true };
       } catch (error) {
@@ -947,6 +979,12 @@ function inicializujAplikaciu() {
     appObj.aktualnyPouzivatel = user;
     
     if (user) {
+      // Zrušiť predchádzajúci listener
+      if (appObj.unsubscribeUser) {
+        appObj.unsubscribeUser();
+        appObj.unsubscribeUser = null;
+      }
+      
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
@@ -957,79 +995,29 @@ function inicializujAplikaciu() {
           appObj.aktualnyPouzivatelRole = 'user';
           appObj.aktualnyPouzivatelApproved = false;
         }
+        
+        // Spustiť real-time listener pre aktuálneho používateľa
+        appObj.spustiRealTimeListenerPrePouzivatela(user.uid);
+        
       } catch (error) {
         console.error('Chyba pri načítaní údajov:', error);
         appObj.aktualnyPouzivatelRole = 'user';
         appObj.aktualnyPouzivatelApproved = false;
       }
       
-      const jeSchvaleny = appObj.maPristup();
-      const jeAdmin = appObj.jeAdmin();
-      
-      if (authContainer) authContainer.style.display = 'none';
-      if (loggedInContainer) {
-        loggedInContainer.style.display = 'block';
-        
-        const contentDiv = document.getElementById('contentArea');
-        const approvalMessage = document.getElementById('approvalMessage');
-        
-        if (contentDiv) {
-          contentDiv.style.display = jeSchvaleny || jeAdmin ? 'block' : 'none';
-        }
-        
-        if (approvalMessage) {
-          approvalMessage.style.display = (!jeSchvaleny && !jeAdmin) ? 'block' : 'none';
-        }
-        
-        if (jeAdmin) {
-          const adminPanel = document.getElementById('adminPanel');
-          const adminButtons = document.getElementById('adminButtons');
-          
-          // Spustiť real-time listener pre používateľov
-          appObj.spustiRealTimeListener();
-          
-          // Načítať používateľov (pre prípad, že by listener ešte nestihol načítať)
-          await appObj.nacitajVsetkychPouzivatelov();
-          zobrazPouzivatelov(appObj.vsetciPouzivatelia);
-          
-          if (adminPanel) {
-            adminPanel.style.display = 'none';
-          }
-          
-          if (adminButtons) {
-            adminButtons.style.display = 'flex';
-          }
-          
-          document.getElementById('btnAplikacia').style.backgroundColor = '#1976D2';
-          document.getElementById('btnAplikacia').style.color = 'white';
-          document.getElementById('btnPouzivatelia').style.backgroundColor = '#e0e0e0';
-          document.getElementById('btnPouzivatelia').style.color = '#333';
-          
-          document.getElementById('contentArea').style.display = 'block';
-          document.getElementById('adminPanel').style.display = 'none';
-          
-        } else {
-          const adminPanel = document.getElementById('adminPanel');
-          const adminButtons = document.getElementById('adminButtons');
-          
-          if (adminPanel) adminPanel.style.display = 'none';
-          if (adminButtons) adminButtons.style.display = 'none';
-          
-          // Zrušiť listener ak nie je admin
-          if (appObj.unsubscribeUsers) {
-            appObj.unsubscribeUsers();
-            appObj.unsubscribeUsers = null;
-          }
-        }
-      }
-      vymazStatusSpravy();
+      prerenderujPodlaStavu(user);
     } else {
+      // Zrušiť listener pri odhlásení
+      if (appObj.unsubscribeUser) {
+        appObj.unsubscribeUser();
+        appObj.unsubscribeUser = null;
+      }
+      
       if (authContainer) authContainer.style.display = 'flex';
       if (loggedInContainer) loggedInContainer.style.display = 'none';
       appObj.aktualnyPouzivatelRole = null;
       appObj.aktualnyPouzivatelApproved = null;
       
-      // Zrušiť listener pri odhlásení
       if (appObj.unsubscribeUsers) {
         appObj.unsubscribeUsers();
         appObj.unsubscribeUsers = null;
@@ -1039,6 +1027,91 @@ function inicializujAplikaciu() {
       resetFormulare();
     }
   });
+}
+
+// Nová funkcia na prerenderovanie UI podľa stavu
+function prerenderujPodlaStavu(user) {
+  const authContainer = document.getElementById('authContainer');
+  const loggedInContainer = document.getElementById('loggedInContainer');
+  const logoutBtn = document.getElementById('logoutBtn');
+  
+  if (!user) {
+    if (authContainer) authContainer.style.display = 'flex';
+    if (loggedInContainer) loggedInContainer.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    return;
+  }
+  
+  const jeSchvaleny = window.app.maPristup();
+  const jeAdmin = window.app.jeAdmin();
+  
+  if (authContainer) authContainer.style.display = 'none';
+  if (loggedInContainer) {
+    loggedInContainer.style.display = 'block';
+    
+    const contentDiv = document.getElementById('contentArea');
+    const approvalMessage = document.getElementById('approvalMessage');
+    
+    if (contentDiv) {
+      contentDiv.style.display = jeSchvaleny || jeAdmin ? 'block' : 'none';
+    }
+    
+    if (approvalMessage) {
+      approvalMessage.style.display = (!jeSchvaleny && !jeAdmin) ? 'block' : 'none';
+    }
+    
+    if (jeAdmin) {
+      const adminPanel = document.getElementById('adminPanel');
+      const adminButtons = document.getElementById('adminButtons');
+      
+      if (!window.app.unsubscribeUsers) {
+        window.app.spustiRealTimeListener();
+      }
+      
+      window.app.nacitajVsetkychPouzivatelov().then(() => {
+        zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+      });
+      
+      if (adminPanel) {
+        adminPanel.style.display = 'none';
+      }
+      
+      if (adminButtons) {
+        adminButtons.style.display = 'flex';
+      }
+      
+      const btnAplikacia = document.getElementById('btnAplikacia');
+      const btnPouzivatelia = document.getElementById('btnPouzivatelia');
+      
+      if (btnAplikacia && btnPouzivatelia) {
+        btnAplikacia.style.backgroundColor = '#1976D2';
+        btnAplikacia.style.color = 'white';
+        btnPouzivatelia.style.backgroundColor = '#e0e0e0';
+        btnPouzivatelia.style.color = '#333';
+      }
+      
+      if (document.getElementById('contentArea')) {
+        document.getElementById('contentArea').style.display = 'block';
+      }
+      if (document.getElementById('adminPanel')) {
+        document.getElementById('adminPanel').style.display = 'none';
+      }
+    } else {
+      const adminPanel = document.getElementById('adminPanel');
+      const adminButtons = document.getElementById('adminButtons');
+      
+      if (adminPanel) adminPanel.style.display = 'none';
+      if (adminButtons) adminButtons.style.display = 'none';
+      
+      if (window.app.unsubscribeUsers) {
+        window.app.unsubscribeUsers();
+        window.app.unsubscribeUsers = null;
+      }
+    }
+  }
+  
+  if (logoutBtn) logoutBtn.style.display = 'block';
+  vymazStatusSpravy();
 }
 
 function vymazStatusSpravy() {
@@ -1153,10 +1226,13 @@ window.schvalPouzivatela = async function(userId) {
     const result = await window.app.schvalPouzivatela(userId);
     if (result.success) {
       await showAlert(
-        'Používateľ bol úspešne schválený!',
+        'Používateľ bol úspešne schválený!<br><br>Ak bol schválený práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.',
         'Úspech',
         '✅'
       );
+      // Načítať používateľov znova
+      await window.app.nacitajVsetkychPouzivatelov();
+      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
     } else {
       await showAlert(
         '❌ ' + result.error,
@@ -1187,10 +1263,13 @@ window.zamietniPouzivatela = async function(userId) {
     const result = await window.app.zamietniPouzivatela(userId);
     if (result.success) {
       await showAlert(
-        'Používateľ bol zamietnutý! Jeho stav je teraz "Čaká".',
+        'Používateľ bol zamietnutý!<br><br>Jeho stav je teraz "Čaká".<br>Ak bol zamietnutý práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.',
         'Úspech',
         '✅'
       );
+      // Načítať používateľov znova
+      await window.app.nacitajVsetkychPouzivatelov();
+      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
     } else {
       await showAlert(
         '❌ ' + result.error,
