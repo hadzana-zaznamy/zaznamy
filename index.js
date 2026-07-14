@@ -197,20 +197,49 @@ style.textContent = `
     box-shadow: 0 6px 16px rgba(244, 67, 54, 0.4);
   }
   
+  .btn-approve {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    background-color: #4CAF50;
+    color: white;
+    transition: background-color 0.3s;
+  }
+  
+  .btn-approve:hover {
+    background-color: #388E3C;
+  }
+  
+  .btn-reject {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    background-color: #FF9800;
+    color: white;
+    transition: background-color 0.3s;
+  }
+  
+  .btn-reject:hover {
+    background-color: #F57C00;
+  }
+  
   .btn-remove-user {
     padding: 6px 12px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
-    background-color: #ff9800;
+    background-color: #f44336;
     color: white;
-    margin-right: 5px;
     transition: background-color 0.3s;
   }
   
   .btn-remove-user:hover {
-    background-color: #e68900;
+    background-color: #d32f2f;
   }
   
   @media (max-width: 768px) {
@@ -486,19 +515,24 @@ function inicializujAplikaciu() {
       }
     },
     
+    // Nová funkcia na zamietnutie používateľa (nastaví approved: false)
     zamietniPouzivatela: async function(userId) {
       if (!this.aktualnyPouzivatel || this.aktualnyPouzivatelRole !== 'admin') {
         return { success: false, error: 'Nemáte oprávnenie na zamietanie používateľov' };
       }
       try {
-        await deleteDoc(doc(db, 'users', userId));
+        await updateDoc(doc(db, 'users', userId), {
+          approved: false,
+          rejectedAt: new Date().toISOString(),
+          rejectedBy: this.aktualnyPouzivatel.uid
+        });
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };
       }
     },
     
-    // Nová funkcia na odstránenie používateľa (iba pre admina)
+    // Funkcia na úplné odstránenie používateľa (iba pre admina)
     odstranPouzivatela: async function(userId, userEmail) {
       if (!this.aktualnyPouzivatel || this.aktualnyPouzivatelRole !== 'admin') {
         return { success: false, error: 'Nemáte oprávnenie na odstraňovanie používateľov' };
@@ -780,17 +814,17 @@ function zobrazPouzivatelov(pouzivatelia) {
             <div style="display:flex;flex-wrap:wrap;gap:5px;">
               ${!jeSchvaleny ? `
                 <button onclick="schvalPouzivatela('${user.id}')" 
-                        style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#4CAF50;color:white;">
+                        class="btn-approve">
                   ✓ Schváliť
                 </button>
-              ` : ''}
-              <button onclick="zamietniPouzivatela('${user.id}')" 
-                      style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#f44336;color:white;">
-                ✗ Zamietnuť
-              </button>
+              ` : `
+                <button onclick="zamietniPouzivatela('${user.id}')" 
+                        class="btn-reject">
+                  ✗ Zamietnuť
+                </button>
+              `}
               <button onclick="odstranPouzivatela('${user.id}', '${user.email}')" 
-                      class="btn-remove-user"
-                      style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#ff9800;color:white;">
+                      class="btn-remove-user">
                 🗑️ Odstrániť
               </button>
             </div>
@@ -804,34 +838,7 @@ function zobrazPouzivatelov(pouzivatelia) {
   container.innerHTML = html;
 }
 
-// Globálna funkcia pre admina na odstránenie používateľa
-window.odstranPouzivatela = async function(userId, userEmail) {
-  // Zobraziť potvrdzovací dialóg
-  if (!confirm(`Naozaj chcete ODSTRÁNIŤ používateľa ${userEmail}?\n\nPo odstránení bude jeho email skopírovaný do schránky a otvorí sa Firebase Console pre manuálne vymazanie účtu.`)) {
-    return;
-  }
-  
-  try {
-    const result = await window.app.odstranPouzivatela(userId, userEmail);
-    
-    if (result.success) {
-      // Aktualizovať zoznam používateľov
-      await window.app.nacitajVsetkychPouzivatelov();
-      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      
-      // Správa o úspechu
-      alert(`✅ Používateľ ${result.email} bol odstránený z databázy!\n\n📧 Email bol skopírovaný do schránky.\n🌐 Otvára sa Firebase Console pre manuálne vymazanie účtu.`);
-      
-      // Otvoriť Firebase Console v novej karte
-      window.open('https://console.firebase.google.com/project/z-a-z-n-a-m-y/authentication/users', '_blank');
-    } else {
-      alert('❌ ' + result.error);
-    }
-  } catch (error) {
-    alert('❌ Nastala chyba: ' + error.message);
-  }
-};
-
+// Globálna funkcia pre admina na schválenie používateľa
 window.schvalPouzivatela = async function(userId) {
   if (!confirm('Naozaj chcete schváliť tohto používateľa?')) {
     return;
@@ -850,8 +857,9 @@ window.schvalPouzivatela = async function(userId) {
   }
 };
 
+// Globálna funkcia pre admina na zamietnutie používateľa (nastaví approved: false)
 window.zamietniPouzivatela = async function(userId) {
-  if (!confirm('Naozaj chcete zamietnuť tohto používateľa? Jeho účet bude vymazaný.')) {
+  if (!confirm('Naozaj chcete ZAMIETNUŤ tohto používateľa? Jeho stav sa zmení na "Čaká".')) {
     return;
   }
   try {
@@ -859,7 +867,31 @@ window.zamietniPouzivatela = async function(userId) {
     if (result.success) {
       await window.app.nacitajVsetkychPouzivatelov();
       zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      alert('✅ Používateľ bol zamietnutý a vymazaný!');
+      alert('✅ Používateľ bol zamietnutý! Jeho stav je teraz "Čaká".');
+    } else {
+      alert('❌ ' + result.error);
+    }
+  } catch (error) {
+    alert('❌ Nastala chyba: ' + error.message);
+  }
+};
+
+// Globálna funkcia pre admina na odstránenie používateľa
+window.odstranPouzivatela = async function(userId, userEmail) {
+  if (!confirm(`Naozaj chcete ODSTRÁNIŤ používateľa ${userEmail}?\n\nPo odstránení bude jeho email skopírovaný do schránky a otvorí sa Firebase Console pre manuálne vymazanie účtu.`)) {
+    return;
+  }
+  
+  try {
+    const result = await window.app.odstranPouzivatela(userId, userEmail);
+    
+    if (result.success) {
+      await window.app.nacitajVsetkychPouzivatelov();
+      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+      
+      alert(`✅ Používateľ ${result.email} bol odstránený z databázy!\n\n📧 Email bol skopírovaný do schránky.\n🌐 Otvára sa Firebase Console pre manuálne vymazanie účtu.`);
+      
+      window.open('https://console.firebase.google.com/project/z-a-z-n-a-m-y/authentication/users', '_blank');
     } else {
       alert('❌ ' + result.error);
     }
