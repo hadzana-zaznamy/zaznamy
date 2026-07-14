@@ -1,4 +1,4 @@
-// index.js - Hádzaná záznamy s App Check (reCAPTCHA v3)
+// index.js - Aplikácia s App Check (reCAPTCHA v3)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { 
@@ -598,7 +598,7 @@ function inicializujAplikaciu() {
     vsetciPouzivatelia: [],
     zobrazenieAdmin: 'aplikacia',
     unsubscribeUsers: null,
-    unsubscribeUser: null, // Nový listener pre aktuálneho používateľa
+    unsubscribeUser: null,
     
     pridajZaznam: function(data) {
       this.zaznamy.push(data);
@@ -616,7 +616,6 @@ function inicializujAplikaciu() {
       // Tu neskôr pridáme vykreslenie zoznamu
     },
     
-    // Nová metóda pre real-time listener na aktuálneho používateľa
     spustiRealTimeListenerPrePouzivatela: function(userId) {
       if (this.unsubscribeUser) {
         this.unsubscribeUser();
@@ -632,29 +631,23 @@ function inicializujAplikaciu() {
           this.aktualnyPouzivatelApproved = userData.approved || false;
           this.aktualnyPouzivatelRole = userData.role || 'user';
           
-          // Ak sa zmenil status alebo rola, prerenderujeme UI
           if (predoslyApproved !== this.aktualnyPouzivatelApproved || 
               predoslaRole !== this.aktualnyPouzivatelRole) {
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
           }
         } else {
-          // Dokument používateľa bol odstránený - odhlásiť používateľa
           console.log('Používateľský dokument bol odstránený, odhlasujem používateľa');
           
-          // Zobraziť upozornenie
           showAlert(
             'Váš účet bol odstránený administrátorom. Budete odhlásený.',
             'Účet odstránený',
             '⚠️'
           ).then(() => {
-            // Odhlásiť používateľa
             signOut(auth).then(() => {
-              // Zrušiť listener
               if (this.unsubscribeUser) {
                 this.unsubscribeUser();
                 this.unsubscribeUser = null;
               }
-              // Aktualizovať UI
               this.aktualnyPouzivatel = null;
               this.aktualnyPouzivatelRole = null;
               this.aktualnyPouzivatelApproved = null;
@@ -751,7 +744,6 @@ function inicializujAplikaciu() {
         await signOut(auth);
         this.aktualnyPouzivatelRole = null;
         this.aktualnyPouzivatelApproved = null;
-        // Odhlásiť real-time listenery
         if (this.unsubscribeUsers) {
           this.unsubscribeUsers();
           this.unsubscribeUsers = null;
@@ -792,7 +784,6 @@ function inicializujAplikaciu() {
       });
     },
     
-    // Spustenie real-time listenera na používateľov
     spustiRealTimeListener: function() {
       if (this.unsubscribeUsers) {
         this.unsubscribeUsers();
@@ -885,13 +876,11 @@ function inicializujAplikaciu() {
         return { success: false, error: 'Nemáte oprávnenie na odstraňovanie používateľov' };
       }
       
-      // Kontrola či neodstraňuje sám seba
       const jeSamSeba = userId === this.aktualnyPouzivatel.uid;
       
       try {
         await deleteDoc(doc(db, 'users', userId));
         
-        // Skopírovať email do schránky
         if (navigator.clipboard && navigator.clipboard.writeText) {
           try {
             await navigator.clipboard.writeText(userEmail);
@@ -912,15 +901,12 @@ function inicializujAplikaciu() {
           document.body.removeChild(tempInput);
         }
     
-        // Ak admin odstránil sám seba, odhlásiť ho
         if (jeSamSeba) {
-          // Odhlásiť používateľa
           await signOut(auth);
           this.aktualnyPouzivatel = null;
           this.aktualnyPouzivatelRole = null;
           this.aktualnyPouzivatelApproved = null;
           
-          // Zrušiť listenery
           if (this.unsubscribeUsers) {
             this.unsubscribeUsers();
             this.unsubscribeUsers = null;
@@ -1025,7 +1011,6 @@ function inicializujAplikaciu() {
     appObj.aktualnyPouzivatel = user;
     
     if (user) {
-      // Zrušiť predchádzajúci listener
       if (appObj.unsubscribeUser) {
         appObj.unsubscribeUser();
         appObj.unsubscribeUser = null;
@@ -1042,7 +1027,6 @@ function inicializujAplikaciu() {
           appObj.aktualnyPouzivatelApproved = false;
         }
         
-        // Spustiť real-time listener pre aktuálneho používateľa
         appObj.spustiRealTimeListenerPrePouzivatela(user.uid);
         
       } catch (error) {
@@ -1053,7 +1037,6 @@ function inicializujAplikaciu() {
       
       prerenderujPodlaStavu(user);
     } else {
-      // Zrušiť listener pri odhlásení
       if (appObj.unsubscribeUser) {
         appObj.unsubscribeUser();
         appObj.unsubscribeUser = null;
@@ -1075,7 +1058,6 @@ function inicializujAplikaciu() {
   });
 }
 
-// Nová funkcia na prerenderovanie UI podľa stavu
 function prerenderujPodlaStavu(user) {
   const authContainer = document.getElementById('authContainer');
   const loggedInContainer = document.getElementById('loggedInContainer');
@@ -1258,7 +1240,6 @@ function zobrazPouzivatelov(pouzivatelia) {
   container.innerHTML = html;
 }
 
-// Globálna funkcia pre admina na schválenie používateľa
 window.schvalPouzivatela = async function(userId) {
   const confirmed = await showWarningConfirm(
     'Naozaj chcete schváliť tohto používateľa?',
@@ -1276,7 +1257,6 @@ window.schvalPouzivatela = async function(userId) {
         'Úspech',
         '✅'
       );
-      // Načítať používateľov znova
       await window.app.nacitajVsetkychPouzivatelov();
       zobrazPouzivatelov(window.app.vsetciPouzivatelia);
     } else {
@@ -1295,7 +1275,6 @@ window.schvalPouzivatela = async function(userId) {
   }
 };
 
-// Globálna funkcia pre admina na zamietnutie používateľa
 window.zamietniPouzivatela = async function(userId) {
   const confirmed = await showWarningConfirm(
     'Naozaj chcete ZAMIETNUŤ tohto používateľa? Jeho stav sa zmení na "Čaká".',
@@ -1313,7 +1292,6 @@ window.zamietniPouzivatela = async function(userId) {
         'Úspech',
         '✅'
       );
-      // Načítať používateľov znova
       await window.app.nacitajVsetkychPouzivatelov();
       zobrazPouzivatelov(window.app.vsetciPouzivatelia);
     } else {
@@ -1332,7 +1310,6 @@ window.zamietniPouzivatela = async function(userId) {
   }
 };
 
-// Globálna funkcia pre admina na odstránenie používateľa
 window.odstranPouzivatela = async function(userId, userEmail) {
   const confirmed = await showDangerConfirm(
     `Naozaj chcete ODSTRÁNIŤ používateľa <strong>${userEmail}</strong>?<br><br>Po odstránení bude jeho email skopírovaný do schránky a otvorí sa Firebase Console pre manuálne vymazanie účtu.${userId === window.app.aktualnyPouzivatel?.uid ? '<br><br><strong style="color:red;">⚠️ POZOR: Toto je váš vlastný účet!</strong>' : ''}`,
@@ -1406,7 +1383,7 @@ function vytvorAuthContainer() {
   authCard.className = 'auth-card';
   
   const heading = document.createElement('h1');
-  heading.textContent = 'Hádzaná záznamy';
+  heading.textContent = 'Prihlásenie / Registrácia';
   heading.style.textAlign = 'center';
   heading.style.color = '#333';
   heading.style.marginBottom = '20px';
@@ -1435,13 +1412,12 @@ function vytvorLoggedInContainer() {
   container.style.display = 'none';
   
   const heading = document.createElement('h1');
-  heading.textContent = 'Hádzaná záznamy';
+  heading.textContent = 'Dashboard';
   heading.style.textAlign = 'center';
   heading.style.color = '#333';
   heading.style.marginBottom = '20px';
   container.appendChild(heading);
   
-  // Admin buttons
   const adminButtons = document.createElement('div');
   adminButtons.id = 'adminButtons';
   adminButtons.style.display = 'none';
@@ -1476,7 +1452,6 @@ function vytvorLoggedInContainer() {
   adminButtons.appendChild(btnPouzivatelia);
   container.appendChild(adminButtons);
   
-  // Approval message
   const approvalMessage = document.createElement('div');
   approvalMessage.id = 'approvalMessage';
   approvalMessage.style.display = 'none';
@@ -1500,7 +1475,6 @@ function vytvorLoggedInContainer() {
   
   container.appendChild(approvalMessage);
   
-  // Content area
   const contentArea = document.createElement('div');
   contentArea.id = 'contentArea';
   contentArea.style.display = 'none';
@@ -1519,7 +1493,6 @@ function vytvorLoggedInContainer() {
   
   container.appendChild(contentArea);
   
-  // Admin panel
   const adminPanel = document.createElement('div');
   adminPanel.id = 'adminPanel';
   adminPanel.style.display = 'none';
@@ -1538,7 +1511,6 @@ function vytvorLoggedInContainer() {
   
   document.body.appendChild(container);
   
-  // Logout button
   const logoutBtn = document.createElement('button');
   logoutBtn.id = 'logoutBtn';
   logoutBtn.textContent = 'Odhlásiť sa';
