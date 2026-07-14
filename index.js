@@ -41,6 +41,9 @@ const appCheck = initializeAppCheck(app, {
   isTokenAutoRefreshEnabled: true
 });
 
+// YouTube embed URL
+const YOUTUBE_EMBED_URL = 'https://www.youtube.com/embed/';
+
 // Pridať globálny štýl pre full-width layout
 const style = document.createElement('style');
 style.textContent = `
@@ -993,6 +996,54 @@ function inicializujAplikaciu() {
       } catch (error) {
         return { success: false, error: error.message };
       }
+    },
+
+    // Video management methods
+    pridajVideo: async function(videoId, nazov, popis) {
+      if (!this.jeAdmin()) {
+        return { success: false, error: 'Nemáte oprávnenie na pridávanie videí' };
+      }
+      
+      try {
+        const docRef = await addDoc(collection(db, 'matches'), {
+          videoId: videoId,
+          nazov: nazov || `Video ${videoId}`,
+          popis: popis || '',
+          createdAt: new Date().toISOString(),
+          createdBy: this.aktualnyPouzivatel.uid,
+          createdByEmail: this.aktualnyPouzivatel.email
+        });
+        return { success: true, id: docRef.id };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+
+    nacitajVidea: async function() {
+      try {
+        const q = query(collection(db, 'matches'), orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const videa = [];
+        querySnapshot.forEach((doc) => {
+          videa.push({ id: doc.id, ...doc.data() });
+        });
+        return { success: true, videa: videa };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+
+    odstranVideo: async function(videoId) {
+      if (!this.jeAdmin()) {
+        return { success: false, error: 'Nemáte oprávnenie na odstraňovanie videí' };
+      }
+      
+      try {
+        await deleteDoc(doc(db, 'matches', videoId));
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
     }
   };
   
@@ -1082,6 +1133,9 @@ function prerenderujPodlaStavu(user) {
     
     if (contentDiv) {
       contentDiv.style.display = jeSchvaleny || jeAdmin ? 'block' : 'none';
+      if (jeSchvaleny || jeAdmin) {
+        zobrazVideaPouzivatelom();
+      }
     }
     
     if (approvalMessage) {
@@ -1110,12 +1164,15 @@ function prerenderujPodlaStavu(user) {
       
       const btnAplikacia = document.getElementById('btnAplikacia');
       const btnPouzivatelia = document.getElementById('btnPouzivatelia');
+      const btnVidea = document.getElementById('btnVidea');
       
-      if (btnAplikacia && btnPouzivatelia) {
+      if (btnAplikacia && btnPouzivatelia && btnVidea) {
         btnAplikacia.style.backgroundColor = '#1976D2';
         btnAplikacia.style.color = 'white';
         btnPouzivatelia.style.backgroundColor = '#e0e0e0';
         btnPouzivatelia.style.color = '#333';
+        btnVidea.style.backgroundColor = '#e0e0e0';
+        btnVidea.style.color = '#333';
       }
       
       if (document.getElementById('contentArea')) {
@@ -1354,6 +1411,360 @@ window.odstranPouzivatela = async function(userId, userEmail) {
   }
 };
 
+// Funkcia na získanie ID videa z YouTube URL
+function extrahujVideoId(url) {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([\w-]+)/,
+    /(?:youtu\.be\/)([\w-]+)/,
+    /(?:youtube\.com\/embed\/)([\w-]+)/,
+    /(?:youtube\.com\/v\/)([\w-]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  
+  // Ak je to priamo ID (len písmená a čísla)
+  if (/^[\w-]{11}$/.test(url)) {
+    return url;
+  }
+  
+  return null;
+}
+
+// Zobrazenie videí pre používateľov
+async function zobrazVideaPouzivatelom() {
+  const container = document.getElementById('videaPrePouzivatelov');
+  if (!container) return;
+  
+  const result = await window.app.nacitajVidea();
+  if (!result.success) {
+    container.innerHTML = `<p style="color:red;">❌ Chyba pri načítaní videí: ${result.error}</p>`;
+    return;
+  }
+  
+  const videa = result.videa;
+  if (!videa || videa.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#999;">Žiadne videá nie sú dostupné</p>';
+    return;
+  }
+  
+  let html = '<h3 style="margin-bottom:15px;">🎥 Zápasy</h3>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">';
+  
+  videa.forEach((video) => {
+    const embedUrl = `${YOUTUBE_EMBED_URL}${video.videoId}`;
+    html += `
+      <div style="background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;">
+        <div style="position:relative;padding-bottom:56.25%;height:0;">
+          <iframe 
+            src="${embedUrl}" 
+            style="position:absolute;top:0;left:0;width:100%;height:100%;"
+            frameborder="0" 
+            allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
+        <div style="padding:15px;">
+          <h4 style="margin:0 0 5px 0;font-size:16px;">${video.nazov || 'Video'}</h4>
+          ${video.popis ? `<p style="margin:0 0 10px 0;font-size:14px;color:#666;">${video.popis}</p>` : ''}
+          <div style="font-size:12px;color:#999;">
+            Pridané: ${formatujDatum(video.createdAt)}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// Načítanie videí do admin panelu
+async function nacitajVideaDoAdminPanelu() {
+  const container = document.getElementById('videaList');
+  if (!container) return;
+  
+  const result = await window.app.nacitajVidea();
+  if (result.success) {
+    zobrazVideaAdmin(result.videa);
+  } else {
+    container.innerHTML = `<p style="color:red;">❌ Chyba pri načítaní videí: ${result.error}</p>`;
+  }
+}
+
+// Zobrazenie videí pre admina
+function zobrazVideaAdmin(videa) {
+  const container = document.getElementById('videaList');
+  if (!container) return;
+  
+  if (!videa || videa.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#999;">Žiadne videá neboli pridané</p>';
+    return;
+  }
+  
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">';
+  
+  videa.forEach((video) => {
+    const embedUrl = `${YOUTUBE_EMBED_URL}${video.videoId}`;
+    html += `
+      <div style="background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;">
+        <div style="position:relative;padding-bottom:56.25%;height:0;">
+          <iframe 
+            src="${embedUrl}" 
+            style="position:absolute;top:0;left:0;width:100%;height:100%;"
+            frameborder="0" 
+            allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
+        <div style="padding:15px;">
+          <h4 style="margin:0 0 5px 0;font-size:16px;">${video.nazov || 'Video'}</h4>
+          ${video.popis ? `<p style="margin:0 0 10px 0;font-size:14px;color:#666;">${video.popis}</p>` : ''}
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#999;">
+            <span>Pridané: ${formatujDatum(video.createdAt)}</span>
+            <button onclick="odstranVideo('${video.id}')" 
+                    class="btn-remove-user"
+                    style="padding:4px 10px;font-size:11px;">
+              🗑️ Odstrániť
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// Odstránenie videa (admin)
+window.odstranVideo = async function(videoId) {
+  const confirmed = await showDangerConfirm(
+    'Naozaj chcete odstrániť toto video?',
+    'Odstránenie videa',
+    '🗑️'
+  );
+  
+  if (confirmed !== 'confirm') return;
+  
+  const result = await window.app.odstranVideo(videoId);
+  if (result.success) {
+    await showAlert('✅ Video bolo úspešne odstránené!', 'Úspech', '✅');
+    nacitajVideaDoAdminPanelu();
+    // Aktualizovať aj zobrazenie pre používateľov
+    zobrazVideaPouzivatelom();
+  } else {
+    await showAlert('❌ ' + result.error, 'Chyba', '❌');
+  }
+};
+
+// Funkcia na otvorenie modálneho okna pre pridanie videa
+window.otvorModalPridaniaVidea = function() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay active';
+  modal.id = 'videoModal';
+  
+  const modalBox = document.createElement('div');
+  modalBox.className = 'modal-box';
+  modalBox.style.maxWidth = '500px';
+  
+  // Close button
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'modal-close';
+  closeBtn.innerHTML = '×';
+  closeBtn.onclick = () => {
+    modal.remove();
+  };
+  modalBox.appendChild(closeBtn);
+  
+  // Icon
+  const icon = document.createElement('div');
+  icon.className = 'modal-icon';
+  icon.textContent = '🎥';
+  modalBox.appendChild(icon);
+  
+  // Title
+  const title = document.createElement('h3');
+  title.textContent = 'Pridať nové video';
+  title.style.marginBottom = '20px';
+  modalBox.appendChild(title);
+  
+  // Form
+  const form = document.createElement('form');
+  form.id = 'videoForm';
+  
+  // Video URL/ID input
+  const urlGroup = document.createElement('div');
+  urlGroup.style.marginBottom = '15px';
+  
+  const urlLabel = document.createElement('label');
+  urlLabel.textContent = 'YouTube URL alebo ID videa *';
+  urlLabel.style.display = 'block';
+  urlLabel.style.marginBottom = '5px';
+  urlLabel.style.fontWeight = 'bold';
+  urlGroup.appendChild(urlLabel);
+  
+  const urlInput = document.createElement('input');
+  urlInput.type = 'text';
+  urlInput.id = 'videoUrl';
+  urlInput.required = true;
+  urlInput.placeholder = 'https://www.youtube.com/watch?v=... alebo ID videa';
+  urlInput.style.width = '100%';
+  urlInput.style.padding = '12px';
+  urlInput.style.border = '1px solid #ddd';
+  urlInput.style.borderRadius = '4px';
+  urlInput.style.fontSize = '14px';
+  urlInput.style.boxSizing = 'border-box';
+  urlGroup.appendChild(urlInput);
+  form.appendChild(urlGroup);
+  
+  // Názov input
+  const nameGroup = document.createElement('div');
+  nameGroup.style.marginBottom = '15px';
+  
+  const nameLabel = document.createElement('label');
+  nameLabel.textContent = 'Názov videa';
+  nameLabel.style.display = 'block';
+  nameLabel.style.marginBottom = '5px';
+  nameLabel.style.fontWeight = 'bold';
+  nameGroup.appendChild(nameLabel);
+  
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.id = 'videoName';
+  nameInput.placeholder = 'Názov zápasu (voliteľné)';
+  nameInput.style.width = '100%';
+  nameInput.style.padding = '12px';
+  nameInput.style.border = '1px solid #ddd';
+  nameInput.style.borderRadius = '4px';
+  nameInput.style.fontSize = '14px';
+  nameInput.style.boxSizing = 'border-box';
+  nameGroup.appendChild(nameInput);
+  form.appendChild(nameGroup);
+  
+  // Popis input
+  const descGroup = document.createElement('div');
+  descGroup.style.marginBottom = '20px';
+  
+  const descLabel = document.createElement('label');
+  descLabel.textContent = 'Popis videa';
+  descLabel.style.display = 'block';
+  descLabel.style.marginBottom = '5px';
+  descLabel.style.fontWeight = 'bold';
+  descGroup.appendChild(descLabel);
+  
+  const descInput = document.createElement('textarea');
+  descInput.id = 'videoDesc';
+  descInput.placeholder = 'Stručný popis zápasu (voliteľné)';
+  descInput.style.width = '100%';
+  descInput.style.padding = '12px';
+  descInput.style.border = '1px solid #ddd';
+  descInput.style.borderRadius = '4px';
+  descInput.style.fontSize = '14px';
+  descInput.style.boxSizing = 'border-box';
+  descInput.style.resize = 'vertical';
+  descInput.style.minHeight = '60px';
+  descInput.style.fontFamily = 'Arial, sans-serif';
+  descGroup.appendChild(descInput);
+  form.appendChild(descGroup);
+  
+  // Submit button
+  const submitBtn = document.createElement('button');
+  submitBtn.type = 'submit';
+  submitBtn.textContent = '✅ Pridať video';
+  submitBtn.style.width = '100%';
+  submitBtn.style.padding = '12px';
+  submitBtn.style.backgroundColor = '#4CAF50';
+  submitBtn.style.color = 'white';
+  submitBtn.style.border = 'none';
+  submitBtn.style.borderRadius = '4px';
+  submitBtn.style.fontSize = '16px';
+  submitBtn.style.cursor = 'pointer';
+  submitBtn.style.transition = 'background-color 0.3s';
+  form.appendChild(submitBtn);
+  
+  // Message div
+  const messageDiv = document.createElement('div');
+  messageDiv.id = 'videoMessage';
+  messageDiv.style.marginTop = '15px';
+  messageDiv.style.textAlign = 'center';
+  messageDiv.style.fontSize = '14px';
+  form.appendChild(messageDiv);
+  
+  modalBox.appendChild(form);
+  modal.appendChild(modalBox);
+  document.body.appendChild(modal);
+  
+  // Form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const url = urlInput.value.trim();
+    const nazov = nameInput.value.trim() || 'Video';
+    const popis = descInput.value.trim();
+    
+    const videoId = extrahujVideoId(url);
+    if (!videoId) {
+      messageDiv.textContent = '❌ Neplatná YouTube URL alebo ID videa';
+      messageDiv.style.color = 'red';
+      return;
+    }
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Ukladám...';
+    submitBtn.style.opacity = '0.7';
+    messageDiv.textContent = '';
+    
+    const result = await window.app.pridajVideo(videoId, nazov, popis);
+    
+    if (result.success) {
+      messageDiv.innerHTML = '✅ Video bolo úspešne pridané!';
+      messageDiv.style.color = 'green';
+      form.reset();
+      
+      // Aktualizovať zoznamy
+      nacitajVideaDoAdminPanelu();
+      zobrazVideaPouzivatelom();
+      
+      setTimeout(() => {
+        modal.remove();
+      }, 1500);
+    } else {
+      messageDiv.textContent = '❌ ' + result.error;
+      messageDiv.style.color = 'red';
+    }
+    
+    submitBtn.disabled = false;
+    submitBtn.textContent = '✅ Pridať video';
+    submitBtn.style.opacity = '1';
+  });
+  
+  // Click outside to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+};
+
+// Zobrazenie správy videí (admin)
+window.zobrazSpravuVidei = function() {
+  document.getElementById('contentArea').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  
+  document.getElementById('btnVidea').style.backgroundColor = '#1976D2';
+  document.getElementById('btnVidea').style.color = 'white';
+  document.getElementById('btnAplikacia').style.backgroundColor = '#e0e0e0';
+  document.getElementById('btnAplikacia').style.color = '#333';
+  document.getElementById('btnPouzivatelia').style.backgroundColor = '#e0e0e0';
+  document.getElementById('btnPouzivatelia').style.color = '#333';
+  
+  // Načítanie videí pre admin panel
+  nacitajVideaDoAdminPanelu();
+};
+
 window.zobrazAplikaciu = function() {
   document.getElementById('contentArea').style.display = 'block';
   document.getElementById('adminPanel').style.display = 'none';
@@ -1362,6 +1773,11 @@ window.zobrazAplikaciu = function() {
   document.getElementById('btnAplikacia').style.color = 'white';
   document.getElementById('btnPouzivatelia').style.backgroundColor = '#e0e0e0';
   document.getElementById('btnPouzivatelia').style.color = '#333';
+  document.getElementById('btnVidea').style.backgroundColor = '#e0e0e0';
+  document.getElementById('btnVidea').style.color = '#333';
+  
+  // Načítať videá pre používateľov
+  zobrazVideaPouzivatelom();
 };
 
 window.zobrazPouzivatelovAdmin = function() {
@@ -1372,6 +1788,17 @@ window.zobrazPouzivatelovAdmin = function() {
   document.getElementById('btnPouzivatelia').style.color = 'white';
   document.getElementById('btnAplikacia').style.backgroundColor = '#e0e0e0';
   document.getElementById('btnAplikacia').style.color = '#333';
+  document.getElementById('btnVidea').style.backgroundColor = '#e0e0e0';
+  document.getElementById('btnVidea').style.color = '#333';
+  
+  // Načítať používateľov
+  if (window.app.vsetciPouzivatelia.length > 0) {
+    zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+  } else {
+    window.app.nacitajVsetkychPouzivatelov().then(() => {
+      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+    });
+  }
 };
 
 function vytvorAuthContainer() {
@@ -1381,13 +1808,6 @@ function vytvorAuthContainer() {
   
   const authCard = document.createElement('div');
   authCard.className = 'auth-card';
-  
-//  const heading = document.createElement('h1');
-//  heading.textContent = 'Prihlásenie / Registrácia';
-//  heading.style.textAlign = 'center';
-//  heading.style.color = '#333';
-//  heading.style.marginBottom = '20px';
-//  authCard.appendChild(heading);
   
   const formsContainer = document.createElement('div');
   formsContainer.id = 'formsContainer';
@@ -1410,13 +1830,6 @@ function vytvorLoggedInContainer() {
   const container = document.createElement('div');
   container.id = 'loggedInContainer';
   container.style.display = 'none';
-  
-//  const heading = document.createElement('h1');
-//  heading.textContent = 'Dashboard';
-//  heading.style.textAlign = 'center';
-//  heading.style.color = '#333';
-//  heading.style.marginBottom = '20px';
-//  container.appendChild(heading);
   
   const adminButtons = document.createElement('div');
   adminButtons.id = 'adminButtons';
@@ -1448,8 +1861,22 @@ function vytvorLoggedInContainer() {
   btnPouzivatelia.style.transition = 'background-color 0.3s';
   btnPouzivatelia.onclick = window.zobrazPouzivatelovAdmin;
   
+  const btnVidea = document.createElement('button');
+  btnVidea.id = 'btnVidea';
+  btnVidea.textContent = '🎥 Spravovať videá';
+  btnVidea.style.padding = '10px 20px';
+  btnVidea.style.border = 'none';
+  btnVidea.style.borderRadius = '4px';
+  btnVidea.style.fontSize = '14px';
+  btnVidea.style.cursor = 'pointer';
+  btnVidea.style.backgroundColor = '#e0e0e0';
+  btnVidea.style.color = '#333';
+  btnVidea.style.transition = 'background-color 0.3s';
+  btnVidea.onclick = window.zobrazSpravuVidei;
+  
   adminButtons.appendChild(btnAplikacia);
   adminButtons.appendChild(btnPouzivatelia);
+  adminButtons.appendChild(btnVidea);
   container.appendChild(adminButtons);
   
   const approvalMessage = document.createElement('div');
@@ -1479,17 +1906,10 @@ function vytvorLoggedInContainer() {
   contentArea.id = 'contentArea';
   contentArea.style.display = 'none';
   
-  const contentTitle = document.createElement('h3');
-  contentTitle.textContent = 'Obsah aplikácie';
-  contentTitle.style.margin = '0 0 15px 0';
-  contentTitle.style.color = '#1565c0';
-  contentArea.appendChild(contentTitle);
-  
-  const contentText = document.createElement('p');
-  contentText.textContent = 'Tu bude neskôr obsah vašej aplikácie.';
-  contentText.style.margin = '0';
-  contentText.style.color = '#555';
-  contentArea.appendChild(contentText);
+  // Kontajner pre videá v contentArea
+  const videaContainer = document.createElement('div');
+  videaContainer.id = 'videaPrePouzivatelov';
+  contentArea.appendChild(videaContainer);
   
   container.appendChild(contentArea);
   
@@ -1503,6 +1923,27 @@ function vytvorLoggedInContainer() {
   adminTitle.style.color = '#e65100';
   adminPanel.appendChild(adminTitle);
   
+  // Tlačidlo na pridanie videa v admin paneli
+  const addVideoBtn = document.createElement('button');
+  addVideoBtn.textContent = '➕ Pridať nové video';
+  addVideoBtn.style.padding = '12px 24px';
+  addVideoBtn.style.backgroundColor = '#4CAF50';
+  addVideoBtn.style.color = 'white';
+  addVideoBtn.style.border = 'none';
+  addVideoBtn.style.borderRadius = '4px';
+  addVideoBtn.style.fontSize = '14px';
+  addVideoBtn.style.cursor = 'pointer';
+  addVideoBtn.style.marginBottom = '20px';
+  addVideoBtn.style.transition = 'background-color 0.3s';
+  addVideoBtn.onclick = window.otvorModalPridaniaVidea;
+  adminPanel.appendChild(addVideoBtn);
+  
+  // Kontajner pre zoznam videí v admin paneli
+  const videaList = document.createElement('div');
+  videaList.id = 'videaList';
+  adminPanel.appendChild(videaList);
+  
+  // Kontajner pre zoznam používateľov
   const usersList = document.createElement('div');
   usersList.id = 'usersList';
   adminPanel.appendChild(usersList);
