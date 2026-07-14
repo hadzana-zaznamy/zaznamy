@@ -1841,13 +1841,21 @@ window.zobrazSpravuVidei = function() {
   const adminPanel = document.getElementById('adminPanel');
   const usersList = document.getElementById('usersList');
   const videaList = document.getElementById('videaList');
+  const addVideoBtn = document.getElementById('addVideoBtn');
+  const adminPanelTitle = document.getElementById('adminPanelTitle');
   
   contentArea.style.display = 'none';
   adminPanel.style.display = 'block';
   
+  // Zmeniť názov panelu
+  if (adminPanelTitle) {
+    adminPanelTitle.textContent = 'Správa videí';
+  }
+  
   // Skryť zoznam používateľov, zobraziť zoznam videí
   if (usersList) usersList.style.display = 'none';
   if (videaList) videaList.style.display = 'block';
+  if (addVideoBtn) addVideoBtn.style.display = 'block';
   
   // Aktualizovať tlačidlá
   document.getElementById('btnVidea').style.backgroundColor = '#1976D2';
@@ -1885,13 +1893,21 @@ window.zobrazPouzivatelovAdmin = function() {
   const adminPanel = document.getElementById('adminPanel');
   const usersList = document.getElementById('usersList');
   const videaList = document.getElementById('videaList');
+  const addVideoBtn = document.getElementById('addVideoBtn');
+  const adminPanelTitle = document.getElementById('adminPanelTitle');
   
   contentArea.style.display = 'none';
   adminPanel.style.display = 'block';
   
+  // Zmeniť názov panelu
+  if (adminPanelTitle) {
+    adminPanelTitle.textContent = 'Správa používateľov';
+  }
+  
   // Skryť zoznam videí, zobraziť zoznam používateľov
   if (usersList) usersList.style.display = 'block';
   if (videaList) videaList.style.display = 'none';
+  if (addVideoBtn) addVideoBtn.style.display = 'none'; // Skryť tlačidlo na pridanie videa
   
   // Aktualizovať tlačidlá
   document.getElementById('btnPouzivatelia').style.backgroundColor = '#1976D2';
@@ -2035,7 +2051,7 @@ function vytvorLoggedInContainer() {
   adminTitle.style.color = '#e65100';
   adminPanel.appendChild(adminTitle);
   
-  // Tlačidlo na pridanie videa v admin paneli
+  // Tlačidlo na pridanie videa v admin paneli - SKRYTÉ PREDVOLENE
   const addVideoBtn = document.createElement('button');
   addVideoBtn.id = 'addVideoBtn';
   addVideoBtn.textContent = '➕ Pridať nové video';
@@ -2049,6 +2065,7 @@ function vytvorLoggedInContainer() {
   addVideoBtn.style.marginBottom = '20px';
   addVideoBtn.style.transition = 'background-color 0.3s';
   addVideoBtn.onclick = window.otvorModalPridaniaVidea;
+  addVideoBtn.style.display = 'none'; // SKRYTÉ PREDVOLENE
   adminPanel.appendChild(addVideoBtn);
   
   // Kontajner pre zoznam videí v admin paneli
