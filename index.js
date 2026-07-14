@@ -48,6 +48,7 @@ function inicializujAplikaciu() {
     aktualnyZaznam: null,
     aktualnyPouzivatel: null,
     aktualnyPouzivatelRole: null,
+    vsetciPouzivatelia: [],
     
     pridajZaznam: function(data) {
       this.zaznamy.push(data);
@@ -162,6 +163,57 @@ function inicializujAplikaciu() {
       });
     },
     
+    // Funkcia na načítanie všetkých používateľov (len pre admina)
+    nacitajVsetkychPouzivatelov: async function() {
+      if (!this.aktualnyPouzivatel || this.aktualnyPouzivatelRole !== 'admin') {
+        return { success: false, error: 'Nemáte oprávnenie na zobrazenie používateľov' };
+      }
+      
+      try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, orderBy('createdAt', 'asc'));
+        const querySnapshot = await getDocs(q);
+        const pouzivatelia = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          // Skryť citlivé údaje
+          pouzivatelia.push({
+            id: doc.id,
+            email: data.email || 'Neznámy',
+            role: data.role || 'user',
+            createdAt: data.createdAt || 'Neznámy',
+            uid: data.uid
+          });
+        });
+        this.vsetciPouzivatelia = pouzivatelia;
+        return { success: true, pouzivatelia: pouzivatelia };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+    
+    // Funkcia na zmenu roly používateľa (len pre admina)
+    zmenRoluPouzivatela: async function(userId, novaRola) {
+      if (!this.aktualnyPouzivatel || this.aktualnyPouzivatelRole !== 'admin') {
+        return { success: false, error: 'Nemáte oprávnenie na zmenu rolí' };
+      }
+      
+      // Admin nemôže zmeniť svoju vlastnú rolu
+      if (userId === this.aktualnyPouzivatel.uid) {
+        return { success: false, error: 'Nemôžete zmeniť svoju vlastnú rolu' };
+      }
+      
+      try {
+        await updateDoc(doc(db, 'users', userId), {
+          role: novaRola,
+          updatedAt: new Date().toISOString()
+        });
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+    
     ulozZaznam: async function(zaznam) {
       if (!this.aktualnyPouzivatel) {
         return { success: false, error: 'Používateľ nie je prihlásený' };
@@ -264,6 +316,20 @@ function inicializujAplikaciu() {
           roleSpan.textContent = role === 'admin' ? '👑 Administrátor' : '👤 Používateľ';
           roleSpan.style.color = role === 'admin' ? '#ff6f00' : '#555';
         }
+        
+        // Ak je admin, zobraziť admin panel
+        if (appObj.aktualnyPouzivatelRole === 'admin') {
+          const adminPanel = document.getElementById('adminPanel');
+          if (adminPanel) {
+            adminPanel.style.display = 'block';
+            // Načítať používateľov
+            await appObj.nacitajVsetkychPouzivatelov();
+            zobrazPouzivatelov(appObj.vsetciPouzivatelia);
+          }
+        } else {
+          const adminPanel = document.getElementById('adminPanel');
+          if (adminPanel) adminPanel.style.display = 'none';
+        }
       }
       // Vymazať status správy po prihlásení
       vymazStatusSpravy();
@@ -320,6 +386,84 @@ function resetFormulare() {
     loginForm.reset();
   }
 }
+
+function zobrazPouzivatelov(pouzivatelia) {
+  const container = document.getElementById('usersList');
+  if (!container) return;
+  
+  if (!pouzivatelia || pouzivatelia.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#999;">Žiadni používatelia</p>';
+    return;
+  }
+  
+  let html = '<div style="overflow-x:auto;">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
+  html += `
+    <thead>
+      <tr style="background-color:#f5f5f5;">
+        <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Email</th>
+        <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Rola</th>
+        <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Registrovaný</th>
+        <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Akcia</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+  
+  pouzivatelia.forEach((user) => {
+    const jeAdmin = user.role === 'admin';
+    const jeAktualny = user.uid === window.app.aktualnyPouzivatel?.uid;
+    
+    html += `
+      <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}">
+        <td style="padding:10px;">${user.email}</td>
+        <td style="padding:10px;">
+          <span style="padding:3px 10px;border-radius:12px;font-size:12px;${jeAdmin ? 'background-color:#fff3e0;color:#e65100;' : 'background-color:#e3f2fd;color:#1565c0;'}">
+            ${jeAdmin ? '👑 Admin' : '👤 User'}
+          </span>
+        </td>
+        <td style="padding:10px;font-size:12px;color:#666;">
+          ${formatujDatum(user.createdAt)}
+        </td>
+        <td style="padding:10px;">
+          ${!jeAktualny ? `
+            <button onclick="zmenRolu('${user.id}', '${user.role}')" 
+                    style="padding:5px 10px;border:none;border-radius:4px;cursor:pointer;font-size:12px;${jeAdmin ? 'background-color:#ff9800;color:white;' : 'background-color:#4CAF50;color:white;'}">
+              ${jeAdmin ? '⬇️ Zmeniť na User' : '⬆️ Zmeniť na Admin'}
+            </button>
+          ` : '<span style="font-size:12px;color:#999;">(Vy)</span>'}
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+// Globálna funkcia pre zmenu roly
+window.zmenRolu = async function(userId, aktualnaRola) {
+  const novaRola = aktualnaRola === 'admin' ? 'user' : 'admin';
+  
+  if (!confirm(`Naozaj chcete zmeniť rolu používateľa na "${novaRola}"?`)) {
+    return;
+  }
+  
+  try {
+    const result = await window.app.zmenRoluPouzivatela(userId, novaRola);
+    
+    if (result.success) {
+      // Znovu načítať používateľov
+      await window.app.nacitajVsetkychPouzivatelov();
+      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+      alert('✅ Rola bola úspešne zmenená!');
+    } else {
+      alert('❌ ' + result.error);
+    }
+  } catch (error) {
+    alert('❌ Nastala chyba: ' + error.message);
+  }
+};
 
 function vytvorAuthContainer() {
   const container = document.createElement('div');
@@ -421,8 +565,7 @@ function vytvorAuthContainer() {
 function vytvorLoggedInContainer() {
   const container = document.createElement('div');
   container.id = 'loggedInContainer';
-  container.style.display = 'none';
-  container.style.maxWidth = '400px';
+  container.style.maxWidth = '800px';
   container.style.margin = '50px auto';
   container.style.padding = '20px';
   container.style.fontFamily = 'Arial, sans-serif';
@@ -467,11 +610,35 @@ function vytvorLoggedInContainer() {
   
   container.appendChild(messageDiv);
   
+  // Admin panel
+  const adminPanel = document.createElement('div');
+  adminPanel.id = 'adminPanel';
+  adminPanel.style.display = 'none';
+  adminPanel.style.marginTop = '20px';
+  adminPanel.style.padding = '20px';
+  adminPanel.style.backgroundColor = '#fff3e0';
+  adminPanel.style.borderRadius = '4px';
+  adminPanel.style.border = '1px solid #ffe0b2';
+  adminPanel.style.textAlign = 'left';
+  
+  const adminTitle = document.createElement('h3');
+  adminTitle.textContent = '👑 Správa používateľov';
+  adminTitle.style.margin = '0 0 15px 0';
+  adminTitle.style.color = '#e65100';
+  adminPanel.appendChild(adminTitle);
+  
+  const usersList = document.createElement('div');
+  usersList.id = 'usersList';
+  adminPanel.appendChild(usersList);
+  
+  container.appendChild(adminPanel);
+  
   // Odhlasovacie tlačidlo
   const logoutBtn = document.createElement('button');
   logoutBtn.id = 'logoutBtn';
   logoutBtn.textContent = '🚪 Odhlásiť sa';
   logoutBtn.style.width = '100%';
+  logoutBtn.style.marginTop = '20px';
   logoutBtn.style.padding = '12px';
   logoutBtn.style.backgroundColor = '#f44336';
   logoutBtn.style.color = 'white';
@@ -800,8 +967,9 @@ function vytvorPrihlasovaciFormular() {
 }
 
 function formatujDatum(datum) {
+  if (!datum) return 'Neznámy';
   const d = new Date(datum);
-  return d.toLocaleDateString('sk-SK');
+  return d.toLocaleDateString('sk-SK') + ' ' + d.toLocaleTimeString('sk-SK', {hour: '2-digit', minute: '2-digit'});
 }
 
 function validujCislo(hodnota) {
