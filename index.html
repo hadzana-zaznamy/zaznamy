@@ -108,6 +108,12 @@
             display: flex;
             justify-content: center;
         }
+        .recaptcha-error {
+            color: #721c24;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -127,6 +133,7 @@
                 <input type="text" id="displayName" required placeholder="Vaše meno">
             </div>
             <div class="g-recaptcha" data-sitekey="6LeKc1MtAAAAALpSgOCruJCBI_3Z6maPVjV_CYA8"></div>
+            <div id="recaptchaError" class="recaptcha-error"></div>
             <button type="submit" id="registerBtn">Registrovať sa</button>
         </form>
         <div id="message" class="message"></div>
@@ -145,6 +152,12 @@
             const displayNameInput = document.getElementById('displayName');
             const registerBtn = document.getElementById('registerBtn');
             const messageDiv = document.getElementById('message');
+            const recaptchaErrorDiv = document.getElementById('recaptchaError');
+
+            // Skontrolujeme či je reCAPTCHA načítaná
+            function isRecaptchaLoaded() {
+                return typeof grecaptcha !== 'undefined' && grecaptcha.render;
+            }
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -153,13 +166,18 @@
                 const password = passwordInput.value;
                 const displayName = displayNameInput.value.trim();
 
-                // Kontrola reCAPTCHA
-                if (typeof grecaptcha !== 'undefined') {
+                // Skontrolujeme reCAPTCHA
+                if (isRecaptchaLoaded()) {
                     const recaptchaResponse = grecaptcha.getResponse();
                     if (!recaptchaResponse) {
-                        showMessage('Prosím, potvrďte že nie ste robot.', 'error');
+                        recaptchaErrorDiv.textContent = 'Prosím, potvrďte že nie ste robot.';
                         return;
+                    } else {
+                        recaptchaErrorDiv.textContent = '';
                     }
+                } else {
+                    // Ak reCAPTCHA nie je načítaná, pokračujeme bez nej (pre prípad, že sa nenačíta)
+                    console.warn('reCAPTCHA nie je načítaná, pokračujem bez overenia');
                 }
 
                 registerBtn.disabled = true;
@@ -172,7 +190,7 @@
                     if (result.success) {
                         showMessage('Registrácia úspešná! Vitajte, ' + displayName + ' 🎉', 'success');
                         form.reset();
-                        if (typeof grecaptcha !== 'undefined') {
+                        if (isRecaptchaLoaded()) {
                             grecaptcha.reset();
                         }
                     } else {
@@ -193,7 +211,7 @@
         });
     </script>
 
-    <!-- reCAPTCHA -->
+    <!-- reCAPTCHA v2 - Checkbox -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </body>
 </html>
