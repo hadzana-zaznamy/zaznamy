@@ -13,7 +13,7 @@ import {
   doc, setDoc, 
   collection, addDoc, 
   getDocs, updateDoc, deleteDoc, 
-  query, where 
+  query, where, orderBy, limit 
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 // App Check import
 import { 
@@ -47,6 +47,7 @@ function inicializujAplikaciu() {
     zaznamy: [],
     aktualnyZaznam: null,
     aktualnyPouzivatel: null,
+    aktualnyPouzivatelRole: null,
     
     pridajZaznam: function(data) {
       this.zaznamy.push(data);
@@ -64,20 +65,46 @@ function inicializujAplikaciu() {
       // Tu neskôr pridáme vykreslenie zoznamu
     },
     
+    // Funkcia na kontrolu, či je používateľ prvý v databáze
+    jePrvyPouzivatel: async function() {
+      try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, orderBy('createdAt', 'asc'), limit(1));
+        const querySnapshot = await getDocs(q);
+        
+        // Ak nie sú žiadni používatelia, tento je prvý
+        if (querySnapshot.empty) {
+          return true;
+        }
+        
+        // Inak už existuje aspoň jeden používateľ
+        return false;
+      } catch (error) {
+        console.error('Chyba pri kontrole prvého používateľa:', error);
+        return false;
+      }
+    },
+    
     registruj: async function(email, password) {
       try {
+        // Najprv skontrolovať, či je používateľ prvý
+        const jePrvy = await this.jePrvyPouzivatel();
+        
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Uložiť len email a uid do databázy, bez mena
+        // Určiť rolu - admin ak je prvý, inak user
+        const role = jePrvy ? 'admin' : 'user';
+        
+        // Uložiť do databázy
         await setDoc(doc(db, 'users', user.uid), {
           uid: user.uid,
           email: email,
           createdAt: new Date().toISOString(),
-          role: 'user'
+          role: role
         });
         
-        return { success: true, user: user };
+        return { success: true, user: user, role: role };
       } catch (error) {
         return { success: false, error: error.message };
       }
@@ -86,7 +113,16 @@ function inicializujAplikaciu() {
     prihlas: async function(email, password) {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        return { success: true, user: userCredential.user };
+        const user = userCredential.user;
+        
+        // Získať rolu používateľa z databázy
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          this.aktualnyPouzivatelRole = userData.role || 'user';
+        }
+        
+        return { success: true, user: user };
       } catch (error) {
         return { success: false, error: error.message };
       }
@@ -95,6 +131,7 @@ function inicializujAplikaciu() {
     odhlas: async function() {
       try {
         await signOut(auth);
+        this.aktualnyPouzivatelRole = null;
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };
@@ -103,8 +140,23 @@ function inicializujAplikaciu() {
     
     getAktualnyPouzivatel: function() {
       return new Promise((resolve) => {
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
           this.aktualnyPouzivatel = user;
+          if (user) {
+            // Získať rolu používateľa
+            try {
+              const userDoc = await getDoc(doc(db, 'users', user.uid));
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                this.aktualnyPouzivatelRole = userData.role || 'user';
+              }
+            } catch (error) {
+              console.error('Chyba pri načítaní roly:', error);
+              this.aktualnyPouzivatelRole = 'user';
+            }
+          } else {
+            this.aktualnyPouzivatelRole = null;
+          }
           resolve(user);
         });
       });
@@ -180,19 +232,38 @@ function inicializujAplikaciu() {
   window.app = appObj;
   
   // Sledovanie stavu prihlásenia
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     appObj.aktualnyPouzivatel = user;
     const authContainer = document.getElementById('authContainer');
     const loggedInContainer = document.getElementById('loggedInContainer');
     
     if (user) {
+      // Získať rolu používateľa
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          appObj.aktualnyPouzivatelRole = userData.role || 'user';
+        }
+      } catch (error) {
+        console.error('Chyba pri načítaní roly:', error);
+        appObj.aktualnyPouzivatelRole = 'user';
+      }
+      
       // Používateľ je prihlásený - skryť auth formuláre, zobraziť odhlasovacie tlačidlo
       if (authContainer) authContainer.style.display = 'none';
       if (loggedInContainer) {
         loggedInContainer.style.display = 'block';
-        // Aktualizovať email v správe
+        // Aktualizovať email a rolu v správe
         const emailSpan = document.getElementById('userEmail');
         if (emailSpan) emailSpan.textContent = user.email;
+        
+        const roleSpan = document.getElementById('userRole');
+        if (roleSpan) {
+          const role = appObj.aktualnyPouzivatelRole || 'user';
+          roleSpan.textContent = role === 'admin' ? '👑 Administrátor' : '👤 Používateľ';
+          roleSpan.style.color = role === 'admin' ? '#ff6f00' : '#555';
+        }
       }
       // Vymazať status správy po prihlásení
       vymazStatusSpravy();
@@ -200,6 +271,7 @@ function inicializujAplikaciu() {
       // Používateľ nie je prihlásený - zobraziť auth formuláre, skryť odhlasovacie tlačidlo
       if (authContainer) authContainer.style.display = 'block';
       if (loggedInContainer) loggedInContainer.style.display = 'none';
+      appObj.aktualnyPouzivatelRole = null;
       // Vymazať všetky status správy
       vymazStatusSpravy();
       // Resetovať formuláre
@@ -381,11 +453,17 @@ function vytvorLoggedInContainer() {
   messageDiv.appendChild(welcomeText);
   
   const emailText = document.createElement('p');
-  emailText.style.margin = '0';
+  emailText.style.margin = '5px 0';
   emailText.style.fontSize = '14px';
   emailText.style.color = '#555';
   emailText.innerHTML = '📧 <span id="userEmail"></span>';
   messageDiv.appendChild(emailText);
+  
+  const roleText = document.createElement('p');
+  roleText.style.margin = '5px 0 0 0';
+  roleText.style.fontSize = '14px';
+  roleText.innerHTML = '👤 <span id="userRole"></span>';
+  messageDiv.appendChild(roleText);
   
   container.appendChild(messageDiv);
   
@@ -473,6 +551,18 @@ function vytvorRegistracnyFormular() {
   heading.style.color = '#333';
   heading.style.marginBottom = '20px';
   container.appendChild(heading);
+  
+  // Info o adminovi
+  const infoDiv = document.createElement('div');
+  infoDiv.style.marginBottom = '20px';
+  infoDiv.style.padding = '10px';
+  infoDiv.style.backgroundColor = '#fff3e0';
+  infoDiv.style.borderRadius = '4px';
+  infoDiv.style.border = '1px solid #ffe0b2';
+  infoDiv.style.fontSize = '13px';
+  infoDiv.style.color = '#e65100';
+  infoDiv.textContent = '💡 Prvý registrovaný používateľ bude automaticky označený ako ADMINISTRÁTOR';
+  container.appendChild(infoDiv);
   
   const form = document.createElement('form');
   
@@ -564,7 +654,8 @@ function vytvorRegistracnyFormular() {
       const result = await window.app.registruj(email, password);
       
       if (result.success) {
-        messageDiv.innerHTML = '✅ Registrácia úspešná! 🎉';
+        const roleText = result.role === 'admin' ? '👑 ADMINISTRÁTOR' : '👤 Používateľ';
+        messageDiv.innerHTML = `✅ Registrácia úspešná! 🎉<br>Vaša rola: <strong>${roleText}</strong>`;
         messageDiv.style.color = 'green';
         form.reset();
         // Po registrácii sa používateľ automaticky prihlási
