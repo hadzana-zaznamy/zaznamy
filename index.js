@@ -2708,13 +2708,6 @@ window.otvorModalPridaniaVidea = function() {
       return;
     }
     
-    // Validate video ID format
-    if (!/^[\w-]{11}$/.test(videoId)) {
-      messageDiv.textContent = '❌ Neplatné ID videa. Malo by mať 11 znakov (písmená, čísla, pomlčky).';
-      messageDiv.style.color = 'red';
-      return;
-    }
-    
     submitBtn.disabled = true;
     submitBtn.textContent = 'Ukladám...';
     submitBtn.style.opacity = '0.7';
