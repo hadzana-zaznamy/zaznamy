@@ -1382,12 +1382,12 @@ function vytvorAuthContainer() {
   const authCard = document.createElement('div');
   authCard.className = 'auth-card';
   
-  const heading = document.createElement('h1');
-  heading.textContent = 'Prihlásenie / Registrácia';
-  heading.style.textAlign = 'center';
-  heading.style.color = '#333';
-  heading.style.marginBottom = '20px';
-  authCard.appendChild(heading);
+//  const heading = document.createElement('h1');
+//  heading.textContent = 'Prihlásenie / Registrácia';
+//  heading.style.textAlign = 'center';
+//  heading.style.color = '#333';
+//  heading.style.marginBottom = '20px';
+//  authCard.appendChild(heading);
   
   const formsContainer = document.createElement('div');
   formsContainer.id = 'formsContainer';
@@ -1411,12 +1411,12 @@ function vytvorLoggedInContainer() {
   container.id = 'loggedInContainer';
   container.style.display = 'none';
   
-  const heading = document.createElement('h1');
-  heading.textContent = 'Dashboard';
-  heading.style.textAlign = 'center';
-  heading.style.color = '#333';
-  heading.style.marginBottom = '20px';
-  container.appendChild(heading);
+//  const heading = document.createElement('h1');
+//  heading.textContent = 'Dashboard';
+//  heading.style.textAlign = 'center';
+//  heading.style.color = '#333';
+//  heading.style.marginBottom = '20px';
+//  container.appendChild(heading);
   
   const adminButtons = document.createElement('div');
   adminButtons.id = 'adminButtons';
