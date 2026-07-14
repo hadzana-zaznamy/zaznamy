@@ -2962,7 +2962,10 @@ function addMarkers(duration) {
 }
 
 function updateProgressBarInstant() {
-  if (!window.youtubePlayer) return;
+  if (!window.youtubePlayer || typeof window.youtubePlayer.getCurrentTime !== 'function') {
+    return;
+  }
+  
   let cur = window.youtubePlayer.getCurrentTime() || 0;
   let dur = window.youtubePlayer.getDuration() || 1;
   let perc = (cur / dur) * 100;
@@ -3005,8 +3008,14 @@ function showSpeedMessage(rate) {
 }
 
 function showControlsAndRestartTimer() {
+  // Skontrolujeme, či prehrávač existuje a má metódu getPlayerState
+  if (!window.youtubePlayer || typeof window.youtubePlayer.getPlayerState !== 'function') {
+    return;
+  }
+  
   const customOverlay = document.getElementById('customPlayerOverlay');
   if (!customOverlay) return;
+  
   customOverlay.style.cursor = 'default';
   let ctrl = document.getElementById('customControls');
   if (ctrl) {
@@ -3014,10 +3023,12 @@ function showControlsAndRestartTimer() {
     ctrl.style.transform = 'translateY(0)';
     ctrl.style.pointerEvents = 'all';
   }
-  if (window.youtubePlayer && window.youtubePlayer.getPlayerState() === 1) {
+  
+  if (window.youtubePlayer.getPlayerState() === 1) {
     clearTimeout(controlsTimer);
     controlsTimer = setTimeout(() => {
-      if (window.youtubePlayer && window.youtubePlayer.getPlayerState() === 1 && !isSeeking) {
+      if (window.youtubePlayer && typeof window.youtubePlayer.getPlayerState === 'function' && 
+          window.youtubePlayer.getPlayerState() === 1 && !isSeeking) {
         if (ctrl) {
           ctrl.style.opacity = '0';
           ctrl.style.transform = 'translateY(100%)';
@@ -3030,7 +3041,10 @@ function showControlsAndRestartTimer() {
 }
 
 function togglePlayPause() {
-  if (!window.youtubePlayer) return;
+  if (!window.youtubePlayer || typeof window.youtubePlayer.getPlayerState !== 'function') {
+    return;
+  }
+  
   if (window.youtubePlayer.getPlayerState() === 1) {
     window.youtubePlayer.pauseVideo();
   } else {
@@ -3219,9 +3233,10 @@ function vytvorVideoPlayer() {
     togglePlayPause();
   });
   
+  // Progress bar input
   const progressBar = document.getElementById('progressBar');
   progressBar.addEventListener('input', (e) => {
-    if (!window.youtubePlayer) return;
+    if (!window.youtubePlayer || typeof window.youtubePlayer.getDuration !== 'function') return;
     isSeeking = true;
     let val = parseFloat(e.target.value);
     let dur = window.youtubePlayer.getDuration();
@@ -3229,9 +3244,10 @@ function vytvorVideoPlayer() {
     document.getElementById('currentTime').textContent = formatTime(newTime);
     updateSection(newTime);
   });
-  
+
+  // Progress bar change
   progressBar.addEventListener('change', (e) => {
-    if (!window.youtubePlayer) return;
+    if (!window.youtubePlayer || typeof window.youtubePlayer.seekTo !== 'function') return;
     let val = parseFloat(e.target.value);
     let dur = window.youtubePlayer.getDuration();
     let newTime = (val / 100) * dur;
@@ -3239,15 +3255,17 @@ function vytvorVideoPlayer() {
     isSeeking = false;
     showControlsAndRestartTimer();
   });
-  
+
+  // Progress bar container click
   document.getElementById('progressBarContainer').addEventListener('click', (e) => {
     if (e.target.classList.contains('timestamp-marker')) return;
+    if (!window.youtubePlayer || typeof window.youtubePlayer.getDuration !== 'function') return;
     let rect = e.currentTarget.getBoundingClientRect();
     let x = e.clientX - rect.left;
     let percent = (x / rect.width) * 100;
     percent = Math.min(100, Math.max(0, percent));
     document.getElementById('progressBar').value = percent;
-    let dur = window.youtubePlayer?.getDuration();
+    let dur = window.youtubePlayer.getDuration();
     if (dur && window.youtubePlayer) {
       let newTime = (percent / 100) * dur;
       window.youtubePlayer.seekTo(newTime, true);
