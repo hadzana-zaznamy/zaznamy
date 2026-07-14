@@ -13,7 +13,8 @@ import {
   doc, getDoc, setDoc, 
   collection, addDoc, 
   getDocs, updateDoc, deleteDoc, 
-  query, where, orderBy, limit 
+  query, where, orderBy, limit,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 // App Check import
 import { 
@@ -242,6 +243,134 @@ style.textContent = `
     background-color: #d32f2f;
   }
   
+  /* Modal styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s;
+  }
+  
+  .modal-overlay.active {
+    display: flex;
+  }
+  
+  .modal-box {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease-out;
+    position: relative;
+  }
+  
+  .modal-box .modal-icon {
+    font-size: 48px;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  
+  .modal-box h3 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 22px;
+  }
+  
+  .modal-box p {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #555;
+    line-height: 1.6;
+  }
+  
+  .modal-box .modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .modal-box .modal-buttons button {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: 500;
+  }
+  
+  .modal-box .modal-buttons .btn-confirm {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .modal-box .modal-buttons .btn-confirm:hover {
+    background-color: #388E3C;
+  }
+  
+  .modal-box .modal-buttons .btn-cancel {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+  
+  .modal-box .modal-buttons .btn-cancel:hover {
+    background-color: #d5d5d5;
+  }
+  
+  .modal-box .modal-buttons .btn-danger {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  .modal-box .modal-buttons .btn-danger:hover {
+    background-color: #d32f2f;
+  }
+  
+  .modal-box .modal-buttons .btn-warning {
+    background-color: #FF9800;
+    color: white;
+  }
+  
+  .modal-box .modal-buttons .btn-warning:hover {
+    background-color: #F57C00;
+  }
+  
+  .modal-box .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.3s;
+  }
+  
+  .modal-box .modal-close:hover {
+    color: #333;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
   @media (max-width: 768px) {
     #authContainer > div, .auth-card {
       padding: 20px;
@@ -282,6 +411,11 @@ style.textContent = `
     #usersList table th,
     #usersList table td {
       padding: 8px 10px !important;
+    }
+    
+    .modal-box {
+      padding: 20px;
+      width: 95%;
     }
   }
   
@@ -326,9 +460,131 @@ style.textContent = `
       font-size: 12px;
       min-width: 400px;
     }
+    
+    .modal-box {
+      padding: 16px;
+    }
+    
+    .modal-box h3 {
+      font-size: 18px;
+    }
+    
+    .modal-box .modal-buttons button {
+      padding: 8px 16px;
+      font-size: 13px;
+    }
   }
 `;
 document.head.appendChild(style);
+
+// Funkcie pre modálne okná
+function showModal(options) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-box';
+    
+    // Close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'modal-close';
+    closeBtn.innerHTML = '×';
+    closeBtn.onclick = () => {
+      overlay.remove();
+      resolve('cancel');
+    };
+    modal.appendChild(closeBtn);
+    
+    // Icon
+    if (options.icon) {
+      const icon = document.createElement('div');
+      icon.className = 'modal-icon';
+      icon.textContent = options.icon;
+      modal.appendChild(icon);
+    }
+    
+    // Title
+    if (options.title) {
+      const title = document.createElement('h3');
+      title.textContent = options.title;
+      modal.appendChild(title);
+    }
+    
+    // Message
+    if (options.message) {
+      const message = document.createElement('p');
+      message.innerHTML = options.message;
+      modal.appendChild(message);
+    }
+    
+    // Buttons
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.className = 'modal-buttons';
+    
+    if (options.type === 'confirm' || options.type === 'danger' || options.type === 'warning') {
+      const confirmBtn = document.createElement('button');
+      const btnClass = options.type === 'danger' ? 'btn-danger' : 
+                       options.type === 'warning' ? 'btn-warning' : 'btn-confirm';
+      confirmBtn.className = btnClass;
+      confirmBtn.textContent = options.confirmText || 'Potvrdiť';
+      confirmBtn.onclick = () => {
+        overlay.remove();
+        resolve('confirm');
+      };
+      buttonsDiv.appendChild(confirmBtn);
+      
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn-cancel';
+      cancelBtn.textContent = options.cancelText || 'Zrušiť';
+      cancelBtn.onclick = () => {
+        overlay.remove();
+        resolve('cancel');
+      };
+      buttonsDiv.appendChild(cancelBtn);
+    } else if (options.type === 'alert') {
+      const okBtn = document.createElement('button');
+      okBtn.className = 'btn-confirm';
+      okBtn.textContent = options.okText || 'OK';
+      okBtn.onclick = () => {
+        overlay.remove();
+        resolve('ok');
+      };
+      buttonsDiv.appendChild(okBtn);
+    }
+    
+    modal.appendChild(buttonsDiv);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Click outside to close (only for alert type)
+    if (options.type === 'alert') {
+      overlay.onclick = (e) => {
+        if (e.target === overlay) {
+          overlay.remove();
+          resolve('ok');
+        }
+      };
+    }
+  });
+}
+
+// Vytvorenie modálnych funkcií
+async function showAlert(message, title = 'Informácia', icon = 'ℹ️') {
+  return showModal({ type: 'alert', title, message, icon, okText: 'OK' });
+}
+
+async function showConfirm(message, title = 'Potvrdenie', icon = '❓') {
+  return showModal({ type: 'confirm', title, message, icon, confirmText: 'Áno', cancelText: 'Nie' });
+}
+
+async function showDangerConfirm(message, title = 'Varovanie', icon = '⚠️') {
+  return showModal({ type: 'danger', title, message, icon, confirmText: 'Odstrániť', cancelText: 'Zrušiť' });
+}
+
+async function showWarningConfirm(message, title = 'Potvrdenie', icon = '⚠️') {
+  return showModal({ type: 'warning', title, message, icon, confirmText: 'Potvrdiť', cancelText: 'Zrušiť' });
+}
 
 document.addEventListener('DOMContentLoaded', inicializujAplikaciu);
 
@@ -341,6 +597,7 @@ function inicializujAplikaciu() {
     aktualnyPouzivatelApproved: null,
     vsetciPouzivatelia: [],
     zobrazenieAdmin: 'aplikacia',
+    unsubscribeUsers: null,
     
     pridajZaznam: function(data) {
       this.zaznamy.push(data);
@@ -440,6 +697,11 @@ function inicializujAplikaciu() {
         await signOut(auth);
         this.aktualnyPouzivatelRole = null;
         this.aktualnyPouzivatelApproved = null;
+        // Odhlásiť real-time listener
+        if (this.unsubscribeUsers) {
+          this.unsubscribeUsers();
+          this.unsubscribeUsers = null;
+        }
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };
@@ -469,6 +731,35 @@ function inicializujAplikaciu() {
           }
           resolve(user);
         });
+      });
+    },
+    
+    // Spustenie real-time listenera na používateľov
+    spustiRealTimeListener: function() {
+      if (this.unsubscribeUsers) {
+        this.unsubscribeUsers();
+      }
+      
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, orderBy('createdAt', 'asc'));
+      
+      this.unsubscribeUsers = onSnapshot(q, (querySnapshot) => {
+        const pouzivatelia = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          pouzivatelia.push({
+            id: doc.id,
+            email: data.email || 'Neznámy',
+            role: data.role || 'user',
+            createdAt: data.createdAt || 'Neznámy',
+            uid: data.uid,
+            approved: data.approved || false
+          });
+        });
+        this.vsetciPouzivatelia = pouzivatelia;
+        zobrazPouzivatelov(pouzivatelia);
+      }, (error) => {
+        console.error('Chyba v real-time listeneri:', error);
       });
     },
     
@@ -515,7 +806,6 @@ function inicializujAplikaciu() {
       }
     },
     
-    // Nová funkcia na zamietnutie používateľa (nastaví approved: false)
     zamietniPouzivatela: async function(userId) {
       if (!this.aktualnyPouzivatel || this.aktualnyPouzivatelRole !== 'admin') {
         return { success: false, error: 'Nemáte oprávnenie na zamietanie používateľov' };
@@ -532,19 +822,16 @@ function inicializujAplikaciu() {
       }
     },
     
-    // Funkcia na úplné odstránenie používateľa (iba pre admina)
     odstranPouzivatela: async function(userId, userEmail) {
       if (!this.aktualnyPouzivatel || this.aktualnyPouzivatelRole !== 'admin') {
         return { success: false, error: 'Nemáte oprávnenie na odstraňovanie používateľov' };
       }
       
-      // Kontrola či neodstraňuje sám seba
       if (userId === this.aktualnyPouzivatel.uid) {
         return { success: false, error: 'Nemôžete odstrániť samého seba!' };
       }
       
       try {
-        // Odstrániť dokument z kolekcie users
         await deleteDoc(doc(db, 'users', userId));
         
         // Skopírovať email do schránky
@@ -552,8 +839,6 @@ function inicializujAplikaciu() {
           try {
             await navigator.clipboard.writeText(userEmail);
           } catch (clipboardError) {
-            console.warn('Nepodarilo sa skopírovať email do schránky:', clipboardError);
-            // Alternatívny spôsob - vytvoriť dočasný input
             const tempInput = document.createElement('input');
             tempInput.value = userEmail;
             document.body.appendChild(tempInput);
@@ -562,7 +847,6 @@ function inicializujAplikaciu() {
             document.body.removeChild(tempInput);
           }
         } else {
-          // Fallback pre staršie prehliadače
           const tempInput = document.createElement('input');
           tempInput.value = userEmail;
           document.body.appendChild(tempInput);
@@ -701,6 +985,10 @@ function inicializujAplikaciu() {
           const adminPanel = document.getElementById('adminPanel');
           const adminButtons = document.getElementById('adminButtons');
           
+          // Spustiť real-time listener pre používateľov
+          appObj.spustiRealTimeListener();
+          
+          // Načítať používateľov (pre prípad, že by listener ešte nestihol načítať)
           await appObj.nacitajVsetkychPouzivatelov();
           zobrazPouzivatelov(appObj.vsetciPouzivatelia);
           
@@ -726,6 +1014,12 @@ function inicializujAplikaciu() {
           
           if (adminPanel) adminPanel.style.display = 'none';
           if (adminButtons) adminButtons.style.display = 'none';
+          
+          // Zrušiť listener ak nie je admin
+          if (appObj.unsubscribeUsers) {
+            appObj.unsubscribeUsers();
+            appObj.unsubscribeUsers = null;
+          }
         }
       }
       vymazStatusSpravy();
@@ -734,6 +1028,13 @@ function inicializujAplikaciu() {
       if (loggedInContainer) loggedInContainer.style.display = 'none';
       appObj.aktualnyPouzivatelRole = null;
       appObj.aktualnyPouzivatelApproved = null;
+      
+      // Zrušiť listener pri odhlásení
+      if (appObj.unsubscribeUsers) {
+        appObj.unsubscribeUsers();
+        appObj.unsubscribeUsers = null;
+      }
+      
       vymazStatusSpravy();
       resetFormulare();
     }
@@ -840,63 +1141,106 @@ function zobrazPouzivatelov(pouzivatelia) {
 
 // Globálna funkcia pre admina na schválenie používateľa
 window.schvalPouzivatela = async function(userId) {
-  if (!confirm('Naozaj chcete schváliť tohto používateľa?')) {
-    return;
-  }
+  const confirmed = await showWarningConfirm(
+    'Naozaj chcete schváliť tohto používateľa?',
+    'Schválenie používateľa',
+    '✅'
+  );
+  
+  if (confirmed !== 'confirm') return;
+  
   try {
     const result = await window.app.schvalPouzivatela(userId);
     if (result.success) {
-      await window.app.nacitajVsetkychPouzivatelov();
-      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      alert('✅ Používateľ bol úspešne schválený!');
+      await showAlert(
+        'Používateľ bol úspešne schválený!',
+        'Úspech',
+        '✅'
+      );
     } else {
-      alert('❌ ' + result.error);
+      await showAlert(
+        '❌ ' + result.error,
+        'Chyba',
+        '❌'
+      );
     }
   } catch (error) {
-    alert('❌ Nastala chyba: ' + error.message);
+    await showAlert(
+      '❌ Nastala chyba: ' + error.message,
+      'Chyba',
+      '❌'
+    );
   }
 };
 
-// Globálna funkcia pre admina na zamietnutie používateľa (nastaví approved: false)
+// Globálna funkcia pre admina na zamietnutie používateľa
 window.zamietniPouzivatela = async function(userId) {
-  if (!confirm('Naozaj chcete ZAMIETNUŤ tohto používateľa? Jeho stav sa zmení na "Čaká".')) {
-    return;
-  }
+  const confirmed = await showWarningConfirm(
+    'Naozaj chcete ZAMIETNUŤ tohto používateľa? Jeho stav sa zmení na "Čaká".',
+    'Zamietnutie používateľa',
+    '⚠️'
+  );
+  
+  if (confirmed !== 'confirm') return;
+  
   try {
     const result = await window.app.zamietniPouzivatela(userId);
     if (result.success) {
-      await window.app.nacitajVsetkychPouzivatelov();
-      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      alert('✅ Používateľ bol zamietnutý! Jeho stav je teraz "Čaká".');
+      await showAlert(
+        'Používateľ bol zamietnutý! Jeho stav je teraz "Čaká".',
+        'Úspech',
+        '✅'
+      );
     } else {
-      alert('❌ ' + result.error);
+      await showAlert(
+        '❌ ' + result.error,
+        'Chyba',
+        '❌'
+      );
     }
   } catch (error) {
-    alert('❌ Nastala chyba: ' + error.message);
+    await showAlert(
+      '❌ Nastala chyba: ' + error.message,
+      'Chyba',
+      '❌'
+    );
   }
 };
 
 // Globálna funkcia pre admina na odstránenie používateľa
 window.odstranPouzivatela = async function(userId, userEmail) {
-  if (!confirm(`Naozaj chcete ODSTRÁNIŤ používateľa ${userEmail}?\n\nPo odstránení bude jeho email skopírovaný do schránky a otvorí sa Firebase Console pre manuálne vymazanie účtu.`)) {
-    return;
-  }
+  const confirmed = await showDangerConfirm(
+    `Naozaj chcete ODSTRÁNIŤ používateľa <strong>${userEmail}</strong>?<br><br>Po odstránení bude jeho email skopírovaný do schránky a otvorí sa Firebase Console pre manuálne vymazanie účtu.`,
+    'Odstránenie používateľa',
+    '🗑️'
+  );
+  
+  if (confirmed !== 'confirm') return;
   
   try {
     const result = await window.app.odstranPouzivatela(userId, userEmail);
     
     if (result.success) {
-      await window.app.nacitajVsetkychPouzivatelov();
-      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      
-      alert(`✅ Používateľ ${result.email} bol odstránený z databázy!\n\n📧 Email bol skopírovaný do schránky.\n🌐 Otvára sa Firebase Console pre manuálne vymazanie účtu.`);
+      await showAlert(
+        `✅ Používateľ <strong>${result.email}</strong> bol odstránený z databázy!<br><br>📧 Email bol skopírovaný do schránky.<br>🌐 Otvára sa Firebase Console pre manuálne vymazanie účtu.`,
+        'Úspech',
+        '✅'
+      );
       
       window.open('https://console.firebase.google.com/project/z-a-z-n-a-m-y/authentication/users', '_blank');
     } else {
-      alert('❌ ' + result.error);
+      await showAlert(
+        '❌ ' + result.error,
+        'Chyba',
+        '❌'
+      );
     }
   } catch (error) {
-    alert('❌ Nastala chyba: ' + error.message);
+    await showAlert(
+      '❌ Nastala chyba: ' + error.message,
+      'Chyba',
+      '❌'
+    );
   }
 };
 
@@ -1079,10 +1423,10 @@ function vytvorLoggedInContainer() {
         document.getElementById('authContainer').style.display = 'flex';
         logoutBtn.style.display = 'none';
       } else {
-        alert('❌ ' + result.error);
+        await showAlert('❌ ' + result.error, 'Chyba', '❌');
       }
     } catch (error) {
-      alert('❌ Nastala chyba pri odhlásení: ' + error.message);
+      await showAlert('❌ Nastala chyba pri odhlásení: ' + error.message, 'Chyba', '❌');
     } finally {
       logoutBtn.disabled = false;
       logoutBtn.textContent = 'Odhlásiť sa';
