@@ -34,7 +34,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ✅ Inicializácia App Check s vaším novým site key
+// Inicializacia App Check s vasim novym site key
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider('6Lc2tVMtAAAAAAJeVHKtQP5vBRl9Qg22XBNmF5WP'),
   isTokenAutoRefreshEnabled: true
@@ -63,41 +63,41 @@ function inicializujAplikaciu() {
     },
     
     aktualizujZoznam: function() {
-      // Tu neskôr pridáme vykreslenie zoznamu
+      // Tu neskor pridame vykreslenie zoznamu
     },
     
-    // Funkcia na kontrolu, či je používateľ prvý v databáze
+    // Funkcia na kontrolu, ci je pouzivatel prvy v databaze
     jePrvyPouzivatel: async function() {
       try {
         const usersRef = collection(db, 'users');
         const q = query(usersRef, orderBy('createdAt', 'asc'), limit(1));
         const querySnapshot = await getDocs(q);
         
-        // Ak nie sú žiadni používatelia, tento je prvý
+        // Ak nie su ziadni pouzivatelia, tento je prvy
         if (querySnapshot.empty) {
           return true;
         }
         
-        // Inak už existuje aspoň jeden používateľ
+        // Inak uz existuje aspon jeden pouzivatel
         return false;
       } catch (error) {
-        console.error('Chyba pri kontrole prvého používateľa:', error);
+        console.error('Chyba pri kontrole prveho pouzivatela:', error);
         return false;
       }
     },
     
     registruj: async function(email, password) {
       try {
-        // Najprv skontrolovať, či je používateľ prvý
+        // Najprv skontrolovat, ci je pouzivatel prvy
         const jePrvy = await this.jePrvyPouzivatel();
         
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Určiť rolu - admin ak je prvý, inak user
+        // Urcit rolu - admin ak je prvy, inak user
         const role = jePrvy ? 'admin' : 'user';
         
-        // Uložiť do databázy
+        // Ulozit do databazy
         await setDoc(doc(db, 'users', user.uid), {
           uid: user.uid,
           email: email,
@@ -116,7 +116,7 @@ function inicializujAplikaciu() {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Získať rolu používateľa z databázy
+        // Ziskat rolu pouzivatela z databazy
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
@@ -144,7 +144,7 @@ function inicializujAplikaciu() {
         onAuthStateChanged(auth, async (user) => {
           this.aktualnyPouzivatel = user;
           if (user) {
-            // Získať rolu používateľa
+            // Ziskat rolu pouzivatela
             try {
               const userDoc = await getDoc(doc(db, 'users', user.uid));
               if (userDoc.exists()) {
@@ -152,7 +152,7 @@ function inicializujAplikaciu() {
                 this.aktualnyPouzivatelRole = userData.role || 'user';
               }
             } catch (error) {
-              console.error('Chyba pri načítaní roly:', error);
+              console.error('Chyba pri nacitani roly:', error);
               this.aktualnyPouzivatelRole = 'user';
             }
           } else {
@@ -163,10 +163,10 @@ function inicializujAplikaciu() {
       });
     },
     
-    // Funkcia na načítanie všetkých používateľov (len pre admina)
+    // Funkcia na nacitanie vsetkych pouzivatelov (len pre admina)
     nacitajVsetkychPouzivatelov: async function() {
       if (!this.aktualnyPouzivatel || this.aktualnyPouzivatelRole !== 'admin') {
-        return { success: false, error: 'Nemáte oprávnenie na zobrazenie používateľov' };
+        return { success: false, error: 'Nemate opravnenie na zobrazenie pouzivatelov' };
       }
       
       try {
@@ -176,12 +176,12 @@ function inicializujAplikaciu() {
         const pouzivatelia = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          // Skryť citlivé údaje
+          // Skryt citlive udaje
           pouzivatelia.push({
             id: doc.id,
-            email: data.email || 'Neznámy',
+            email: data.email || 'Neznamy',
             role: data.role || 'user',
-            createdAt: data.createdAt || 'Neznámy',
+            createdAt: data.createdAt || 'Neznamy',
             uid: data.uid
           });
         });
@@ -194,7 +194,7 @@ function inicializujAplikaciu() {
     
     ulozZaznam: async function(zaznam) {
       if (!this.aktualnyPouzivatel) {
-        return { success: false, error: 'Používateľ nie je prihlásený' };
+        return { success: false, error: 'Pouzivatel nie je prihlaseny' };
       }
       
       try {
@@ -211,7 +211,7 @@ function inicializujAplikaciu() {
     
     nacitajZaznamy: async function() {
       if (!this.aktualnyPouzivatel) {
-        return { success: false, error: 'Používateľ nie je prihlásený' };
+        return { success: false, error: 'Pouzivatel nie je prihlaseny' };
       }
       
       try {
@@ -231,7 +231,7 @@ function inicializujAplikaciu() {
     
     aktualizujZaznam: async function(id, data) {
       if (!this.aktualnyPouzivatel) {
-        return { success: false, error: 'Používateľ nie je prihlásený' };
+        return { success: false, error: 'Pouzivatel nie je prihlaseny' };
       }
       
       try {
@@ -247,7 +247,7 @@ function inicializujAplikaciu() {
     
     vymazZaznam: async function(id) {
       if (!this.aktualnyPouzivatel) {
-        return { success: false, error: 'Používateľ nie je prihlásený' };
+        return { success: false, error: 'Pouzivatel nie je prihlaseny' };
       }
       
       try {
@@ -261,23 +261,23 @@ function inicializujAplikaciu() {
   
   window.app = appObj;
   
-  // Vytvoriť auth container a logged-in container
+  // Vytvorit auth container a logged-in container
   vytvorAuthContainer();
   vytvorLoggedInContainer();
   
-  // NAJDÔLEŽITEJŠIA ZMENA: Najprv skryť oba kontajnery
+  // Najprv skryt oba kontajnery
   const authContainer = document.getElementById('authContainer');
   const loggedInContainer = document.getElementById('loggedInContainer');
   
   if (authContainer) authContainer.style.display = 'none';
   if (loggedInContainer) loggedInContainer.style.display = 'none';
   
-  // Sledovanie stavu prihlásenia
+  // Sledovanie stavu prihlasenia
   onAuthStateChanged(auth, async (user) => {
     appObj.aktualnyPouzivatel = user;
     
     if (user) {
-      // Získať rolu používateľa
+      // Ziskat rolu pouzivatela
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
@@ -285,31 +285,31 @@ function inicializujAplikaciu() {
           appObj.aktualnyPouzivatelRole = userData.role || 'user';
         }
       } catch (error) {
-        console.error('Chyba pri načítaní roly:', error);
+        console.error('Chyba pri nacitani roly:', error);
         appObj.aktualnyPouzivatelRole = 'user';
       }
       
-      // Používateľ je prihlásený - skryť auth, zobraziť logged-in
+      // Pouzivatel je prihlaseny - skryt auth, zobrazit logged-in
       if (authContainer) authContainer.style.display = 'none';
       if (loggedInContainer) {
         loggedInContainer.style.display = 'block';
-        // Aktualizovať email a rolu v správe
+        // Aktualizovat email a rolu v sprave
         const emailSpan = document.getElementById('userEmail');
         if (emailSpan) emailSpan.textContent = user.email;
         
         const roleSpan = document.getElementById('userRole');
         if (roleSpan) {
           const role = appObj.aktualnyPouzivatelRole || 'user';
-          roleSpan.textContent = role === 'admin' ? '👑 Administrátor' : '👤 Používateľ';
+          roleSpan.textContent = role === 'admin' ? 'Administrator' : 'Pouzivatel';
           roleSpan.style.color = role === 'admin' ? '#ff6f00' : '#555';
         }
         
-        // Ak je admin, zobraziť admin panel
+        // Ak je admin, zobrazit admin panel
         if (appObj.aktualnyPouzivatelRole === 'admin') {
           const adminPanel = document.getElementById('adminPanel');
           if (adminPanel) {
             adminPanel.style.display = 'block';
-            // Načítať používateľov
+            // Nacitat pouzivatelov
             await appObj.nacitajVsetkychPouzivatelov();
             zobrazPouzivatelov(appObj.vsetciPouzivatelia);
           }
@@ -318,37 +318,37 @@ function inicializujAplikaciu() {
           if (adminPanel) adminPanel.style.display = 'none';
         }
       }
-      // Vymazať status správy po prihlásení
+      // Vymazat status spravy po prihlaseni
       vymazStatusSpravy();
     } else {
-      // Používateľ nie je prihlásený - zobraziť auth, skryť logged-in
+      // Pouzivatel nie je prihlaseny - zobrazit auth, skryt logged-in
       if (authContainer) authContainer.style.display = 'block';
       if (loggedInContainer) loggedInContainer.style.display = 'none';
       appObj.aktualnyPouzivatelRole = null;
-      // Vymazať všetky status správy
+      // Vymazat vsetky status spravy
       vymazStatusSpravy();
-      // Resetovať formuláre
+      // Resetovat formulare
       resetFormulare();
     }
   });
 }
 
 function vymazStatusSpravy() {
-  // Vymazať správy z registračného formulára
+  // Vymazat spravy z registracneho formulara
   const regMessage = document.getElementById('regMessage');
   if (regMessage) {
     regMessage.textContent = '';
     regMessage.style.color = '';
   }
   
-  // Vymazať správy z prihlasovacieho formulára
+  // Vymazat spravy z prihlasovacieho formulara
   const loginMessage = document.getElementById('loginMessage');
   if (loginMessage) {
     loginMessage.textContent = '';
     loginMessage.style.color = '';
   }
   
-  // Vymazať správy z odhlasovacieho formulára
+  // Vymazat spravy z odhlasovacieho formulara
   const logoutStatus = document.getElementById('logoutStatus');
   if (logoutStatus) {
     logoutStatus.textContent = '';
@@ -357,13 +357,13 @@ function vymazStatusSpravy() {
 }
 
 function resetFormulare() {
-  // Resetovať registračný formulár
+  // Resetovat registracny formular
   const regForm = document.querySelector('#registerForm form');
   if (regForm) {
     regForm.reset();
   }
   
-  // Resetovať prihlasovací formulár
+  // Resetovat prihlasovaci formular
   const loginForm = document.querySelector('#loginForm form');
   if (loginForm) {
     loginForm.reset();
@@ -375,7 +375,7 @@ function zobrazPouzivatelov(pouzivatelia) {
   if (!container) return;
   
   if (!pouzivatelia || pouzivatelia.length === 0) {
-    container.innerHTML = '<p style="text-align:center;color:#999;">Žiadni používatelia</p>';
+    container.innerHTML = '<p style="text-align:center;color:#999;">Ziadeni pouzivatelia</p>';
     return;
   }
   
@@ -386,7 +386,7 @@ function zobrazPouzivatelov(pouzivatelia) {
       <tr style="background-color:#f5f5f5;">
         <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Email</th>
         <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Rola</th>
-        <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Registrovaný</th>
+        <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Registrovany</th>
       </tr>
     </thead>
     <tbody>
@@ -398,10 +398,10 @@ function zobrazPouzivatelov(pouzivatelia) {
     
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}">
-        <td style="padding:10px;">${user.email} ${jeAktualny ? '⬅️ (Vy)' : ''}</td>
+        <td style="padding:10px;">${user.email} ${jeAktualny ? '(Vy)' : ''}</td>
         <td style="padding:10px;">
           <span style="padding:3px 10px;border-radius:12px;font-size:12px;${jeAdmin ? 'background-color:#fff3e0;color:#e65100;' : 'background-color:#e3f2fd;color:#1565c0;'}">
-            ${jeAdmin ? '👑 Admin' : '👤 User'}
+            ${jeAdmin ? 'Admin' : 'User'}
           </span>
         </td>
         <td style="padding:10px;font-size:12px;color:#666;">
@@ -425,17 +425,17 @@ function vytvorAuthContainer() {
   container.style.backgroundColor = '#f9f9f9';
   container.style.borderRadius = '8px';
   container.style.boxShadow = '0 0 10px rgba(0,0,0,0.1)';
-  // Pôvodne skrytý - zobrazí sa len ak nie je prihlásený
+  // Povodne skryty - zobrazi sa len ak nie je prihlaseny
   container.style.display = 'none';
   
   const heading = document.createElement('h1');
-  heading.textContent = 'Hádzaná záznamy';
+  heading.textContent = 'Hadzana zaznamy';
   heading.style.textAlign = 'center';
   heading.style.color = '#333';
   heading.style.marginBottom = '20px';
   container.appendChild(heading);
   
-  // Tlačidlá na prepínanie
+  // Tlacidla na prepinanie
   const buttonContainer = document.createElement('div');
   buttonContainer.style.display = 'flex';
   buttonContainer.style.gap = '10px';
@@ -443,7 +443,7 @@ function vytvorAuthContainer() {
   
   const registerBtn = document.createElement('button');
   registerBtn.id = 'showRegisterBtn';
-  registerBtn.textContent = '📝 Registrácia';
+  registerBtn.textContent = 'Registracia';
   registerBtn.style.flex = '1';
   registerBtn.style.padding = '12px';
   registerBtn.style.backgroundColor = '#4CAF50';
@@ -456,7 +456,7 @@ function vytvorAuthContainer() {
   
   const loginBtn = document.createElement('button');
   loginBtn.id = 'showLoginBtn';
-  loginBtn.textContent = '🔐 Prihlásenie';
+  loginBtn.textContent = 'Prihlasenie';
   loginBtn.style.flex = '1';
   loginBtn.style.padding = '12px';
   loginBtn.style.backgroundColor = '#2196F3';
@@ -471,12 +471,12 @@ function vytvorAuthContainer() {
   buttonContainer.appendChild(loginBtn);
   container.appendChild(buttonContainer);
   
-  // Kontajner pre formuláre
+  // Kontajner pre formulare
   const formsContainer = document.createElement('div');
   formsContainer.id = 'formsContainer';
   container.appendChild(formsContainer);
   
-  // Vytvorenie formulárov
+  // Vytvorenie formularov
   const registerForm = vytvorRegistracnyFormular();
   const loginForm = vytvorPrihlasovaciFormular();
   
@@ -485,7 +485,7 @@ function vytvorAuthContainer() {
   
   document.body.appendChild(container);
   
-  // Event listenery pre tlačidlá
+  // Event listenery pre tlacidla
   registerBtn.addEventListener('click', () => {
     registerForm.style.display = 'block';
     loginForm.style.display = 'none';
@@ -493,7 +493,7 @@ function vytvorAuthContainer() {
     loginBtn.style.backgroundColor = '#2196F3';
     registerBtn.style.transform = 'scale(1.02)';
     loginBtn.style.transform = 'scale(1)';
-    // Vymazať správy pri prepínaní
+    // Vymazat spravy pri prepinani
     vymazStatusSpravy();
   });
   
@@ -504,11 +504,11 @@ function vytvorAuthContainer() {
     registerBtn.style.backgroundColor = '#4CAF50';
     loginBtn.style.transform = 'scale(1.02)';
     registerBtn.style.transform = 'scale(1)';
-    // Vymazať správy pri prepínaní
+    // Vymazat spravy pri prepinani
     vymazStatusSpravy();
   });
   
-  // Štandardne zobraziť registračný formulár
+  // Standardne zobrazit registracny formular
   registerForm.style.display = 'block';
   loginForm.style.display = 'none';
   registerBtn.style.backgroundColor = '#45a049';
@@ -525,17 +525,17 @@ function vytvorLoggedInContainer() {
   container.style.borderRadius = '8px';
   container.style.boxShadow = '0 0 10px rgba(0,0,0,0.1)';
   container.style.textAlign = 'center';
-  // Pôvodne skrytý - zobrazí sa len ak je prihlásený
+  // Povodne skryty - zobrazi sa len ak je prihlaseny
   container.style.display = 'none';
   
   const heading = document.createElement('h1');
-  heading.textContent = 'Hádzaná záznamy';
+  heading.textContent = 'Hadzana zaznamy';
   heading.style.textAlign = 'center';
   heading.style.color = '#333';
   heading.style.marginBottom = '20px';
   container.appendChild(heading);
   
-  // Správa pre prihláseného používateľa
+  // Sprava pre prihlaseneho pouzivatela
   const messageDiv = document.createElement('div');
   messageDiv.style.marginBottom = '20px';
   messageDiv.style.padding = '15px';
@@ -546,20 +546,20 @@ function vytvorLoggedInContainer() {
   const welcomeText = document.createElement('p');
   welcomeText.style.margin = '0 0 5px 0';
   welcomeText.style.fontSize = '16px';
-  welcomeText.textContent = '✅ Ste prihlásený';
+  welcomeText.textContent = 'Ste prihlaseny';
   messageDiv.appendChild(welcomeText);
   
   const emailText = document.createElement('p');
   emailText.style.margin = '5px 0';
   emailText.style.fontSize = '14px';
   emailText.style.color = '#555';
-  emailText.innerHTML = '📧 <span id="userEmail"></span>';
+  emailText.innerHTML = 'Email: <span id="userEmail"></span>';
   messageDiv.appendChild(emailText);
   
   const roleText = document.createElement('p');
   roleText.style.margin = '5px 0 0 0';
   roleText.style.fontSize = '14px';
-  roleText.innerHTML = '👤 <span id="userRole"></span>';
+  roleText.innerHTML = 'Rola: <span id="userRole"></span>';
   messageDiv.appendChild(roleText);
   
   container.appendChild(messageDiv);
@@ -576,7 +576,7 @@ function vytvorLoggedInContainer() {
   adminPanel.style.textAlign = 'left';
   
   const adminTitle = document.createElement('h3');
-  adminTitle.textContent = '👑 Zoznam používateľov';
+  adminTitle.textContent = 'Zoznam pouzivatelov';
   adminTitle.style.margin = '0 0 15px 0';
   adminTitle.style.color = '#e65100';
   adminPanel.appendChild(adminTitle);
@@ -587,10 +587,10 @@ function vytvorLoggedInContainer() {
   
   container.appendChild(adminPanel);
   
-  // Odhlasovacie tlačidlo
+  // Odhlasovacie tlacidlo
   const logoutBtn = document.createElement('button');
   logoutBtn.id = 'logoutBtn';
-  logoutBtn.textContent = '🚪 Odhlásiť sa';
+  logoutBtn.textContent = 'Odhlasit sa';
   logoutBtn.style.width = '100%';
   logoutBtn.style.marginTop = '20px';
   logoutBtn.style.padding = '12px';
@@ -612,7 +612,7 @@ function vytvorLoggedInContainer() {
   
   container.appendChild(logoutBtn);
   
-  // Status správa
+  // Status sprava
   const statusDiv = document.createElement('div');
   statusDiv.id = 'logoutStatus';
   statusDiv.style.marginTop = '15px';
@@ -622,7 +622,7 @@ function vytvorLoggedInContainer() {
   
   document.body.appendChild(container);
   
-  // Event listener pre odhlásenie
+  // Event listener pre odhlasenie
   logoutBtn.addEventListener('click', async () => {
     logoutBtn.disabled = true;
     logoutBtn.textContent = 'Odhlasujem...';
@@ -634,12 +634,12 @@ function vytvorLoggedInContainer() {
       const result = await window.app.odhlas();
       
       if (result.success) {
-        statusDiv.innerHTML = '✅ Odhlásenie úspešné!';
+        statusDiv.innerHTML = 'Odhlasenie uspesne!';
         statusDiv.style.color = 'green';
-        // Skryť logged-in container, zobraziť auth container
+        // Skryt logged-in container, zobrazit auth container
         document.getElementById('loggedInContainer').style.display = 'none';
         document.getElementById('authContainer').style.display = 'block';
-        // Vymazať status správu po chvíli
+        // Vymazat status spravu po chvili
         setTimeout(() => {
           if (statusDiv) {
             statusDiv.textContent = '';
@@ -647,15 +647,15 @@ function vytvorLoggedInContainer() {
           }
         }, 3000);
       } else {
-        statusDiv.textContent = '❌ ' + result.error;
+        statusDiv.textContent = 'Chyba: ' + result.error;
         statusDiv.style.color = 'red';
       }
     } catch (error) {
-      statusDiv.textContent = '❌ Nastala chyba pri odhlásení: ' + error.message;
+      statusDiv.textContent = 'Nastala chyba pri odhlaseni: ' + error.message;
       statusDiv.style.color = 'red';
     } finally {
       logoutBtn.disabled = false;
-      logoutBtn.textContent = '🚪 Odhlásiť sa';
+      logoutBtn.textContent = 'Odhlasit sa';
       logoutBtn.style.opacity = '1';
     }
   });
@@ -667,7 +667,7 @@ function vytvorRegistracnyFormular() {
   container.style.display = 'none';
   
   const heading = document.createElement('h2');
-  heading.textContent = 'Vytvoriť nový účet';
+  heading.textContent = 'Vytvorit novy ucet';
   heading.style.textAlign = 'center';
   heading.style.color = '#333';
   heading.style.marginBottom = '20px';
@@ -682,7 +682,7 @@ function vytvorRegistracnyFormular() {
   infoDiv.style.border = '1px solid #ffe0b2';
   infoDiv.style.fontSize = '13px';
   infoDiv.style.color = '#e65100';
-  infoDiv.textContent = '💡 Prvý registrovaný používateľ bude automaticky označený ako ADMINISTRÁTOR';
+  infoDiv.textContent = 'Prvy registrovany pouzivatel bude automaticky oznaceny ako ADMINISTRATOR';
   container.appendChild(infoDiv);
   
   const form = document.createElement('form');
@@ -721,7 +721,7 @@ function vytvorRegistracnyFormular() {
   passwordInput.type = 'password';
   passwordInput.id = 'regPassword';
   passwordInput.required = true;
-  passwordInput.placeholder = 'Minimálne 6 znakov';
+  passwordInput.placeholder = 'Minimalne 6 znakov';
   passwordInput.minLength = 6;
   passwordInput.style.width = '100%';
   passwordInput.style.padding = '10px';
@@ -732,11 +732,11 @@ function vytvorRegistracnyFormular() {
   passwordGroup.appendChild(passwordInput);
   form.appendChild(passwordGroup);
   
-  // Tlačidlo
+  // Tlacidlo
   const button = document.createElement('button');
   button.type = 'submit';
   button.id = 'registerBtn';
-  button.textContent = 'Registrovať sa';
+  button.textContent = 'Registrovat sa';
   button.style.width = '100%';
   button.style.padding = '12px';
   button.style.backgroundColor = '#4CAF50';
@@ -748,7 +748,7 @@ function vytvorRegistracnyFormular() {
   button.style.transition = 'background-color 0.3s';
   form.appendChild(button);
   
-  // Správa
+  // Sprava
   const messageDiv = document.createElement('div');
   messageDiv.id = 'regMessage';
   messageDiv.style.marginTop = '15px';
@@ -758,7 +758,7 @@ function vytvorRegistracnyFormular() {
   
   container.appendChild(form);
   
-  // Event listener pre formulár
+  // Event listener pre formular
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -775,22 +775,22 @@ function vytvorRegistracnyFormular() {
       const result = await window.app.registruj(email, password);
       
       if (result.success) {
-        const roleText = result.role === 'admin' ? '👑 ADMINISTRÁTOR' : '👤 Používateľ';
-        messageDiv.innerHTML = `✅ Registrácia úspešná! 🎉<br>Vaša rola: <strong>${roleText}</strong>`;
+        const roleText = result.role === 'admin' ? 'ADMINISTRATOR' : 'Pouzivatel';
+        messageDiv.innerHTML = 'Registracia uspesna! Vasa rola: ' + roleText;
         messageDiv.style.color = 'green';
         form.reset();
-        // Po registrácii sa používateľ automaticky prihlási
-        // onAuthStateChanged sa postará o zobrazenie správneho UI
+        // Po registracii sa pouzivatel automaticky prihlasi
+        // onAuthStateChanged sa postara o zobrazenie spravneho UI
       } else {
-        messageDiv.textContent = '❌ ' + result.error;
+        messageDiv.textContent = 'Chyba: ' + result.error;
         messageDiv.style.color = 'red';
       }
     } catch (error) {
-      messageDiv.textContent = '❌ Nastala chyba pri registrácii: ' + error.message;
+      messageDiv.textContent = 'Nastala chyba pri registracii: ' + error.message;
       messageDiv.style.color = 'red';
     } finally {
       button.disabled = false;
-      button.textContent = 'Registrovať sa';
+      button.textContent = 'Registrovat sa';
       button.style.opacity = '1';
     }
   });
@@ -804,7 +804,7 @@ function vytvorPrihlasovaciFormular() {
   container.style.display = 'none';
   
   const heading = document.createElement('h2');
-  heading.textContent = 'Prihlásiť sa';
+  heading.textContent = 'Prihlasit sa';
   heading.style.textAlign = 'center';
   heading.style.color = '#333';
   heading.style.marginBottom = '20px';
@@ -846,7 +846,7 @@ function vytvorPrihlasovaciFormular() {
   passwordInput.type = 'password';
   passwordInput.id = 'loginPassword';
   passwordInput.required = true;
-  passwordInput.placeholder = 'Vaše heslo';
+  passwordInput.placeholder = 'Vase heslo';
   passwordInput.style.width = '100%';
   passwordInput.style.padding = '10px';
   passwordInput.style.border = '1px solid #ddd';
@@ -856,11 +856,11 @@ function vytvorPrihlasovaciFormular() {
   passwordGroup.appendChild(passwordInput);
   form.appendChild(passwordGroup);
   
-  // Tlačidlo
+  // Tlacidlo
   const button = document.createElement('button');
   button.type = 'submit';
   button.id = 'loginBtn';
-  button.textContent = 'Prihlásiť sa';
+  button.textContent = 'Prihlasit sa';
   button.style.width = '100%';
   button.style.padding = '12px';
   button.style.backgroundColor = '#2196F3';
@@ -872,7 +872,7 @@ function vytvorPrihlasovaciFormular() {
   button.style.transition = 'background-color 0.3s';
   form.appendChild(button);
   
-  // Správa
+  // Sprava
   const messageDiv = document.createElement('div');
   messageDiv.id = 'loginMessage';
   messageDiv.style.marginTop = '15px';
@@ -882,7 +882,7 @@ function vytvorPrihlasovaciFormular() {
   
   container.appendChild(form);
   
-  // Event listener pre formulár
+  // Event listener pre formular
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -899,20 +899,20 @@ function vytvorPrihlasovaciFormular() {
       const result = await window.app.prihlas(email, password);
       
       if (result.success) {
-        messageDiv.innerHTML = '✅ Prihlásenie úspešné! 🎉';
+        messageDiv.innerHTML = 'Prihlasenie uspesne!';
         messageDiv.style.color = 'green';
         form.reset();
-        // onAuthStateChanged sa postará o zobrazenie správneho UI
+        // onAuthStateChanged sa postara o zobrazenie spravneho UI
       } else {
-        messageDiv.textContent = '❌ ' + result.error;
+        messageDiv.textContent = 'Chyba: ' + result.error;
         messageDiv.style.color = 'red';
       }
     } catch (error) {
-      messageDiv.textContent = '❌ Nastala chyba pri prihlásení: ' + error.message;
+      messageDiv.textContent = 'Nastala chyba pri prihlaseni: ' + error.message;
       messageDiv.style.color = 'red';
     } finally {
       button.disabled = false;
-      button.textContent = 'Prihlásiť sa';
+      button.textContent = 'Prihlasit sa';
       button.style.opacity = '1';
     }
   });
@@ -921,7 +921,7 @@ function vytvorPrihlasovaciFormular() {
 }
 
 function formatujDatum(datum) {
-  if (!datum) return 'Neznámy';
+  if (!datum) return 'Neznamy';
   const d = new Date(datum);
   return d.toLocaleDateString('sk-SK') + ' ' + d.toLocaleTimeString('sk-SK', {hour: '2-digit', minute: '2-digit'});
 }
