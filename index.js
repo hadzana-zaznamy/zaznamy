@@ -813,6 +813,7 @@ function vytvorRegistracnyFormular() {
   
   const form = document.createElement('form');
   
+  // Email
   const emailGroup = document.createElement('div');
   emailGroup.style.marginBottom = '15px';
   const emailLabel = document.createElement('label');
@@ -834,6 +835,7 @@ function vytvorRegistracnyFormular() {
   emailGroup.appendChild(emailInput);
   form.appendChild(emailGroup);
   
+  // Heslo
   const passwordGroup = document.createElement('div');
   passwordGroup.style.marginBottom = '15px';
   passwordGroup.style.position = 'relative';
@@ -915,6 +917,122 @@ function vytvorRegistracnyFormular() {
   passwordGroup.appendChild(passwordWrapper);
   form.appendChild(passwordGroup);
   
+  // Potvrdenie hesla
+  const confirmPasswordGroup = document.createElement('div');
+  confirmPasswordGroup.style.marginBottom = '15px';
+  confirmPasswordGroup.style.position = 'relative';
+  
+  const confirmPasswordLabel = document.createElement('label');
+  confirmPasswordLabel.textContent = 'Potvrdenie hesla';
+  confirmPasswordLabel.style.display = 'block';
+  confirmPasswordLabel.style.marginBottom = '5px';
+  confirmPasswordLabel.style.fontWeight = 'bold';
+  confirmPasswordGroup.appendChild(confirmPasswordLabel);
+  
+  const confirmPasswordWrapper = document.createElement('div');
+  confirmPasswordWrapper.style.position = 'relative';
+  confirmPasswordWrapper.style.width = '100%';
+  
+  const confirmPasswordInput = document.createElement('input');
+  confirmPasswordInput.type = 'password';
+  confirmPasswordInput.id = 'regConfirmPassword';
+  confirmPasswordInput.required = true;
+  confirmPasswordInput.placeholder = 'Zopakujte heslo';
+  confirmPasswordInput.style.width = '100%';
+  confirmPasswordInput.style.padding = '10px';
+  confirmPasswordInput.style.paddingRight = '40px';
+  confirmPasswordInput.style.border = '1px solid #ddd';
+  confirmPasswordInput.style.borderRadius = '4px';
+  confirmPasswordInput.style.fontSize = '14px';
+  confirmPasswordInput.style.boxSizing = 'border-box';
+  confirmPasswordWrapper.appendChild(confirmPasswordInput);
+  
+  // Tlačidlo pre zobrazenie/skrytie potvrdenia hesla
+  const confirmToggleBtn = document.createElement('button');
+  confirmToggleBtn.type = 'button';
+  confirmToggleBtn.style.position = 'absolute';
+  confirmToggleBtn.style.right = '10px';
+  confirmToggleBtn.style.top = '50%';
+  confirmToggleBtn.style.transform = 'translateY(-50%)';
+  confirmToggleBtn.style.background = 'none';
+  confirmToggleBtn.style.border = 'none';
+  confirmToggleBtn.style.cursor = 'pointer';
+  confirmToggleBtn.style.padding = '5px';
+  confirmToggleBtn.style.display = 'flex';
+  confirmToggleBtn.style.alignItems = 'center';
+  confirmToggleBtn.style.justifyContent = 'center';
+  confirmToggleBtn.style.color = '#666';
+  confirmToggleBtn.style.fontSize = '18px';
+  
+  confirmToggleBtn.innerHTML = `
+    <svg style="width:20px;height:20px;color:#666;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  `;
+  
+  let isConfirmPasswordVisible = false;
+  
+  confirmToggleBtn.addEventListener('click', () => {
+    isConfirmPasswordVisible = !isConfirmPasswordVisible;
+    confirmPasswordInput.type = isConfirmPasswordVisible ? 'text' : 'password';
+    
+    if (isConfirmPasswordVisible) {
+      confirmToggleBtn.innerHTML = `
+        <svg style="width:20px;height:20px;color:#666;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          <line x1="21" y1="3" x2="3" y2="21" stroke="currentColor" stroke-width="2" />
+        </svg>
+      `;
+    } else {
+      confirmToggleBtn.innerHTML = `
+        <svg style="width:20px;height:20px;color:#666;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      `;
+    }
+  });
+  
+  confirmPasswordWrapper.appendChild(confirmToggleBtn);
+  confirmPasswordGroup.appendChild(confirmPasswordWrapper);
+  form.appendChild(confirmPasswordGroup);
+  
+  // Správa o zhode hesiel
+  const passwordMatchMessage = document.createElement('div');
+  passwordMatchMessage.id = 'passwordMatchMessage';
+  passwordMatchMessage.style.marginTop = '-10px';
+  passwordMatchMessage.style.marginBottom = '10px';
+  passwordMatchMessage.style.fontSize = '13px';
+  passwordMatchMessage.style.color = '#f44336';
+  passwordMatchMessage.style.display = 'none';
+  form.appendChild(passwordMatchMessage);
+  
+  // Kontrola zhody hesiel pri zmene
+  function checkPasswordMatch() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    if (confirmPassword.length === 0) {
+      passwordMatchMessage.style.display = 'none';
+      return true;
+    }
+    
+    if (password === confirmPassword) {
+      passwordMatchMessage.style.display = 'none';
+      return true;
+    } else {
+      passwordMatchMessage.textContent = '❌ Heslá sa nezhodujú!';
+      passwordMatchMessage.style.display = 'block';
+      return false;
+    }
+  }
+  
+  passwordInput.addEventListener('input', checkPasswordMatch);
+  confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+  
+  // Tlačidlo
   const button = document.createElement('button');
   button.type = 'submit';
   button.id = 'registerBtn';
@@ -959,6 +1077,13 @@ function vytvorRegistracnyFormular() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    // Skontrolovať zhodu hesiel
+    if (!checkPasswordMatch()) {
+      passwordMatchMessage.textContent = '❌ Heslá sa nezhodujú!';
+      passwordMatchMessage.style.display = 'block';
+      return;
+    }
+    
     const email = emailInput.value.trim();
     const password = passwordInput.value;
     
@@ -977,6 +1102,7 @@ function vytvorRegistracnyFormular() {
         messageDiv.innerHTML = `✅ Registrácia úspešná!<br>Vaša rola: <strong>${roleText}</strong><br>Stav: <strong>${statusText}</strong>`;
         messageDiv.style.color = result.approved ? 'green' : 'orange';
         form.reset();
+        passwordMatchMessage.style.display = 'none';
       } else {
         messageDiv.textContent = '❌ ' + result.error;
         messageDiv.style.color = 'red';
