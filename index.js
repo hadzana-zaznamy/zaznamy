@@ -667,7 +667,7 @@ function inicializujAplikaciu() {
       }, (error) => {
         console.error('Chyba v listeneri používateľa:', error);
       });
-    }
+    },
     
     jePrvyPouzivatel: async function() {
       try {
