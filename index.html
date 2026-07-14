@@ -132,7 +132,7 @@
                 <label for="displayName">Používateľské meno</label>
                 <input type="text" id="displayName" required placeholder="Vaše meno">
             </div>
-            <div class="g-recaptcha" data-sitekey="6LeKc1MtAAAAALpSgOCruJCBI_3Z6maPVjV_CYA8"></div>
+            <div class="g-recaptcha" data-sitekey="6LeLq1MtAAAAAFPWj--GyismZLDALRkAJg3dhtyG"></div>
             <div id="recaptchaError" class="recaptcha-error"></div>
             <button type="submit" id="registerBtn">Registrovať sa</button>
         </form>
@@ -175,9 +175,6 @@
                     } else {
                         recaptchaErrorDiv.textContent = '';
                     }
-                } else {
-                    // Ak reCAPTCHA nie je načítaná, pokračujeme bez nej (pre prípad, že sa nenačíta)
-                    console.warn('reCAPTCHA nie je načítaná, pokračujem bez overenia');
                 }
 
                 registerBtn.disabled = true;
