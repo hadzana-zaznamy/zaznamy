@@ -2673,8 +2673,13 @@ window.otvorModalPridaniaVidea = function() {
       } catch (e) {
         try {
           // Ak JSON zlyhal, skúsime to ako JavaScript objekt
+          // Odstránime "timestamps:" ak existuje
+          let cleanText = tsText;
+          // Odstránime "timestamps:" alebo "timestamps ="
+          cleanText = cleanText.replace(/^\s*timestamps\s*[:=]\s*/, '');
+          
           // Použijeme Function constructor na bezpečné vyhodnotenie
-          const evalFn = new Function(`return (${tsText})`);
+          const evalFn = new Function(`return (${cleanText})`);
           const result = evalFn();
           if (typeof result === 'object' && !Array.isArray(result) && result !== null) {
             timestamps = result;
@@ -2682,7 +2687,8 @@ window.otvorModalPridaniaVidea = function() {
             throw new Error('Musí byť objekt');
           }
         } catch (error) {
-          messageDiv.textContent = '❌ Neplatný formát časových značiek. Použite JSON alebo JavaScript objekt.';
+          console.error('Chyba pri parsovaní:', error);
+          messageDiv.textContent = '❌ Neplatný formát časových značiek. Použite JSON alebo JavaScript objekt bez "timestamps:" prefixu.';
           messageDiv.style.color = 'red';
           return;
         }
