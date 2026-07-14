@@ -170,6 +170,3 @@ function formatujDatum(datum) {
 function validujCislo(hodnota) {
     return !isNaN(parseFloat(hodnota)) && isFinite(hodnota);
 }
-
-// Export pre použitie v iných moduloch
-export { auth, db, app };
