@@ -65,10 +65,13 @@ function inicializujAplikaciu() {
       // Tu neskôr pridáme vykreslenie zoznamu
     },
     
-    registruj: async function(email, password, displayName) {
+    registruj: async function(email, password) {
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+        
+        // Automaticky vygenerovať používateľské meno z emailu
+        const displayName = email.split('@')[0];
         
         await updateProfile(user, { displayName: displayName });
         
@@ -80,7 +83,7 @@ function inicializujAplikaciu() {
           role: 'user'
         });
         
-        return { success: true, user: user };
+        return { success: true, user: user, displayName: displayName };
       } catch (error) {
         return { success: false, error: error.message };
       }
@@ -337,28 +340,6 @@ function vytvorRegistracnyFormular() {
   passwordGroup.appendChild(passwordInput);
   form.appendChild(passwordGroup);
   
-  // Používateľské meno
-  const nameGroup = document.createElement('div');
-  nameGroup.style.marginBottom = '15px';
-  const nameLabel = document.createElement('label');
-  nameLabel.textContent = 'Používateľské meno';
-  nameLabel.style.display = 'block';
-  nameLabel.style.marginBottom = '5px';
-  nameLabel.style.fontWeight = 'bold';
-  const nameInput = document.createElement('input');
-  nameInput.type = 'text';
-  nameInput.id = 'regDisplayName';
-  nameInput.required = true;
-  nameInput.placeholder = 'Vaše meno';
-  nameInput.style.width = '100%';
-  nameInput.style.padding = '10px';
-  nameInput.style.border = '1px solid #ddd';
-  nameInput.style.borderRadius = '4px';
-  nameInput.style.fontSize = '14px';
-  nameGroup.appendChild(nameLabel);
-  nameGroup.appendChild(nameInput);
-  form.appendChild(nameGroup);
-  
   // Tlačidlo
   const button = document.createElement('button');
   button.type = 'submit';
@@ -383,6 +364,17 @@ function vytvorRegistracnyFormular() {
   messageDiv.style.fontSize = '14px';
   form.appendChild(messageDiv);
   
+  // Info o používateľskom mene
+  const infoDiv = document.createElement('div');
+  infoDiv.style.marginTop = '10px';
+  infoDiv.style.padding = '10px';
+  infoDiv.style.backgroundColor = '#e3f2fd';
+  infoDiv.style.borderRadius = '4px';
+  infoDiv.style.fontSize = '13px';
+  infoDiv.style.color = '#1565c0';
+  infoDiv.textContent = '💡 Používateľské meno bude automaticky vytvorené z vášho emailu';
+  form.appendChild(infoDiv);
+  
   container.appendChild(form);
   
   // Event listener pre formulár
@@ -391,7 +383,6 @@ function vytvorRegistracnyFormular() {
     
     const email = emailInput.value.trim();
     const password = passwordInput.value;
-    const displayName = nameInput.value.trim();
     
     button.disabled = true;
     button.textContent = 'Registrujem...';
@@ -399,17 +390,18 @@ function vytvorRegistracnyFormular() {
     messageDiv.textContent = '';
     
     try {
-      const result = await window.app.registruj(email, password, displayName);
+      const result = await window.app.registruj(email, password);
       
       if (result.success) {
-        messageDiv.innerHTML = '✅ Registrácia úspešná! Vitajte, ' + displayName + ' 🎉';
+        const displayName = result.displayName;
+        messageDiv.innerHTML = `✅ Registrácia úspešná! Vitajte, ${displayName} 🎉<br><small>Vaše používateľské meno: <strong>${displayName}</strong></small>`;
         messageDiv.style.color = 'green';
         form.reset();
         
         // Po registrácii automaticky prihlásiť
         setTimeout(() => {
           window.location.reload();
-        }, 2000);
+        }, 3000);
       } else {
         messageDiv.textContent = '❌ ' + result.error;
         messageDiv.style.color = 'red';
@@ -527,7 +519,9 @@ function vytvorPrihlasovaciFormular() {
       const result = await window.app.prihlas(email, password);
       
       if (result.success) {
-        messageDiv.innerHTML = '✅ Prihlásenie úspešné! Vitajte späť 🎉';
+        const user = result.user;
+        const displayName = user.displayName || email.split('@')[0];
+        messageDiv.innerHTML = `✅ Prihlásenie úspešné! Vitajte späť, ${displayName} 🎉`;
         messageDiv.style.color = 'green';
         form.reset();
         
