@@ -10,7 +10,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { 
   getFirestore, 
-  doc, setDoc, 
+  doc, getDoc, setDoc, 
   collection, addDoc, 
   getDocs, updateDoc, deleteDoc, 
   query, where, orderBy, limit 
