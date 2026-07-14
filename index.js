@@ -197,6 +197,22 @@ style.textContent = `
     box-shadow: 0 6px 16px rgba(244, 67, 54, 0.4);
   }
   
+  .btn-remove-user {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    background-color: #ff9800;
+    color: white;
+    margin-right: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .btn-remove-user:hover {
+    background-color: #e68900;
+  }
+  
   @media (max-width: 768px) {
     #authContainer > div, .auth-card {
       padding: 20px;
@@ -482,6 +498,51 @@ function inicializujAplikaciu() {
       }
     },
     
+    // Nová funkcia na odstránenie používateľa (iba pre admina)
+    odstranPouzivatela: async function(userId, userEmail) {
+      if (!this.aktualnyPouzivatel || this.aktualnyPouzivatelRole !== 'admin') {
+        return { success: false, error: 'Nemáte oprávnenie na odstraňovanie používateľov' };
+      }
+      
+      // Kontrola či neodstraňuje sám seba
+      if (userId === this.aktualnyPouzivatel.uid) {
+        return { success: false, error: 'Nemôžete odstrániť samého seba!' };
+      }
+      
+      try {
+        // Odstrániť dokument z kolekcie users
+        await deleteDoc(doc(db, 'users', userId));
+        
+        // Skopírovať email do schránky
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(userEmail);
+          } catch (clipboardError) {
+            console.warn('Nepodarilo sa skopírovať email do schránky:', clipboardError);
+            // Alternatívny spôsob - vytvoriť dočasný input
+            const tempInput = document.createElement('input');
+            tempInput.value = userEmail;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+          }
+        } else {
+          // Fallback pre staršie prehliadače
+          const tempInput = document.createElement('input');
+          tempInput.value = userEmail;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+        }
+        
+        return { success: true, email: userEmail };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+    
     maPristup: function() {
       return this.aktualnyPouzivatel && this.aktualnyPouzivatelApproved === true;
     },
@@ -715,16 +776,25 @@ function zobrazPouzivatelov(pouzivatelia) {
           ${formatujDatum(user.createdAt)}
         </td>
         <td style="padding:12px;">
-          ${!jeAdmin && !jeSchvaleny ? `
-            <button onclick="schvalPouzivatela('${user.id}')" 
-                    style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#4CAF50;color:white;margin-right:5px;">
-              ✓ Schváliť
-            </button>
-            <button onclick="zamietniPouzivatela('${user.id}')" 
-                    style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#f44336;color:white;">
-              ✗ Zamietnuť
-            </button>
-          ` : (jeAdmin ? '<span style="font-size:12px;color:#999;">Admin</span>' : '<span style="font-size:12px;color:#4CAF50;">Schválený</span>')}
+          ${!jeAdmin ? `
+            <div style="display:flex;flex-wrap:wrap;gap:5px;">
+              ${!jeSchvaleny ? `
+                <button onclick="schvalPouzivatela('${user.id}')" 
+                        style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#4CAF50;color:white;">
+                  ✓ Schváliť
+                </button>
+              ` : ''}
+              <button onclick="zamietniPouzivatela('${user.id}')" 
+                      style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#f44336;color:white;">
+                ✗ Zamietnuť
+              </button>
+              <button onclick="odstranPouzivatela('${user.id}', '${user.email}')" 
+                      class="btn-remove-user"
+                      style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#ff9800;color:white;">
+                🗑️ Odstrániť
+              </button>
+            </div>
+          ` : '<span style="font-size:12px;color:#999;">Admin</span>'}
         </td>
       </tr>
     `;
@@ -733,6 +803,34 @@ function zobrazPouzivatelov(pouzivatelia) {
   html += '</tbody></table></div>';
   container.innerHTML = html;
 }
+
+// Globálna funkcia pre admina na odstránenie používateľa
+window.odstranPouzivatela = async function(userId, userEmail) {
+  // Zobraziť potvrdzovací dialóg
+  if (!confirm(`Naozaj chcete ODSTRÁNIŤ používateľa ${userEmail}?\n\nPo odstránení bude jeho email skopírovaný do schránky a otvorí sa Firebase Console pre manuálne vymazanie účtu.`)) {
+    return;
+  }
+  
+  try {
+    const result = await window.app.odstranPouzivatela(userId, userEmail);
+    
+    if (result.success) {
+      // Aktualizovať zoznam používateľov
+      await window.app.nacitajVsetkychPouzivatelov();
+      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+      
+      // Správa o úspechu
+      alert(`✅ Používateľ ${result.email} bol odstránený z databázy!\n\n📧 Email bol skopírovaný do schránky.\n🌐 Otvára sa Firebase Console pre manuálne vymazanie účtu.`);
+      
+      // Otvoriť Firebase Console v novej karte
+      window.open('https://console.firebase.google.com/project/z-a-z-n-a-m-y/authentication/users', '_blank');
+    } else {
+      alert('❌ ' + result.error);
+    }
+  } catch (error) {
+    alert('❌ Nastala chyba: ' + error.message);
+  }
+};
 
 window.schvalPouzivatela = async function(userId) {
   if (!confirm('Naozaj chcete schváliť tohto používateľa?')) {
@@ -949,7 +1047,6 @@ function vytvorLoggedInContainer() {
         document.getElementById('authContainer').style.display = 'flex';
         logoutBtn.style.display = 'none';
       } else {
-        // Chyba pri odhlásení - zobrazíme alert
         alert('❌ ' + result.error);
       }
     } catch (error) {
