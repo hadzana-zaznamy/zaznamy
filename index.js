@@ -16,7 +16,7 @@ import {
   getDocs, updateDoc, deleteDoc, 
   query, where 
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-// ⬇️ Nový import pre App Check
+// App Check import
 import { 
   initializeAppCheck, 
   ReCaptchaV3Provider 
@@ -35,9 +35,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ⬇️ Inicializácia App Check s vaším site key
+// ✅ Inicializácia App Check s vaším novým site key
 const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6LfZsVMtAAAAAJK9URuVeVVzcSF7J81NQjuq0CNl'),
+  provider: new ReCaptchaV3Provider('6Lc2tVMtAAAAAAJeVHKtQP5vBRl9Qg22XBNmF5WP'),
   isTokenAutoRefreshEnabled: true
 });
 
