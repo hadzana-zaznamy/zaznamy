@@ -3,12 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hádzaná záznamy</title>
+    <title>Hádzaná záznamy - Registrácia</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <script type="module" src="index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76,175,80,0.3);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+        }
+        .message.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        .login-link a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        .g-recaptcha {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
 </head>
 <body>
-    <!-- Telo stránky bude neskôr doplnené -->
+    <div class="container">
+        <h1>Registrácia</h1>
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required placeholder="vas@email.sk">
+            </div>
+            <div class="form-group">
+                <label for="password">Heslo</label>
+                <input type="password" id="password" required placeholder="Minimálne 6 znakov" minlength="6">
+            </div>
+            <div class="form-group">
+                <label for="displayName">Používateľské meno</label>
+                <input type="text" id="displayName" required placeholder="Vaše meno">
+            </div>
+            <div class="g-recaptcha" data-sitekey="6LeKc1MtAAAAALpSgOCruJCBI_3Z6maPVjV_CYA8"></div>
+            <button type="submit" id="registerBtn">Registrovať sa</button>
+        </form>
+        <div id="message" class="message"></div>
+        <div class="login-link">
+            Už máte účet? <a href="#">Prihlásiť sa</a>
+        </div>
+    </div>
+
+    <script type="module" src="index.js"></script>
+    <script type="module">
+        // Pripojenie formulára k app logike
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registerForm');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const displayNameInput = document.getElementById('displayName');
+            const registerBtn = document.getElementById('registerBtn');
+            const messageDiv = document.getElementById('message');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                const displayName = displayNameInput.value.trim();
+
+                // Kontrola reCAPTCHA
+                if (typeof grecaptcha !== 'undefined') {
+                    const recaptchaResponse = grecaptcha.getResponse();
+                    if (!recaptchaResponse) {
+                        showMessage('Prosím, potvrďte že nie ste robot.', 'error');
+                        return;
+                    }
+                }
+
+                registerBtn.disabled = true;
+                registerBtn.textContent = 'Registrujem...';
+
+                try {
+                    // Použitie app objektu z index.js
+                    const result = await window.app.registruj(email, password, displayName);
+                    
+                    if (result.success) {
+                        showMessage('Registrácia úspešná! Vitajte, ' + displayName + ' 🎉', 'success');
+                        form.reset();
+                        if (typeof grecaptcha !== 'undefined') {
+                            grecaptcha.reset();
+                        }
+                    } else {
+                        showMessage(result.error, 'error');
+                    }
+                } catch (error) {
+                    showMessage('Nastala chyba pri registrácii: ' + error.message, 'error');
+                } finally {
+                    registerBtn.disabled = false;
+                    registerBtn.textContent = 'Registrovať sa';
+                }
+            });
+
+            function showMessage(text, type) {
+                messageDiv.textContent = text;
+                messageDiv.className = 'message ' + type;
+            }
+        });
+    </script>
+
+    <!-- reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </body>
 </html>
