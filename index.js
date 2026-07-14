@@ -178,8 +178,32 @@ function inicializujAplikaciu() {
   };
   
   window.app = appObj;
-  appObj.getAktualnyPouzivatel();
+  
+  // Sledovanie stavu prihlásenia
+  onAuthStateChanged(auth, (user) => {
+    appObj.aktualnyPouzivatel = user;
+    const authContainer = document.getElementById('authContainer');
+    const loggedInContainer = document.getElementById('loggedInContainer');
+    
+    if (user) {
+      // Používateľ je prihlásený - skryť auth formuláre, zobraziť odhlasovacie tlačidlo
+      if (authContainer) authContainer.style.display = 'none';
+      if (loggedInContainer) {
+        loggedInContainer.style.display = 'block';
+        // Aktualizovať email v správe
+        const emailSpan = document.getElementById('userEmail');
+        if (emailSpan) emailSpan.textContent = user.email;
+      }
+    } else {
+      // Používateľ nie je prihlásený - zobraziť auth formuláre, skryť odhlasovacie tlačidlo
+      if (authContainer) authContainer.style.display = 'block';
+      if (loggedInContainer) loggedInContainer.style.display = 'none';
+    }
+  });
+  
+  // Vytvoriť auth container a logged-in container
   vytvorAuthContainer();
+  vytvorLoggedInContainer();
 }
 
 function vytvorAuthContainer() {
@@ -273,6 +297,114 @@ function vytvorAuthContainer() {
   registerForm.style.display = 'block';
   loginForm.style.display = 'none';
   registerBtn.style.backgroundColor = '#45a049';
+}
+
+function vytvorLoggedInContainer() {
+  const container = document.createElement('div');
+  container.id = 'loggedInContainer';
+  container.style.display = 'none';
+  container.style.maxWidth = '400px';
+  container.style.margin = '50px auto';
+  container.style.padding = '20px';
+  container.style.fontFamily = 'Arial, sans-serif';
+  container.style.backgroundColor = '#f9f9f9';
+  container.style.borderRadius = '8px';
+  container.style.boxShadow = '0 0 10px rgba(0,0,0,0.1)';
+  container.style.textAlign = 'center';
+  
+  const heading = document.createElement('h1');
+  heading.textContent = 'Hádzaná záznamy';
+  heading.style.textAlign = 'center';
+  heading.style.color = '#333';
+  heading.style.marginBottom = '20px';
+  container.appendChild(heading);
+  
+  // Správa pre prihláseného používateľa
+  const messageDiv = document.createElement('div');
+  messageDiv.style.marginBottom = '20px';
+  messageDiv.style.padding = '15px';
+  messageDiv.style.backgroundColor = '#e8f5e9';
+  messageDiv.style.borderRadius = '4px';
+  messageDiv.style.border = '1px solid #c8e6c9';
+  
+  const welcomeText = document.createElement('p');
+  welcomeText.style.margin = '0 0 5px 0';
+  welcomeText.style.fontSize = '16px';
+  welcomeText.textContent = '✅ Ste prihlásený';
+  messageDiv.appendChild(welcomeText);
+  
+  const emailText = document.createElement('p');
+  emailText.style.margin = '0';
+  emailText.style.fontSize = '14px';
+  emailText.style.color = '#555';
+  emailText.innerHTML = '📧 <span id="userEmail"></span>';
+  messageDiv.appendChild(emailText);
+  
+  container.appendChild(messageDiv);
+  
+  // Odhlasovacie tlačidlo
+  const logoutBtn = document.createElement('button');
+  logoutBtn.id = 'logoutBtn';
+  logoutBtn.textContent = '🚪 Odhlásiť sa';
+  logoutBtn.style.width = '100%';
+  logoutBtn.style.padding = '12px';
+  logoutBtn.style.backgroundColor = '#f44336';
+  logoutBtn.style.color = 'white';
+  logoutBtn.style.border = 'none';
+  logoutBtn.style.borderRadius = '4px';
+  logoutBtn.style.fontSize = '16px';
+  logoutBtn.style.cursor = 'pointer';
+  logoutBtn.style.transition = 'background-color 0.3s';
+  
+  logoutBtn.addEventListener('mouseenter', () => {
+    logoutBtn.style.backgroundColor = '#d32f2f';
+  });
+  
+  logoutBtn.addEventListener('mouseleave', () => {
+    logoutBtn.style.backgroundColor = '#f44336';
+  });
+  
+  container.appendChild(logoutBtn);
+  
+  // Status správa
+  const statusDiv = document.createElement('div');
+  statusDiv.id = 'logoutStatus';
+  statusDiv.style.marginTop = '15px';
+  statusDiv.style.textAlign = 'center';
+  statusDiv.style.fontSize = '14px';
+  container.appendChild(statusDiv);
+  
+  document.body.appendChild(container);
+  
+  // Event listener pre odhlásenie
+  logoutBtn.addEventListener('click', async () => {
+    logoutBtn.disabled = true;
+    logoutBtn.textContent = 'Odhlasujem...';
+    logoutBtn.style.opacity = '0.7';
+    statusDiv.textContent = '';
+    
+    try {
+      const result = await window.app.odhlas();
+      
+      if (result.success) {
+        statusDiv.innerHTML = '✅ Odhlásenie úspešné!';
+        statusDiv.style.color = 'green';
+        // Skryť logged-in container, zobraziť auth container
+        document.getElementById('loggedInContainer').style.display = 'none';
+        document.getElementById('authContainer').style.display = 'block';
+      } else {
+        statusDiv.textContent = '❌ ' + result.error;
+        statusDiv.style.color = 'red';
+      }
+    } catch (error) {
+      statusDiv.textContent = '❌ Nastala chyba pri odhlásení: ' + error.message;
+      statusDiv.style.color = 'red';
+    } finally {
+      logoutBtn.disabled = false;
+      logoutBtn.textContent = '🚪 Odhlásiť sa';
+      logoutBtn.style.opacity = '1';
+    }
+  });
 }
 
 function vytvorRegistracnyFormular() {
@@ -379,11 +511,8 @@ function vytvorRegistracnyFormular() {
         messageDiv.innerHTML = '✅ Registrácia úspešná! 🎉';
         messageDiv.style.color = 'green';
         form.reset();
-        
-        // Po registrácii automaticky prihlásiť
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        // Po registrácii sa používateľ automaticky prihlási
+        // onAuthStateChanged sa postará o zobrazenie správneho UI
       } else {
         messageDiv.textContent = '❌ ' + result.error;
         messageDiv.style.color = 'red';
@@ -504,11 +633,7 @@ function vytvorPrihlasovaciFormular() {
         messageDiv.innerHTML = '✅ Prihlásenie úspešné! 🎉';
         messageDiv.style.color = 'green';
         form.reset();
-        
-        // Po prihlásení presmerovať
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // onAuthStateChanged sa postará o zobrazenie správneho UI
       } else {
         messageDiv.textContent = '❌ ' + result.error;
         messageDiv.style.color = 'red';
