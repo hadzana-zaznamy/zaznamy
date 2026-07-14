@@ -192,28 +192,6 @@ function inicializujAplikaciu() {
       }
     },
     
-    // Funkcia na zmenu roly používateľa (len pre admina)
-    zmenRoluPouzivatela: async function(userId, novaRola) {
-      if (!this.aktualnyPouzivatel || this.aktualnyPouzivatelRole !== 'admin') {
-        return { success: false, error: 'Nemáte oprávnenie na zmenu rolí' };
-      }
-      
-      // Admin nemôže zmeniť svoju vlastnú rolu
-      if (userId === this.aktualnyPouzivatel.uid) {
-        return { success: false, error: 'Nemôžete zmeniť svoju vlastnú rolu' };
-      }
-      
-      try {
-        await updateDoc(doc(db, 'users', userId), {
-          role: novaRola,
-          updatedAt: new Date().toISOString()
-        });
-        return { success: true };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
-    },
-    
     ulozZaznam: async function(zaznam) {
       if (!this.aktualnyPouzivatel) {
         return { success: false, error: 'Používateľ nie je prihlásený' };
@@ -404,7 +382,6 @@ function zobrazPouzivatelov(pouzivatelia) {
         <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Email</th>
         <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Rola</th>
         <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Registrovaný</th>
-        <th style="padding:10px;text-align:left;border-bottom:2px solid #ddd;">Akcia</th>
       </tr>
     </thead>
     <tbody>
@@ -416,7 +393,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}">
-        <td style="padding:10px;">${user.email}</td>
+        <td style="padding:10px;">${user.email} ${jeAktualny ? '⬅️ (Vy)' : ''}</td>
         <td style="padding:10px;">
           <span style="padding:3px 10px;border-radius:12px;font-size:12px;${jeAdmin ? 'background-color:#fff3e0;color:#e65100;' : 'background-color:#e3f2fd;color:#1565c0;'}">
             ${jeAdmin ? '👑 Admin' : '👤 User'}
@@ -425,14 +402,6 @@ function zobrazPouzivatelov(pouzivatelia) {
         <td style="padding:10px;font-size:12px;color:#666;">
           ${formatujDatum(user.createdAt)}
         </td>
-        <td style="padding:10px;">
-          ${!jeAktualny ? `
-            <button onclick="zmenRolu('${user.id}', '${user.role}')" 
-                    style="padding:5px 10px;border:none;border-radius:4px;cursor:pointer;font-size:12px;${jeAdmin ? 'background-color:#ff9800;color:white;' : 'background-color:#4CAF50;color:white;'}">
-              ${jeAdmin ? '⬇️ Zmeniť na User' : '⬆️ Zmeniť na Admin'}
-            </button>
-          ` : '<span style="font-size:12px;color:#999;">(Vy)</span>'}
-        </td>
       </tr>
     `;
   });
@@ -440,30 +409,6 @@ function zobrazPouzivatelov(pouzivatelia) {
   html += '</tbody></table></div>';
   container.innerHTML = html;
 }
-
-// Globálna funkcia pre zmenu roly
-window.zmenRolu = async function(userId, aktualnaRola) {
-  const novaRola = aktualnaRola === 'admin' ? 'user' : 'admin';
-  
-  if (!confirm(`Naozaj chcete zmeniť rolu používateľa na "${novaRola}"?`)) {
-    return;
-  }
-  
-  try {
-    const result = await window.app.zmenRoluPouzivatela(userId, novaRola);
-    
-    if (result.success) {
-      // Znovu načítať používateľov
-      await window.app.nacitajVsetkychPouzivatelov();
-      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      alert('✅ Rola bola úspešne zmenená!');
-    } else {
-      alert('❌ ' + result.error);
-    }
-  } catch (error) {
-    alert('❌ Nastala chyba: ' + error.message);
-  }
-};
 
 function vytvorAuthContainer() {
   const container = document.createElement('div');
@@ -622,7 +567,7 @@ function vytvorLoggedInContainer() {
   adminPanel.style.textAlign = 'left';
   
   const adminTitle = document.createElement('h3');
-  adminTitle.textContent = '👑 Správa používateľov';
+  adminTitle.textContent = '👑 Zoznam používateľov';
   adminTitle.style.margin = '0 0 15px 0';
   adminTitle.style.color = '#e65100';
   adminPanel.appendChild(adminTitle);
