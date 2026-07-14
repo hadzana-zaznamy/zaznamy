@@ -261,11 +261,20 @@ function inicializujAplikaciu() {
   
   window.app = appObj;
   
+  // Vytvoriť auth container a logged-in container
+  vytvorAuthContainer();
+  vytvorLoggedInContainer();
+  
+  // NAJDÔLEŽITEJŠIA ZMENA: Najprv skryť oba kontajnery
+  const authContainer = document.getElementById('authContainer');
+  const loggedInContainer = document.getElementById('loggedInContainer');
+  
+  if (authContainer) authContainer.style.display = 'none';
+  if (loggedInContainer) loggedInContainer.style.display = 'none';
+  
   // Sledovanie stavu prihlásenia
   onAuthStateChanged(auth, async (user) => {
     appObj.aktualnyPouzivatel = user;
-    const authContainer = document.getElementById('authContainer');
-    const loggedInContainer = document.getElementById('loggedInContainer');
     
     if (user) {
       // Získať rolu používateľa
@@ -280,7 +289,7 @@ function inicializujAplikaciu() {
         appObj.aktualnyPouzivatelRole = 'user';
       }
       
-      // Používateľ je prihlásený - skryť auth formuláre, zobraziť odhlasovacie tlačidlo
+      // Používateľ je prihlásený - skryť auth, zobraziť logged-in
       if (authContainer) authContainer.style.display = 'none';
       if (loggedInContainer) {
         loggedInContainer.style.display = 'block';
@@ -312,7 +321,7 @@ function inicializujAplikaciu() {
       // Vymazať status správy po prihlásení
       vymazStatusSpravy();
     } else {
-      // Používateľ nie je prihlásený - zobraziť auth formuláre, skryť odhlasovacie tlačidlo
+      // Používateľ nie je prihlásený - zobraziť auth, skryť logged-in
       if (authContainer) authContainer.style.display = 'block';
       if (loggedInContainer) loggedInContainer.style.display = 'none';
       appObj.aktualnyPouzivatelRole = null;
@@ -322,10 +331,6 @@ function inicializujAplikaciu() {
       resetFormulare();
     }
   });
-  
-  // Vytvoriť auth container a logged-in container
-  vytvorAuthContainer();
-  vytvorLoggedInContainer();
 }
 
 function vymazStatusSpravy() {
@@ -420,6 +425,8 @@ function vytvorAuthContainer() {
   container.style.backgroundColor = '#f9f9f9';
   container.style.borderRadius = '8px';
   container.style.boxShadow = '0 0 10px rgba(0,0,0,0.1)';
+  // Pôvodne skrytý - zobrazí sa len ak nie je prihlásený
+  container.style.display = 'none';
   
   const heading = document.createElement('h1');
   heading.textContent = 'Hádzaná záznamy';
@@ -518,6 +525,8 @@ function vytvorLoggedInContainer() {
   container.style.borderRadius = '8px';
   container.style.boxShadow = '0 0 10px rgba(0,0,0,0.1)';
   container.style.textAlign = 'center';
+  // Pôvodne skrytý - zobrazí sa len ak je prihlásený
+  container.style.display = 'none';
   
   const heading = document.createElement('h1');
   heading.textContent = 'Hádzaná záznamy';
