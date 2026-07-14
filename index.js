@@ -800,17 +800,6 @@ function vytvorRegistracnyFormular() {
   heading.style.marginBottom = '20px';
   container.appendChild(heading);
   
-  const infoDiv = document.createElement('div');
-  infoDiv.style.marginBottom = '20px';
-  infoDiv.style.padding = '10px';
-  infoDiv.style.backgroundColor = '#fff3e0';
-  infoDiv.style.borderRadius = '4px';
-  infoDiv.style.border = '1px solid #ffe0b2';
-  infoDiv.style.fontSize = '13px';
-  infoDiv.style.color = '#e65100';
-  infoDiv.textContent = '💡 Prvý používateľ bude automaticky ADMINISTRÁTOR. Ostatní používatelia musia byť schválení adminom.';
-  container.appendChild(infoDiv);
-  
   const form = document.createElement('form');
   
   // Email
