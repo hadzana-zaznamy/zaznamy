@@ -2195,14 +2195,22 @@ function zobrazVideaAdmin(videa) {
 
 // Otvorenie modálneho okna pre video
 window.otvorVideoModal = async function(videoId) {
+  console.log('otvorVideoModal volaný s ID:', videoId);
+  
   const video = window.app.vsetkyVidea.find(v => v.id === videoId);
   if (!video) {
+    console.error('Video sa nenašlo, ID:', videoId);
     await showAlert('Video sa nenašlo', 'Chyba', '❌');
     return;
   }
   
+  console.log('Nájdené video:', video);
+  
   const modal = document.getElementById('videoModal');
-  if (!modal) return;
+  if (!modal) {
+    console.error('Modal #videoModal neexistuje');
+    return;
+  }
   
   // Skryť scroll tlačidlo
   const scrollBtn = document.getElementById('scroll');
@@ -2229,8 +2237,34 @@ window.otvorVideoModal = async function(videoId) {
   const modalErrorDiv = document.getElementById('modalError');
   if (modalErrorDiv) modalErrorDiv.style.display = 'none';
   
-  // Načítať video
-  if (window.YT && YT.Player) {
+  // Skontrolovať či je YT API dostupné
+  if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+    // Počkáme na načítanie YT API
+    console.log('YT API nie je dostupné, čakám...');
+    await new Promise((resolve) => {
+      const checkYT = setInterval(() => {
+        if (typeof YT !== 'undefined' && typeof YT.Player !== 'undefined') {
+          clearInterval(checkYT);
+          resolve();
+        }
+      }, 200);
+      // Timeout po 5 sekundách
+      setTimeout(() => {
+        clearInterval(checkYT);
+        resolve();
+      }, 5000);
+    });
+  }
+  
+  // Skontrolovať znova po čakaní
+  if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+    modalErrorDiv.style.display = 'flex';
+    modalErrorDiv.innerHTML = '<p>Prehrávač YouTube sa nepodarilo načítať. Skontrolujte internetové pripojenie.</p>';
+    return;
+  }
+  
+  // Vytvoriť prehrávač
+  try {
     window.youtubePlayer = new YT.Player('youtubePlayer', {
       videoId: video.videoId,
       playerVars: { 
@@ -2242,6 +2276,7 @@ window.otvorVideoModal = async function(videoId) {
       },
       events: {
         onReady: (e) => {
+          console.log('YT Player ready');
           e.target.playVideo();
           let dur = e.target.getDuration();
           document.getElementById('duration').textContent = formatTime(dur);
@@ -2252,11 +2287,16 @@ window.otvorVideoModal = async function(videoId) {
           updatePlayButtons(1);
           showControlsAndRestartTimer();
           // Nastaviť kvalitu
-          if (e.target.setPlaybackQuality) {
-            e.target.setPlaybackQuality('hd1080');
+          try {
+            if (e.target.setPlaybackQuality) {
+              e.target.setPlaybackQuality('hd1080');
+            }
+          } catch (qError) {
+            console.warn('Nastavenie kvality zlyhalo:', qError);
           }
         },
         onStateChange: (e) => {
+          console.log('YT Player state change:', e.data);
           updatePlayButtons(e.data);
           if (e.data === 1) {
             if (window.progressInterval) clearInterval(window.progressInterval);
@@ -2270,12 +2310,22 @@ window.otvorVideoModal = async function(videoId) {
             clearInterval(window.progressInterval);
           }
         },
-        onError: () => {
-          if (modalErrorDiv) modalErrorDiv.style.display = 'flex';
+        onError: (e) => {
+          console.error('YT Player error:', e);
+          if (modalErrorDiv) {
+            modalErrorDiv.style.display = 'flex';
+            modalErrorDiv.innerHTML = '<p>Video nie je dostupné. Skontrolujte ID videa.</p>';
+          }
           if (window.youtubePlayer) window.youtubePlayer.stopVideo();
         }
       }
     });
+  } catch (error) {
+    console.error('Chyba pri vytváraní prehrávača:', error);
+    if (modalErrorDiv) {
+      modalErrorDiv.style.display = 'flex';
+      modalErrorDiv.innerHTML = '<p>Chyba pri načítaní prehrávača: ' + error.message + '</p>';
+    }
   }
 };
 
