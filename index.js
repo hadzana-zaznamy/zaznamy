@@ -597,12 +597,52 @@ function vytvorLoggedInContainer() {
   container.style.maxWidth = '800px';
   container.style.margin = '50px auto';
   container.style.padding = '20px';
+  container.style.paddingTop = '70px'; // Pridaný padding pre tlačidlo v rohu
   container.style.fontFamily = 'Arial, sans-serif';
   container.style.backgroundColor = '#f9f9f9';
   container.style.borderRadius = '8px';
   container.style.boxShadow = '0 0 10px rgba(0,0,0,0.1)';
   container.style.textAlign = 'center';
   container.style.display = 'none';
+  container.style.position = 'relative'; // Pre umiestnenie tlačidla
+  
+  // Tlačidlo na odhlásenie v pravom hornom rohu
+  const logoutBtn = document.createElement('button');
+  logoutBtn.id = 'logoutBtn';
+  logoutBtn.textContent = 'Odhlásiť sa';
+  logoutBtn.style.position = 'absolute';
+  logoutBtn.style.top = '15px';
+  logoutBtn.style.right = '20px';
+  logoutBtn.style.padding = '8px 16px';
+  logoutBtn.style.backgroundColor = '#f44336';
+  logoutBtn.style.color = 'white';
+  logoutBtn.style.border = 'none';
+  logoutBtn.style.borderRadius = '4px';
+  logoutBtn.style.fontSize = '14px';
+  logoutBtn.style.cursor = 'pointer';
+  logoutBtn.style.transition = 'background-color 0.3s';
+  logoutBtn.style.zIndex = '1000';
+  
+  logoutBtn.addEventListener('mouseenter', () => {
+    logoutBtn.style.backgroundColor = '#d32f2f';
+  });
+  
+  logoutBtn.addEventListener('mouseleave', () => {
+    logoutBtn.style.backgroundColor = '#f44336';
+  });
+  
+  container.appendChild(logoutBtn);
+  
+  // Status správa pre odhlásenie
+  const statusDiv = document.createElement('div');
+  statusDiv.id = 'logoutStatus';
+  statusDiv.style.position = 'absolute';
+  statusDiv.style.top = '60px';
+  statusDiv.style.right = '20px';
+  statusDiv.style.textAlign = 'center';
+  statusDiv.style.fontSize = '14px';
+  statusDiv.style.zIndex = '1000';
+  container.appendChild(statusDiv);
   
   const heading = document.createElement('h1');
   heading.textContent = 'Hádzaná záznamy';
@@ -718,40 +758,9 @@ function vytvorLoggedInContainer() {
   
   container.appendChild(adminPanel);
   
-  // Odhlasovacie tlačidlo
-  const logoutBtn = document.createElement('button');
-  logoutBtn.id = 'logoutBtn';
-  logoutBtn.textContent = 'Odhlásiť sa';
-  logoutBtn.style.width = '100%';
-  logoutBtn.style.marginTop = '20px';
-  logoutBtn.style.padding = '12px';
-  logoutBtn.style.backgroundColor = '#f44336';
-  logoutBtn.style.color = 'white';
-  logoutBtn.style.border = 'none';
-  logoutBtn.style.borderRadius = '4px';
-  logoutBtn.style.fontSize = '16px';
-  logoutBtn.style.cursor = 'pointer';
-  logoutBtn.style.transition = 'background-color 0.3s';
-  
-  logoutBtn.addEventListener('mouseenter', () => {
-    logoutBtn.style.backgroundColor = '#d32f2f';
-  });
-  
-  logoutBtn.addEventListener('mouseleave', () => {
-    logoutBtn.style.backgroundColor = '#f44336';
-  });
-  
-  container.appendChild(logoutBtn);
-  
-  const statusDiv = document.createElement('div');
-  statusDiv.id = 'logoutStatus';
-  statusDiv.style.marginTop = '15px';
-  statusDiv.style.textAlign = 'center';
-  statusDiv.style.fontSize = '14px';
-  container.appendChild(statusDiv);
-  
   document.body.appendChild(container);
   
+  // Event listener pre odhlásenie
   logoutBtn.addEventListener('click', async () => {
     logoutBtn.disabled = true;
     logoutBtn.textContent = 'Odhlasujem...';
@@ -763,7 +772,7 @@ function vytvorLoggedInContainer() {
       const result = await window.app.odhlas();
       
       if (result.success) {
-        statusDiv.innerHTML = 'Odhlásenie úspešné!';
+        statusDiv.innerHTML = '✅ Odhlásenie úspešné!';
         statusDiv.style.color = 'green';
         document.getElementById('loggedInContainer').style.display = 'none';
         document.getElementById('authContainer').style.display = 'block';
@@ -774,11 +783,11 @@ function vytvorLoggedInContainer() {
           }
         }, 3000);
       } else {
-        statusDiv.textContent = 'Chyba: ' + result.error;
+        statusDiv.textContent = '❌ ' + result.error;
         statusDiv.style.color = 'red';
       }
     } catch (error) {
-      statusDiv.textContent = 'Nastala chyba pri odhlásení: ' + error.message;
+      statusDiv.textContent = '❌ Nastala chyba pri odhlásení: ' + error.message;
       statusDiv.style.color = 'red';
     } finally {
       logoutBtn.disabled = false;
