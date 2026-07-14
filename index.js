@@ -517,7 +517,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}">
-        <td style="padding:10px;">${user.email} ${jeAktualny ? '(Vy)' : ''}</td>
+        <td style="padding:10px;">${user.email}</td>
         <td style="padding:10px;">
           <span style="padding:3px 10px;border-radius:12px;font-size:12px;${jeAdmin ? 'background-color:#fff3e0;color:#e65100;' : 'background-color:#e3f2fd;color:#1565c0;'}">
             ${jeAdmin ? 'Admin' : 'User'}
@@ -525,7 +525,7 @@ function zobrazPouzivatelov(pouzivatelia) {
         </td>
         <td style="padding:10px;">
           <span style="padding:3px 10px;border-radius:12px;font-size:12px;${jeSchvaleny ? 'background-color:#c8e6c9;color:#2e7d32;' : 'background-color:#ffcdd2;color:#c62828;'}">
-            ${jeSchvaleny ? '✓ Schválený' : '⏳ Čaká na schválenie'}
+            ${jeSchvaleny ? 'Schválený' : 'Čaká'}
           </span>
         </td>
         <td style="padding:10px;font-size:12px;color:#666;">
