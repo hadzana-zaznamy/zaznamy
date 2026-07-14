@@ -1424,7 +1424,7 @@ function vytvorLoggedInContainer() {
   
   const btnAplikacia = document.createElement('button');
   btnAplikacia.id = 'btnAplikacia';
-  btnAplikacia.textContent = '📋 Aplikácia';
+  btnAplikacia.textContent = 'Aplikácia';
   btnAplikacia.style.padding = '10px 20px';
   btnAplikacia.style.border = 'none';
   btnAplikacia.style.borderRadius = '4px';
@@ -1457,7 +1457,7 @@ function vytvorLoggedInContainer() {
   approvalMessage.style.display = 'none';
   
   const approvalTitle = document.createElement('h3');
-  approvalTitle.textContent = '⏳ Čakáte na schválenie';
+  approvalTitle.textContent = 'Čakáte na schválenie';
   approvalTitle.style.color = '#e65100';
   approvalTitle.style.margin = '0 0 10px 0';
   approvalMessage.appendChild(approvalTitle);
@@ -1480,7 +1480,7 @@ function vytvorLoggedInContainer() {
   contentArea.style.display = 'none';
   
   const contentTitle = document.createElement('h3');
-  contentTitle.textContent = '📋 Obsah aplikácie';
+  contentTitle.textContent = 'Obsah aplikácie';
   contentTitle.style.margin = '0 0 15px 0';
   contentTitle.style.color = '#1565c0';
   contentArea.appendChild(contentTitle);
@@ -1498,7 +1498,7 @@ function vytvorLoggedInContainer() {
   adminPanel.style.display = 'none';
   
   const adminTitle = document.createElement('h3');
-  adminTitle.textContent = '👑 Správa používateľov';
+  adminTitle.textContent = 'Správa používateľov';
   adminTitle.style.margin = '0 0 15px 0';
   adminTitle.style.color = '#e65100';
   adminPanel.appendChild(adminTitle);
