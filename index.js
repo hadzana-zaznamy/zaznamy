@@ -2950,7 +2950,7 @@ function addMarkers(duration) {
     
     marker.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (window.youtubePlayer) {
+      if (window.youtubePlayer && typeof window.youtubePlayer.seekTo === 'function') {
         window.youtubePlayer.seekTo(sec, true);
         updateProgressBarInstant();
         showControlsAndRestartTimer();
@@ -3008,7 +3008,7 @@ function showSpeedMessage(rate) {
 }
 
 function showControlsAndRestartTimer() {
-  // Skontrolujeme, či prehrávač existuje a má metódu getPlayerState
+  // Bezpečnostná kontrola - ak prehrávač neexistuje alebo nemá metódu getPlayerState
   if (!window.youtubePlayer || typeof window.youtubePlayer.getPlayerState !== 'function') {
     return;
   }
@@ -3024,9 +3024,11 @@ function showControlsAndRestartTimer() {
     ctrl.style.pointerEvents = 'all';
   }
   
+  // Iba ak je prehrávač v stave prehrávania (1)
   if (window.youtubePlayer.getPlayerState() === 1) {
     clearTimeout(controlsTimer);
     controlsTimer = setTimeout(() => {
+      // Znova skontrolujeme pred skrytím
       if (window.youtubePlayer && typeof window.youtubePlayer.getPlayerState === 'function' && 
           window.youtubePlayer.getPlayerState() === 1 && !isSeeking) {
         if (ctrl) {
@@ -3090,7 +3092,8 @@ function updatePlayButtons(state) {
 }
 
 function toggleMute() {
-  if (!window.youtubePlayer) return;
+  if (!window.youtubePlayer || typeof window.youtubePlayer.isMuted !== 'function') return;
+  
   let muted = window.youtubePlayer.isMuted();
   if (muted) {
     window.youtubePlayer.unMute();
@@ -3124,8 +3127,12 @@ function toggleFullscreen() {
 
 function closeVideoModal() {
   if (window.youtubePlayer) {
-    window.youtubePlayer.stopVideo();
-    window.youtubePlayer.destroy();
+    try {
+      window.youtubePlayer.stopVideo();
+      window.youtubePlayer.destroy();
+    } catch(e) {
+      console.warn('Chyba pri zatváraní prehrávača:', e);
+    }
     window.youtubePlayer = null;
   }
   const modal = document.getElementById('videoModal');
