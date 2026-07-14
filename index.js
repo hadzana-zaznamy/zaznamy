@@ -2668,13 +2668,28 @@ window.otvorModalPridaniaVidea = function() {
     const tsText = document.getElementById('timestampsInput').value.trim();
     if (tsText) {
       try {
+        // Najprv skúsime parsovať ako JSON
         timestamps = JSON.parse(tsText);
-        // Validate that it's an object
-        if (typeof timestamps !== 'object' || Array.isArray(timestamps)) {
-          throw new Error('Musí byť objekt');
+      } catch (e) {
+        try {
+          // Ak JSON zlyhal, skúsime to ako JavaScript objekt
+          // Použijeme Function constructor na bezpečné vyhodnotenie
+          const evalFn = new Function(`return (${tsText})`);
+          const result = evalFn();
+          if (typeof result === 'object' && !Array.isArray(result) && result !== null) {
+            timestamps = result;
+          } else {
+            throw new Error('Musí byť objekt');
+          }
+        } catch (error) {
+          messageDiv.textContent = '❌ Neplatný formát časových značiek. Použite JSON alebo JavaScript objekt.';
+          messageDiv.style.color = 'red';
+          return;
         }
-      } catch (error) {
-        messageDiv.textContent = '❌ Neplatný JSON formát časových značiek';
+      }
+      // Validate that it's an object
+      if (typeof timestamps !== 'object' || Array.isArray(timestamps) || timestamps === null) {
+        messageDiv.textContent = '❌ Časové značky musia byť objekt';
         messageDiv.style.color = 'red';
         return;
       }
