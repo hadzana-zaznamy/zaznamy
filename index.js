@@ -197,20 +197,6 @@ style.textContent = `
     box-shadow: 0 6px 16px rgba(244, 67, 54, 0.4);
   }
   
-  #logoutStatus {
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    text-align: center;
-    font-size: 14px;
-    font-weight: 500;
-    z-index: 9999;
-    padding: 10px 20px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  }
-  
   @media (max-width: 768px) {
     #authContainer > div, .auth-card {
       padding: 20px;
@@ -670,11 +656,6 @@ function vymazStatusSpravy() {
     loginMessage.textContent = '';
     loginMessage.style.color = '';
   }
-  const logoutStatus = document.getElementById('logoutStatus');
-  if (logoutStatus) {
-    logoutStatus.textContent = '';
-    logoutStatus.style.color = '';
-  }
 }
 
 function resetFormulare() {
@@ -956,42 +937,23 @@ function vytvorLoggedInContainer() {
   logoutBtn.textContent = 'Odhlásiť sa';
   document.body.appendChild(logoutBtn);
   
-  // Logout status (zachovávame pre chybové správy, ale odstránime úspešné správy)
-  const statusDiv = document.createElement('div');
-  statusDiv.id = 'logoutStatus';
-  document.body.appendChild(statusDiv);
-  
   logoutBtn.addEventListener('click', async () => {
     logoutBtn.disabled = true;
     logoutBtn.textContent = 'Odhlasujem...';
     logoutBtn.style.opacity = '0.7';
-    statusDiv.textContent = '';
-    statusDiv.style.color = '';
     
     try {
       const result = await window.app.odhlas();
       if (result.success) {
-        // ODSTRÁNENÉ: statusDiv.innerHTML = '✅ Odhlásenie úspešné!';
-        // ODSTRÁNENÉ: statusDiv.style.color = 'green';
         document.getElementById('loggedInContainer').style.display = 'none';
         document.getElementById('authContainer').style.display = 'flex';
         logoutBtn.style.display = 'none';
-        // ODSTRÁNENÉ: setTimeout na vymazanie správy
       } else {
-        statusDiv.textContent = '❌ ' + result.error;
-        statusDiv.style.color = 'red';
-        setTimeout(() => {
-          statusDiv.textContent = '';
-          statusDiv.style.color = '';
-        }, 5000);
+        // Chyba pri odhlásení - zobrazíme alert
+        alert('❌ ' + result.error);
       }
     } catch (error) {
-      statusDiv.textContent = '❌ Nastala chyba pri odhlásení: ' + error.message;
-      statusDiv.style.color = 'red';
-      setTimeout(() => {
-        statusDiv.textContent = '';
-        statusDiv.style.color = '';
-      }, 5000);
+      alert('❌ Nastala chyba pri odhlásení: ' + error.message);
     } finally {
       logoutBtn.disabled = false;
       logoutBtn.textContent = 'Odhlásiť sa';
