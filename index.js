@@ -50,6 +50,7 @@ function inicializujAplikaciu() {
     aktualnyPouzivatelRole: null,
     aktualnyPouzivatelApproved: null,
     vsetciPouzivatelia: [],
+    zobrazenieAdmin: 'aplikacia', // 'aplikacia' alebo 'pouzivatelia'
     
     pridajZaznam: function(data) {
       this.zaznamy.push(data);
@@ -402,18 +403,27 @@ function inicializujAplikaciu() {
           approvalMessage.style.display = (!jeSchvaleny && !jeAdmin) ? 'block' : 'none';
         }
         
-        // Ak je admin, zobraziť admin panel
+        // Ak je admin, zobraziť admin panel a tlačidlá
         if (jeAdmin) {
           const adminPanel = document.getElementById('adminPanel');
+          const adminButtons = document.getElementById('adminButtons');
+          
           if (adminPanel) {
             adminPanel.style.display = 'block';
             // Načítať používateľov
             await appObj.nacitajVsetkychPouzivatelov();
             zobrazPouzivatelov(appObj.vsetciPouzivatelia);
           }
+          
+          if (adminButtons) {
+            adminButtons.style.display = 'flex';
+          }
         } else {
           const adminPanel = document.getElementById('adminPanel');
+          const adminButtons = document.getElementById('adminButtons');
+          
           if (adminPanel) adminPanel.style.display = 'none';
+          if (adminButtons) adminButtons.style.display = 'none';
         }
       }
       // Vymazať status správy po prihlásení
@@ -570,6 +580,29 @@ window.zamietniPouzivatela = async function(userId) {
   }
 };
 
+// Funkcie na prepínanie admin zobrazenia
+window.zobrazAplikaciu = function() {
+  document.getElementById('contentArea').style.display = 'block';
+  document.getElementById('adminPanel').style.display = 'none';
+  
+  // Aktualizovať aktívne tlačidlá
+  document.getElementById('btnAplikacia').style.backgroundColor = '#1976D2';
+  document.getElementById('btnAplikacia').style.color = 'white';
+  document.getElementById('btnPouzivatelia').style.backgroundColor = '#e0e0e0';
+  document.getElementById('btnPouzivatelia').style.color = '#333';
+};
+
+window.zobrazPouzivatelovAdmin = function() {
+  document.getElementById('contentArea').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  
+  // Aktualizovať aktívne tlačidlá
+  document.getElementById('btnPouzivatelia').style.backgroundColor = '#1976D2';
+  document.getElementById('btnPouzivatelia').style.color = 'white';
+  document.getElementById('btnAplikacia').style.backgroundColor = '#e0e0e0';
+  document.getElementById('btnAplikacia').style.color = '#333';
+};
+
 function vytvorAuthContainer() {
   const container = document.createElement('div');
   container.id = 'authContainer';
@@ -613,6 +646,7 @@ function vytvorLoggedInContainer() {
   container.style.maxWidth = '800px';
   container.style.margin = '50px auto';
   container.style.padding = '20px';
+  container.style.paddingTop = '80px';
   container.style.fontFamily = 'Arial, sans-serif';
   container.style.backgroundColor = '#f9f9f9';
   container.style.borderRadius = '8px';
@@ -649,7 +683,7 @@ function vytvorLoggedInContainer() {
   
   document.body.appendChild(logoutBtn);
   
-  // Status správa pre odhlásenie - FIXED pozícia
+  // Status správa pre odhlásenie - FIXED pozícia (ODSTRÁNENÝ BIELY OBDĹŽNIK)
   const statusDiv = document.createElement('div');
   statusDiv.id = 'logoutStatus';
   statusDiv.style.position = 'fixed';
@@ -658,10 +692,7 @@ function vytvorLoggedInContainer() {
   statusDiv.style.textAlign = 'center';
   statusDiv.style.fontSize = '14px';
   statusDiv.style.zIndex = '9999';
-  statusDiv.style.backgroundColor = 'white';
-  statusDiv.style.padding = '8px 16px';
-  statusDiv.style.borderRadius = '4px';
-  statusDiv.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+  // ODSTRÁNENÉ: backgroundColor, padding, borderRadius, boxShadow
   document.body.appendChild(statusDiv);
   
   const heading = document.createElement('h1');
@@ -670,6 +701,44 @@ function vytvorLoggedInContainer() {
   heading.style.color = '#333';
   heading.style.marginBottom = '20px';
   container.appendChild(heading);
+  
+  // Admin tlačidlá - zobrazia sa len pre admina
+  const adminButtons = document.createElement('div');
+  adminButtons.id = 'adminButtons';
+  adminButtons.style.display = 'none';
+  adminButtons.style.gap = '10px';
+  adminButtons.style.justifyContent = 'center';
+  adminButtons.style.marginBottom = '20px';
+  
+  const btnAplikacia = document.createElement('button');
+  btnAplikacia.id = 'btnAplikacia';
+  btnAplikacia.textContent = '📋 Aplikácia';
+  btnAplikacia.style.padding = '10px 20px';
+  btnAplikacia.style.border = 'none';
+  btnAplikacia.style.borderRadius = '4px';
+  btnAplikacia.style.fontSize = '14px';
+  btnAplikacia.style.cursor = 'pointer';
+  btnAplikacia.style.backgroundColor = '#1976D2';
+  btnAplikacia.style.color = 'white';
+  btnAplikacia.style.transition = 'background-color 0.3s';
+  btnAplikacia.onclick = window.zobrazAplikaciu;
+  
+  const btnPouzivatelia = document.createElement('button');
+  btnPouzivatelia.id = 'btnPouzivatelia';
+  btnPouzivatelia.textContent = '👥 Používatelia';
+  btnPouzivatelia.style.padding = '10px 20px';
+  btnPouzivatelia.style.border = 'none';
+  btnPouzivatelia.style.borderRadius = '4px';
+  btnPouzivatelia.style.fontSize = '14px';
+  btnPouzivatelia.style.cursor = 'pointer';
+  btnPouzivatelia.style.backgroundColor = '#e0e0e0';
+  btnPouzivatelia.style.color = '#333';
+  btnPouzivatelia.style.transition = 'background-color 0.3s';
+  btnPouzivatelia.onclick = window.zobrazPouzivatelovAdmin;
+  
+  adminButtons.appendChild(btnAplikacia);
+  adminButtons.appendChild(btnPouzivatelia);
+  container.appendChild(adminButtons);
   
   // Správa o čakaní na schválenie
   const approvalMessage = document.createElement('div');
