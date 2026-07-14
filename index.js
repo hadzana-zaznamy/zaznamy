@@ -157,29 +157,22 @@ function inicializujAplikaciu() {
     };
     
     window.app = appObj;
-    
-    // Automatické nastavenie aktuálneho používateľa
     appObj.getAktualnyPouzivatel();
-    
-    // Vytvorenie registračného formulára dynamicky
     vytvorRegistracnyFormular();
 }
 
 function vytvorRegistracnyFormular() {
-    // Vytvorenie kontajnera
     const container = document.createElement('div');
     container.style.maxWidth = '400px';
     container.style.margin = '50px auto';
     container.style.padding = '20px';
     container.style.fontFamily = 'Arial, sans-serif';
     
-    // Nadpis
     const heading = document.createElement('h1');
     heading.textContent = 'Registrácia';
     heading.style.textAlign = 'center';
     container.appendChild(heading);
     
-    // Formulár
     const form = document.createElement('form');
     form.id = 'registerForm';
     
@@ -244,24 +237,6 @@ function vytvorRegistracnyFormular() {
     nameGroup.appendChild(nameInput);
     form.appendChild(nameGroup);
     
-    // reCAPTCHA
-    const recaptchaDiv = document.createElement('div');
-    recaptchaDiv.className = 'g-recaptcha';
-    recaptchaDiv.setAttribute('data-sitekey', '6LeLq1MtAAAAAFPWj--GyismZLDALRkAJg3dhtyG');
-    recaptchaDiv.style.margin = '20px 0';
-    recaptchaDiv.style.display = 'flex';
-    recaptchaDiv.style.justifyContent = 'center';
-    form.appendChild(recaptchaDiv);
-    
-    // Chyba reCAPTCHA
-    const recaptchaError = document.createElement('div');
-    recaptchaError.id = 'recaptchaError';
-    recaptchaError.style.color = 'red';
-    recaptchaError.style.fontSize = '14px';
-    recaptchaError.style.textAlign = 'center';
-    recaptchaError.style.marginTop = '5px';
-    form.appendChild(recaptchaError);
-    
     // Tlačidlo
     const button = document.createElement('button');
     button.type = 'submit';
@@ -286,7 +261,6 @@ function vytvorRegistracnyFormular() {
     
     container.appendChild(form);
     
-    // Odkaz na prihlásenie
     const loginLink = document.createElement('div');
     loginLink.style.textAlign = 'center';
     loginLink.style.marginTop = '20px';
@@ -295,13 +269,6 @@ function vytvorRegistracnyFormular() {
     
     document.body.appendChild(container);
     
-    // Načítanie reCAPTCHA skriptu
-    const script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-    
     // Event listener pre formulár
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -309,17 +276,6 @@ function vytvorRegistracnyFormular() {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
         const displayName = nameInput.value.trim();
-        
-        // Kontrola reCAPTCHA
-        if (typeof grecaptcha !== 'undefined' && grecaptcha.getResponse) {
-            const recaptchaResponse = grecaptcha.getResponse();
-            if (!recaptchaResponse) {
-                recaptchaError.textContent = 'Prosím, potvrďte že nie ste robot.';
-                return;
-            } else {
-                recaptchaError.textContent = '';
-            }
-        }
         
         button.disabled = true;
         button.textContent = 'Registrujem...';
@@ -331,9 +287,6 @@ function vytvorRegistracnyFormular() {
                 messageDiv.textContent = 'Registrácia úspešná! Vitajte, ' + displayName + ' 🎉';
                 messageDiv.style.color = 'green';
                 form.reset();
-                if (typeof grecaptcha !== 'undefined' && grecaptcha.reset) {
-                    grecaptcha.reset();
-                }
             } else {
                 messageDiv.textContent = result.error;
                 messageDiv.style.color = 'red';
