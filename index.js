@@ -628,7 +628,7 @@ function inicializujAplikaciu() {
           const userData = docSnapshot.data();
           const predoslyApproved = this.aktualnyPouzivatelApproved;
           const predoslaRole = this.aktualnyPouzivatelRole;
-          
+      
           this.aktualnyPouzivatelApproved = userData.approved || false;
           this.aktualnyPouzivatelRole = userData.role || 'user';
           
@@ -637,11 +637,37 @@ function inicializujAplikaciu() {
               predoslaRole !== this.aktualnyPouzivatelRole) {
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
           }
+        } else {
+          // Dokument používateľa bol odstránený - odhlásiť používateľa
+          console.log('Používateľský dokument bol odstránený, odhlasujem používateľa');
+          
+          // Zobraziť upozornenie
+          showAlert(
+            'Váš účet bol odstránený administrátorom. Budete odhlásený.',
+            'Účet odstránený',
+            '⚠️'
+          ).then(() => {
+            // Odhlásiť používateľa
+            signOut(auth).then(() => {
+              // Zrušiť listener
+              if (this.unsubscribeUser) {
+                this.unsubscribeUser();
+                this.unsubscribeUser = null;
+              }
+              // Aktualizovať UI
+              this.aktualnyPouzivatel = null;
+              this.aktualnyPouzivatelRole = null;
+              this.aktualnyPouzivatelApproved = null;
+              prerenderujPodlaStavu(null);
+            }).catch((error) => {
+              console.error('Chyba pri odhlásení:', error);
+            });
+          });
         }
       }, (error) => {
         console.error('Chyba v listeneri používateľa:', error);
       });
-    },
+    }
     
     jePrvyPouzivatel: async function() {
       try {
@@ -859,9 +885,8 @@ function inicializujAplikaciu() {
         return { success: false, error: 'Nemáte oprávnenie na odstraňovanie používateľov' };
       }
       
-      if (userId === this.aktualnyPouzivatel.uid) {
-        return { success: false, error: 'Nemôžete odstrániť samého seba!' };
-      }
+      // Kontrola či neodstraňuje sám seba
+      const jeSamSeba = userId === this.aktualnyPouzivatel.uid;
       
       try {
         await deleteDoc(doc(db, 'users', userId));
@@ -886,12 +911,33 @@ function inicializujAplikaciu() {
           document.execCommand('copy');
           document.body.removeChild(tempInput);
         }
+    
+        // Ak admin odstránil sám seba, odhlásiť ho
+        if (jeSamSeba) {
+          // Odhlásiť používateľa
+          await signOut(auth);
+          this.aktualnyPouzivatel = null;
+          this.aktualnyPouzivatelRole = null;
+          this.aktualnyPouzivatelApproved = null;
+          
+          // Zrušiť listenery
+          if (this.unsubscribeUsers) {
+            this.unsubscribeUsers();
+            this.unsubscribeUsers = null;
+          }
+          if (this.unsubscribeUser) {
+            this.unsubscribeUser();
+            this.unsubscribeUser = null;
+          }
+      
+          return { success: true, email: userEmail, vlastnyUcet: true };
+        }
         
-        return { success: true, email: userEmail };
+        return { success: true, email: userEmail, vlastnyUcet: false };
       } catch (error) {
         return { success: false, error: error.message };
       }
-    },
+    }
     
     maPristup: function() {
       return this.aktualnyPouzivatel && this.aktualnyPouzivatelApproved === true;
@@ -1289,7 +1335,7 @@ window.zamietniPouzivatela = async function(userId) {
 // Globálna funkcia pre admina na odstránenie používateľa
 window.odstranPouzivatela = async function(userId, userEmail) {
   const confirmed = await showDangerConfirm(
-    `Naozaj chcete ODSTRÁNIŤ používateľa <strong>${userEmail}</strong>?<br><br>Po odstránení bude jeho email skopírovaný do schránky a otvorí sa Firebase Console pre manuálne vymazanie účtu.`,
+    `Naozaj chcete ODSTRÁNIŤ používateľa <strong>${userEmail}</strong>?<br><br>Po odstránení bude jeho email skopírovaný do schránky a otvorí sa Firebase Console pre manuálne vymazanie účtu.${userId === window.app.aktualnyPouzivatel?.uid ? '<br><br><strong style="color:red;">⚠️ POZOR: Toto je váš vlastný účet!</strong>' : ''}`,
     'Odstránenie používateľa',
     '🗑️'
   );
@@ -1300,13 +1346,21 @@ window.odstranPouzivatela = async function(userId, userEmail) {
     const result = await window.app.odstranPouzivatela(userId, userEmail);
     
     if (result.success) {
-      await showAlert(
-        `✅ Používateľ <strong>${result.email}</strong> bol odstránený z databázy!<br><br>📧 Email bol skopírovaný do schránky.<br>🌐 Otvára sa Firebase Console pre manuálne vymazanie účtu.`,
-        'Úspech',
-        '✅'
-      );
-      
-      window.open('https://console.firebase.google.com/project/z-a-z-n-a-m-y/authentication/users', '_blank');
+      if (result.vlastnyUcet) {
+        await showAlert(
+          `✅ Váš účet <strong>${result.email}</strong> bol odstránený!<br><br>📧 Email bol skopírovaný do schránky.<br>🌐 Otvára sa Firebase Console pre manuálne vymazanie účtu.<br><br><strong style="color:#f44336;">Budete odhlásený.</strong>`,
+          'Vlastný účet odstránený',
+          '⚠️'
+        );
+        window.open('https://console.firebase.google.com/project/z-a-z-n-a-m-y/authentication/users', '_blank');
+      } else {
+        await showAlert(
+          `✅ Používateľ <strong>${result.email}</strong> bol odstránený z databázy!<br><br>📧 Email bol skopírovaný do schránky.<br>🌐 Otvára sa Firebase Console pre manuálne vymazanie účtu.`,
+          'Úspech',
+          '✅'
+        );
+        window.open('https://console.firebase.google.com/project/z-a-z-n-a-m-y/authentication/users', '_blank');
+      }
     } else {
       await showAlert(
         '❌ ' + result.error,
