@@ -194,16 +194,59 @@ function inicializujAplikaciu() {
         const emailSpan = document.getElementById('userEmail');
         if (emailSpan) emailSpan.textContent = user.email;
       }
+      // Vymazať status správy po prihlásení
+      vymazStatusSpravy();
     } else {
       // Používateľ nie je prihlásený - zobraziť auth formuláre, skryť odhlasovacie tlačidlo
       if (authContainer) authContainer.style.display = 'block';
       if (loggedInContainer) loggedInContainer.style.display = 'none';
+      // Vymazať všetky status správy
+      vymazStatusSpravy();
+      // Resetovať formuláre
+      resetFormulare();
     }
   });
   
   // Vytvoriť auth container a logged-in container
   vytvorAuthContainer();
   vytvorLoggedInContainer();
+}
+
+function vymazStatusSpravy() {
+  // Vymazať správy z registračného formulára
+  const regMessage = document.getElementById('regMessage');
+  if (regMessage) {
+    regMessage.textContent = '';
+    regMessage.style.color = '';
+  }
+  
+  // Vymazať správy z prihlasovacieho formulára
+  const loginMessage = document.getElementById('loginMessage');
+  if (loginMessage) {
+    loginMessage.textContent = '';
+    loginMessage.style.color = '';
+  }
+  
+  // Vymazať správy z odhlasovacieho formulára
+  const logoutStatus = document.getElementById('logoutStatus');
+  if (logoutStatus) {
+    logoutStatus.textContent = '';
+    logoutStatus.style.color = '';
+  }
+}
+
+function resetFormulare() {
+  // Resetovať registračný formulár
+  const regForm = document.querySelector('#registerForm form');
+  if (regForm) {
+    regForm.reset();
+  }
+  
+  // Resetovať prihlasovací formulár
+  const loginForm = document.querySelector('#loginForm form');
+  if (loginForm) {
+    loginForm.reset();
+  }
 }
 
 function vytvorAuthContainer() {
@@ -282,6 +325,8 @@ function vytvorAuthContainer() {
     loginBtn.style.backgroundColor = '#2196F3';
     registerBtn.style.transform = 'scale(1.02)';
     loginBtn.style.transform = 'scale(1)';
+    // Vymazať správy pri prepínaní
+    vymazStatusSpravy();
   });
   
   loginBtn.addEventListener('click', () => {
@@ -291,6 +336,8 @@ function vytvorAuthContainer() {
     registerBtn.style.backgroundColor = '#4CAF50';
     loginBtn.style.transform = 'scale(1.02)';
     registerBtn.style.transform = 'scale(1)';
+    // Vymazať správy pri prepínaní
+    vymazStatusSpravy();
   });
   
   // Štandardne zobraziť registračný formulár
@@ -382,6 +429,7 @@ function vytvorLoggedInContainer() {
     logoutBtn.textContent = 'Odhlasujem...';
     logoutBtn.style.opacity = '0.7';
     statusDiv.textContent = '';
+    statusDiv.style.color = '';
     
     try {
       const result = await window.app.odhlas();
@@ -392,6 +440,13 @@ function vytvorLoggedInContainer() {
         // Skryť logged-in container, zobraziť auth container
         document.getElementById('loggedInContainer').style.display = 'none';
         document.getElementById('authContainer').style.display = 'block';
+        // Vymazať status správu po chvíli
+        setTimeout(() => {
+          if (statusDiv) {
+            statusDiv.textContent = '';
+            statusDiv.style.color = '';
+          }
+        }, 3000);
       } else {
         statusDiv.textContent = '❌ ' + result.error;
         statusDiv.style.color = 'red';
@@ -503,6 +558,7 @@ function vytvorRegistracnyFormular() {
     button.textContent = 'Registrujem...';
     button.style.opacity = '0.7';
     messageDiv.textContent = '';
+    messageDiv.style.color = '';
     
     try {
       const result = await window.app.registruj(email, password);
@@ -625,6 +681,7 @@ function vytvorPrihlasovaciFormular() {
     button.textContent = 'Prihlasujem...';
     button.style.opacity = '0.7';
     messageDiv.textContent = '';
+    messageDiv.style.color = '';
     
     try {
       const result = await window.app.prihlas(email, password);
