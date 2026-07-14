@@ -408,16 +408,28 @@ function inicializujAplikaciu() {
           const adminPanel = document.getElementById('adminPanel');
           const adminButtons = document.getElementById('adminButtons');
           
+          // Načítať používateľov
+          await appObj.nacitajVsetkychPouzivatelov();
+          zobrazPouzivatelov(appObj.vsetciPouzivatelia);
+          
           if (adminPanel) {
-            adminPanel.style.display = 'block';
-            // Načítať používateľov
-            await appObj.nacitajVsetkychPouzivatelov();
-            zobrazPouzivatelov(appObj.vsetciPouzivatelia);
+            adminPanel.style.display = 'none'; // Skryté na začiatku
           }
           
           if (adminButtons) {
             adminButtons.style.display = 'flex';
           }
+          
+          // Nastaviť aktívne tlačidlo na Aplikácia
+          document.getElementById('btnAplikacia').style.backgroundColor = '#1976D2';
+          document.getElementById('btnAplikacia').style.color = 'white';
+          document.getElementById('btnPouzivatelia').style.backgroundColor = '#e0e0e0';
+          document.getElementById('btnPouzivatelia').style.color = '#333';
+          
+          // Zobraziť aplikáciu, skryť admin panel
+          document.getElementById('contentArea').style.display = 'block';
+          document.getElementById('adminPanel').style.display = 'none';
+          
         } else {
           const adminPanel = document.getElementById('adminPanel');
           const adminButtons = document.getElementById('adminButtons');
@@ -692,7 +704,6 @@ function vytvorLoggedInContainer() {
   statusDiv.style.textAlign = 'center';
   statusDiv.style.fontSize = '14px';
   statusDiv.style.zIndex = '9999';
-  // ODSTRÁNENÉ: backgroundColor, padding, borderRadius, boxShadow
   document.body.appendChild(statusDiv);
   
   const heading = document.createElement('h1');
