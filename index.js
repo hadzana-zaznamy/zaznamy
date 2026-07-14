@@ -4,7 +4,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/fireba
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 
-  updateProfile, 
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged 
@@ -70,20 +69,15 @@ function inicializujAplikaciu() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Automaticky vygenerovať používateľské meno z emailu
-        const displayName = email.split('@')[0];
-        
-        await updateProfile(user, { displayName: displayName });
-        
+        // Uložiť len email a uid do databázy, bez mena
         await setDoc(doc(db, 'users', user.uid), {
           uid: user.uid,
           email: email,
-          displayName: displayName,
           createdAt: new Date().toISOString(),
           role: 'user'
         });
         
-        return { success: true, user: user, displayName: displayName };
+        return { success: true, user: user };
       } catch (error) {
         return { success: false, error: error.message };
       }
@@ -364,17 +358,6 @@ function vytvorRegistracnyFormular() {
   messageDiv.style.fontSize = '14px';
   form.appendChild(messageDiv);
   
-  // Info o používateľskom mene
-  const infoDiv = document.createElement('div');
-  infoDiv.style.marginTop = '10px';
-  infoDiv.style.padding = '10px';
-  infoDiv.style.backgroundColor = '#e3f2fd';
-  infoDiv.style.borderRadius = '4px';
-  infoDiv.style.fontSize = '13px';
-  infoDiv.style.color = '#1565c0';
-  infoDiv.textContent = '💡 Používateľské meno bude automaticky vytvorené z vášho emailu';
-  form.appendChild(infoDiv);
-  
   container.appendChild(form);
   
   // Event listener pre formulár
@@ -393,15 +376,14 @@ function vytvorRegistracnyFormular() {
       const result = await window.app.registruj(email, password);
       
       if (result.success) {
-        const displayName = result.displayName;
-        messageDiv.innerHTML = `✅ Registrácia úspešná! Vitajte, ${displayName} 🎉<br><small>Vaše používateľské meno: <strong>${displayName}</strong></small>`;
+        messageDiv.innerHTML = '✅ Registrácia úspešná! 🎉';
         messageDiv.style.color = 'green';
         form.reset();
         
         // Po registrácii automaticky prihlásiť
         setTimeout(() => {
           window.location.reload();
-        }, 3000);
+        }, 2000);
       } else {
         messageDiv.textContent = '❌ ' + result.error;
         messageDiv.style.color = 'red';
@@ -519,9 +501,7 @@ function vytvorPrihlasovaciFormular() {
       const result = await window.app.prihlas(email, password);
       
       if (result.success) {
-        const user = result.user;
-        const displayName = user.displayName || email.split('@')[0];
-        messageDiv.innerHTML = `✅ Prihlásenie úspešné! Vitajte späť, ${displayName} 🎉`;
+        messageDiv.innerHTML = '✅ Prihlásenie úspešné! 🎉';
         messageDiv.style.color = 'green';
         form.reset();
         
