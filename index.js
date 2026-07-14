@@ -112,7 +112,23 @@ function inicializujAplikaciu() {
         
         return { success: true, user: user, role: role, approved: approved };
       } catch (error) {
-        return { success: false, error: error.message };
+        // Spracovanie špecifických chýb Firebase
+        let errorMessage = error.message;
+        
+        // Kontrola konkrétnych chybových kódov
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = 'Zadaná e-mailová adresa už existuje. Prosím, prihláste sa, alebo si zvoľte inú e-mailovú adresu.';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'Zadaná e-mailová adresa je neplatná. Prosím, skontrolujte správnosť zadania.';
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = 'Heslo je príliš slabé. Prosím, zvoľte silnejšie heslo (minimálne 6 znakov).';
+        } else if (error.code === 'auth/operation-not-allowed') {
+          errorMessage = 'Registrácia je momentálne zakázaná. Kontaktujte administrátora.';
+        } else if (error.code === 'auth/too-many-requests') {
+          errorMessage = 'Príliš veľa neúspešných pokusov. Skúste to prosím neskôr.';
+        }
+        
+        return { success: false, error: errorMessage };
       }
     },
     
@@ -134,7 +150,22 @@ function inicializujAplikaciu() {
         
         return { success: true, user: user };
       } catch (error) {
-        return { success: false, error: error.message };
+        // Spracovanie špecifických chýb Firebase pre prihlásenie
+        let errorMessage = error.message;
+        
+        if (error.code === 'auth/user-not-found') {
+          errorMessage = 'Používateľ s touto e-mailovou adresou nebol nájdený.';
+        } else if (error.code === 'auth/wrong-password') {
+          errorMessage = 'Nesprávne heslo. Prosím, skúste to znova.';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'Zadaná e-mailová adresa je neplatná.';
+        } else if (error.code === 'auth/too-many-requests') {
+          errorMessage = 'Príliš veľa neúspešných pokusov. Skúste to prosím neskôr.';
+        } else if (error.code === 'auth/user-disabled') {
+          errorMessage = 'Tento účet bol zablokovaný. Kontaktujte administrátora.';
+        }
+        
+        return { success: false, error: errorMessage };
       }
     },
     
@@ -1101,12 +1132,21 @@ function vytvorRegistracnyFormular() {
         messageDiv.style.color = result.approved ? 'green' : 'orange';
         form.reset();
         passwordMatchMessage.style.display = 'none';
+        
+        // Automaticky prepnúť na prihlasovací formulár po úspešnej registrácii
+        setTimeout(() => {
+          document.getElementById('registerForm').style.display = 'none';
+          document.getElementById('loginForm').style.display = 'block';
+          vymazStatusSpravy();
+        }, 3000);
       } else {
+        // Zobrazenie chybovej správy - použijeme priamo chybovú správu z funkcie
         messageDiv.textContent = '❌ ' + result.error;
         messageDiv.style.color = 'red';
       }
     } catch (error) {
-      messageDiv.textContent = '❌ Nastala chyba pri registrácii: ' + error.message;
+      // Toto by nemalo nastať, ale pre istotu
+      messageDiv.textContent = '❌ Nastala neočakávaná chyba: ' + error.message;
       messageDiv.style.color = 'red';
     } finally {
       button.disabled = false;
