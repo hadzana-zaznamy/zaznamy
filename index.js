@@ -697,14 +697,22 @@ function vytvorRegistracnyFormular() {
   emailGroup.appendChild(emailInput);
   form.appendChild(emailGroup);
   
-  // Heslo
+  // Heslo s tlačidlom na zobrazenie/skrytie
   const passwordGroup = document.createElement('div');
   passwordGroup.style.marginBottom = '15px';
+  passwordGroup.style.position = 'relative';
+  
   const passwordLabel = document.createElement('label');
   passwordLabel.textContent = 'Heslo';
   passwordLabel.style.display = 'block';
   passwordLabel.style.marginBottom = '5px';
   passwordLabel.style.fontWeight = 'bold';
+  passwordGroup.appendChild(passwordLabel);
+  
+  const passwordWrapper = document.createElement('div');
+  passwordWrapper.style.position = 'relative';
+  passwordWrapper.style.width = '100%';
+  
   const passwordInput = document.createElement('input');
   passwordInput.type = 'password';
   passwordInput.id = 'regPassword';
@@ -713,11 +721,66 @@ function vytvorRegistracnyFormular() {
   passwordInput.minLength = 6;
   passwordInput.style.width = '100%';
   passwordInput.style.padding = '10px';
+  passwordInput.style.paddingRight = '40px';
   passwordInput.style.border = '1px solid #ddd';
   passwordInput.style.borderRadius = '4px';
   passwordInput.style.fontSize = '14px';
-  passwordGroup.appendChild(passwordLabel);
-  passwordGroup.appendChild(passwordInput);
+  passwordInput.style.boxSizing = 'border-box';
+  passwordWrapper.appendChild(passwordInput);
+  
+  // Tlačidlo pre zobrazenie/skrytie hesla
+  const toggleBtn = document.createElement('button');
+  toggleBtn.type = 'button';
+  toggleBtn.style.position = 'absolute';
+  toggleBtn.style.right = '10px';
+  toggleBtn.style.top = '50%';
+  toggleBtn.style.transform = 'translateY(-50%)';
+  toggleBtn.style.background = 'none';
+  toggleBtn.style.border = 'none';
+  toggleBtn.style.cursor = 'pointer';
+  toggleBtn.style.padding = '5px';
+  toggleBtn.style.display = 'flex';
+  toggleBtn.style.alignItems = 'center';
+  toggleBtn.style.justifyContent = 'center';
+  toggleBtn.style.color = '#666';
+  toggleBtn.style.fontSize = '18px';
+  
+  // SVG pre oko (zobraziť heslo)
+  toggleBtn.innerHTML = `
+    <svg style="width:20px;height:20px;color:#666;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  `;
+  
+  let isPasswordVisible = false;
+  
+  toggleBtn.addEventListener('click', () => {
+    isPasswordVisible = !isPasswordVisible;
+    passwordInput.type = isPasswordVisible ? 'text' : 'password';
+    
+    if (isPasswordVisible) {
+      // Zobraziť preškrtnuté oko
+      toggleBtn.innerHTML = `
+        <svg style="width:20px;height:20px;color:#666;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          <line x1="21" y1="3" x2="3" y2="21" stroke="currentColor" stroke-width="2" />
+        </svg>
+      `;
+    } else {
+      // Zobraziť normálne oko
+      toggleBtn.innerHTML = `
+        <svg style="width:20px;height:20px;color:#666;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      `;
+    }
+  });
+  
+  passwordWrapper.appendChild(toggleBtn);
+  passwordGroup.appendChild(passwordWrapper);
   form.appendChild(passwordGroup);
   
   // Tlačidlo
@@ -822,14 +885,22 @@ function vytvorPrihlasovaciFormular() {
   emailGroup.appendChild(emailInput);
   form.appendChild(emailGroup);
   
-  // Heslo
+  // Heslo s tlačidlom na zobrazenie/skrytie
   const passwordGroup = document.createElement('div');
   passwordGroup.style.marginBottom = '15px';
+  passwordGroup.style.position = 'relative';
+  
   const passwordLabel = document.createElement('label');
   passwordLabel.textContent = 'Heslo';
   passwordLabel.style.display = 'block';
   passwordLabel.style.marginBottom = '5px';
   passwordLabel.style.fontWeight = 'bold';
+  passwordGroup.appendChild(passwordLabel);
+  
+  const passwordWrapper = document.createElement('div');
+  passwordWrapper.style.position = 'relative';
+  passwordWrapper.style.width = '100%';
+  
   const passwordInput = document.createElement('input');
   passwordInput.type = 'password';
   passwordInput.id = 'loginPassword';
@@ -837,11 +908,66 @@ function vytvorPrihlasovaciFormular() {
   passwordInput.placeholder = 'Vaše heslo';
   passwordInput.style.width = '100%';
   passwordInput.style.padding = '10px';
+  passwordInput.style.paddingRight = '40px';
   passwordInput.style.border = '1px solid #ddd';
   passwordInput.style.borderRadius = '4px';
   passwordInput.style.fontSize = '14px';
-  passwordGroup.appendChild(passwordLabel);
-  passwordGroup.appendChild(passwordInput);
+  passwordInput.style.boxSizing = 'border-box';
+  passwordWrapper.appendChild(passwordInput);
+  
+  // Tlačidlo pre zobrazenie/skrytie hesla
+  const toggleBtn = document.createElement('button');
+  toggleBtn.type = 'button';
+  toggleBtn.style.position = 'absolute';
+  toggleBtn.style.right = '10px';
+  toggleBtn.style.top = '50%';
+  toggleBtn.style.transform = 'translateY(-50%)';
+  toggleBtn.style.background = 'none';
+  toggleBtn.style.border = 'none';
+  toggleBtn.style.cursor = 'pointer';
+  toggleBtn.style.padding = '5px';
+  toggleBtn.style.display = 'flex';
+  toggleBtn.style.alignItems = 'center';
+  toggleBtn.style.justifyContent = 'center';
+  toggleBtn.style.color = '#666';
+  toggleBtn.style.fontSize = '18px';
+  
+  // SVG pre oko (zobraziť heslo)
+  toggleBtn.innerHTML = `
+    <svg style="width:20px;height:20px;color:#666;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  `;
+  
+  let isPasswordVisible = false;
+  
+  toggleBtn.addEventListener('click', () => {
+    isPasswordVisible = !isPasswordVisible;
+    passwordInput.type = isPasswordVisible ? 'text' : 'password';
+    
+    if (isPasswordVisible) {
+      // Zobraziť preškrtnuté oko
+      toggleBtn.innerHTML = `
+        <svg style="width:20px;height:20px;color:#666;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          <line x1="21" y1="3" x2="3" y2="21" stroke="currentColor" stroke-width="2" />
+        </svg>
+      `;
+    } else {
+      // Zobraziť normálne oko
+      toggleBtn.innerHTML = `
+        <svg style="width:20px;height:20px;color:#666;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      `;
+    }
+  });
+  
+  passwordWrapper.appendChild(toggleBtn);
+  passwordGroup.appendChild(passwordWrapper);
   form.appendChild(passwordGroup);
   
   // Tlačidlo
