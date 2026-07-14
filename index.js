@@ -1437,7 +1437,7 @@ function vytvorLoggedInContainer() {
   
   const btnPouzivatelia = document.createElement('button');
   btnPouzivatelia.id = 'btnPouzivatelia';
-  btnPouzivatelia.textContent = '👥 Používatelia';
+  btnPouzivatelia.textContent = 'Používatelia';
   btnPouzivatelia.style.padding = '10px 20px';
   btnPouzivatelia.style.border = 'none';
   btnPouzivatelia.style.borderRadius = '4px';
