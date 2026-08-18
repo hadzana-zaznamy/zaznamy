@@ -2170,11 +2170,6 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     detailsHtml += `<p><strong>Hostia:</strong> ${video.hostiaTim || '?'}</p>`;
   }
   
-  // Ak video nemá ID, pridáme indikátor LEN pre admina (sOdstranenim = true)
-  const bezIdIndikator = (sOdstranenim && (!video.videoId || video.videoId.trim() === '')) 
-    ? `<p style="color:#f44336;font-weight:bold;font-size:12px;">⚠️ BEZ ID VIDEA - NEBUDE VIDITEĽNÉ PRE POUŽÍVATEĽOV</p>` 
-    : '';
-  
   let adminButtonsHtml = '';
   if (sOdstranenim) {
     adminButtonsHtml = `
