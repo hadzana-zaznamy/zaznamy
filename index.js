@@ -2806,7 +2806,8 @@ function otvorModalVidea(video = null) {
   
   const sutOptions = [
     { value: '', text: 'Vyberte súťaž' },
-    { value: '1. liga', text: '1. liga' }
+    { value: '1. liga', text: '1. liga' },
+    { value: '1. liga žien', text: '1. liga žien' }
   ];
   
   sutOptions.forEach(opt => {
@@ -2946,29 +2947,75 @@ function otvorModalVidea(video = null) {
   koloGroup.appendChild(koloInput);
   form.appendChild(koloGroup);
   
-  const datumGroup = document.createElement('div');
-  datumGroup.style.marginBottom = '15px';
+  // --- DÁTUM A ČAS - DVA BOXY VEDĽA SEBA ---
+  const datumCasGroup = document.createElement('div');
+  datumCasGroup.style.marginBottom = '15px';
   
-  const datumLabel = document.createElement('label');
-  datumLabel.textContent = 'Dátum a čas';
-  datumLabel.style.display = 'block';
-  datumLabel.style.marginBottom = '5px';
-  datumLabel.style.fontWeight = 'bold';
-  datumGroup.appendChild(datumLabel);
+  const datumCasLabel = document.createElement('label');
+  datumCasLabel.textContent = 'Dátum a čas';
+  datumCasLabel.style.display = 'block';
+  datumCasLabel.style.marginBottom = '5px';
+  datumCasLabel.style.fontWeight = 'bold';
+  datumCasGroup.appendChild(datumCasLabel);
   
+  const datumCasWrapper = document.createElement('div');
+  datumCasWrapper.style.display = 'flex';
+  datumCasWrapper.style.gap = '10px';
+  
+  // Dátum - input type date
   const datumInput = document.createElement('input');
-  datumInput.type = 'text';
-  datumInput.id = 'datumacasInput';
-  datumInput.placeholder = '09. 05. 2026 12:00 hod.';
-  datumInput.value = jeUprava ? video.datumacas : '';
-  datumInput.style.width = '100%';
+  datumInput.type = 'date';
+  datumInput.id = 'datumInput';
+  datumInput.style.flex = '1';
   datumInput.style.padding = '12px';
   datumInput.style.border = '1px solid #ddd';
   datumInput.style.borderRadius = '4px';
   datumInput.style.fontSize = '14px';
   datumInput.style.boxSizing = 'border-box';
-  datumGroup.appendChild(datumInput);
-  form.appendChild(datumGroup);
+  
+  // Čas - input type time
+  const casInput = document.createElement('input');
+  casInput.type = 'time';
+  casInput.id = 'casInput';
+  casInput.style.flex = '1';
+  casInput.style.padding = '12px';
+  casInput.style.border = '1px solid #ddd';
+  casInput.style.borderRadius = '4px';
+  casInput.style.fontSize = '14px';
+  casInput.style.boxSizing = 'border-box';
+  
+  // Ak upravujeme video, naplníme polia
+  if (jeUprava && video.datumacas) {
+    const parsed = parseDatumacas(video.datumacas);
+    if (parsed) {
+      const year = parsed.getFullYear();
+      const month = String(parsed.getMonth() + 1).padStart(2, '0');
+      const day = String(parsed.getDate()).padStart(2, '0');
+      datumInput.value = `${year}-${month}-${day}`;
+      
+      const hours = String(parsed.getHours()).padStart(2, '0');
+      const minutes = String(parsed.getMinutes()).padStart(2, '0');
+      casInput.value = `${hours}:${minutes}`;
+    } else {
+      // Ak sa nepodarilo parsovať, skúsime extrahovať z reťazca
+      const dateMatch = video.datumacas.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);
+      const timeMatch = video.datumacas.match(/(\d{1,2}):(\d{2})/);
+      if (dateMatch) {
+        const [_, den, mesiac, rok] = dateMatch;
+        datumInput.value = `${rok}-${mesiac.padStart(2, '0')}-${den.padStart(2, '0')}`;
+      }
+      if (timeMatch) {
+        const [_, hodina, minuta] = timeMatch;
+        casInput.value = `${hodina.padStart(2, '0')}:${minuta}`;
+      }
+    }
+  }
+  
+  datumCasWrapper.appendChild(datumInput);
+  datumCasWrapper.appendChild(casInput);
+  datumCasGroup.appendChild(datumCasWrapper);
+  form.appendChild(datumCasGroup);
+  // --- KONIEC DÁTUM A ČAS ---
   
   const tsGroup = document.createElement('div');
   tsGroup.style.marginBottom = '15px';
@@ -3032,7 +3079,22 @@ function otvorModalVidea(video = null) {
     const hostiaTim = document.getElementById('hostiaTimInput').value.trim();
     const mesiac = document.getElementById('mesiacInput').value;
     const kolo = document.getElementById('koloInput').value.trim();
-    const datumacas = document.getElementById('datumacasInput').value.trim();
+    
+    // Získanie dátumu a času z dvoch polí
+    const datumValue = document.getElementById('datumInput').value;
+    const casValue = document.getElementById('casInput').value;
+    let datumacas = '';
+    
+    if (datumValue && casValue) {
+      const [year, month, day] = datumValue.split('-');
+      const [hours, minutes] = casValue.split(':');
+      // Formát: "DD. MM. YYYY HH:MM hod."
+      datumacas = `${parseInt(day)}. ${parseInt(month)}. ${year} ${parseInt(hours)}:${minutes} hod.`;
+    } else if (datumValue) {
+      const [year, month, day] = datumValue.split('-');
+      datumacas = `${parseInt(day)}. ${parseInt(month)}. ${year}`;
+    }
+    
     let timestamps = {};
 
     if (!videoId) {
