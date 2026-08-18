@@ -3846,6 +3846,26 @@ async function otvorModalUpravyMoichPreferencii() {
   const vsetkySezony = ['2026/2027', '2025/2026', '2024/2025', '2023/2024'];
   const vsetkyKategorie = ['MLDKY', 'STDKY', 'MLDCI', 'STDCI'];
   
+  // --- ZORAĎOVANIE TÍMOV: zvolené (zafajknuté) prvé ---
+  let zoradeneTimy = [];
+  if (vsetkyTimy.length > 0) {
+    const zvoleneTimy = [];
+    const nezvoleneTimy = [];
+    
+    vsetkyTimy.forEach(tim => {
+      if (aktualneTimy.includes(tim)) {
+        zvoleneTimy.push(tim);
+      } else {
+        nezvoleneTimy.push(tim);
+      }
+    });
+    
+    zvoleneTimy.sort((a, b) => a.localeCompare(b, 'sk'));
+    nezvoleneTimy.sort((a, b) => a.localeCompare(b, 'sk'));
+    
+    zoradeneTimy = [...zvoleneTimy, ...nezvoleneTimy];
+  }
+  
   // Vytvorenie modálneho okna
   const modal = document.createElement('div');
   modal.className = 'modal-overlay active';
@@ -3891,7 +3911,7 @@ async function otvorModalUpravyMoichPreferencii() {
   sezonaContainer.style.border = '1px solid #e0e0e0';
   
   const sezonaLabel = document.createElement('div');
-  sezonaLabel.textContent = 'Moje preferované sezóny:';
+  sezonaLabel.textContent = '📅 Moje preferované sezóny (viac možností):';
   sezonaLabel.style.fontWeight = 'bold';
   sezonaLabel.style.marginBottom = '8px';
   sezonaLabel.style.fontSize = '13px';
@@ -3952,7 +3972,7 @@ async function otvorModalUpravyMoichPreferencii() {
   kategoriaContainer.style.border = '1px solid #e0e0e0';
   
   const kategoriaLabel = document.createElement('div');
-  kategoriaLabel.textContent = 'Moje preferované kategórie:';
+  kategoriaLabel.textContent = '🏆 Moje preferované kategórie (viac možností):';
   kategoriaLabel.style.fontWeight = 'bold';
   kategoriaLabel.style.marginBottom = '8px';
   kategoriaLabel.style.fontSize = '13px';
@@ -3963,7 +3983,23 @@ async function otvorModalUpravyMoichPreferencii() {
   kategoriaCheckboxContainer.style.flexWrap = 'wrap';
   kategoriaCheckboxContainer.style.gap = '8px';
   
+  // Zoraď kategórie: zvolené prvé
+  const zvoleneKategorie = [];
+  const nezvoleneKategorie = [];
+  
   vsetkyKategorie.forEach(kategoria => {
+    if (aktualneKategorie.includes(kategoria)) {
+      zvoleneKategorie.push(kategoria);
+    } else {
+      nezvoleneKategorie.push(kategoria);
+    }
+  });
+  
+  zvoleneKategorie.sort((a, b) => (categoryMap[a] || a).localeCompare(categoryMap[b] || b, 'sk'));
+  nezvoleneKategorie.sort((a, b) => (categoryMap[a] || a).localeCompare(categoryMap[b] || b, 'sk'));
+  const zoradeneKategorieAll = [...zvoleneKategorie, ...nezvoleneKategorie];
+  
+  zoradeneKategorieAll.forEach(kategoria => {
     const label = document.createElement('label');
     label.style.display = 'flex';
     label.style.alignItems = 'center';
@@ -4004,7 +4040,7 @@ async function otvorModalUpravyMoichPreferencii() {
   kategoriaContainer.appendChild(kategoriaCheckboxContainer);
   modalBox.appendChild(kategoriaContainer);
   
-  // --- SEKCE: VÝBER TÍMOV ---
+  // --- SEKCE: VÝBER TÍMOV (ZVOLENÉ PRVÉ) ---
   const timyLabel = document.createElement('div');
   timyLabel.textContent = '🏐 Moje preferované tímy:';
   timyLabel.style.fontWeight = 'bold';
@@ -4025,16 +4061,16 @@ async function otvorModalUpravyMoichPreferencii() {
   container.style.borderRadius = '6px';
   container.style.backgroundColor = '#fafafa';
   
-  if (vsetkyTimy.length === 0) {
+  if (zoradeneTimy.length === 0) {
     const emptyMsg = document.createElement('p');
-    emptyMsg.textContent = 'Žiadne tímy nie sú dostupné.';
+    emptyMsg.textContent = 'Žiadne tímy nie sú dostupné. Kontaktujte administrátora.';
     emptyMsg.style.color = '#999';
     emptyMsg.style.textAlign = 'center';
     emptyMsg.style.padding = '20px';
     emptyMsg.style.fontSize = '14px';
     container.appendChild(emptyMsg);
   } else {
-    vsetkyTimy.forEach(tim => {
+    zoradeneTimy.forEach(tim => {
       const label = document.createElement('label');
       label.style.display = 'flex';
       label.style.alignItems = 'center';
@@ -4049,7 +4085,8 @@ async function otvorModalUpravyMoichPreferencii() {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = tim;
-      checkbox.checked = aktualneTimy.includes(tim);
+      const jeZvolene = aktualneTimy.includes(tim);
+      checkbox.checked = jeZvolene;
       checkbox.style.width = '18px';
       checkbox.style.height = '18px';
       checkbox.style.cursor = 'pointer';
@@ -4059,6 +4096,15 @@ async function otvorModalUpravyMoichPreferencii() {
       span.textContent = tim;
       span.style.fontSize = '14px';
       span.style.fontWeight = '500';
+      
+      // Ak je tím zvolený, pridáme indikátor
+      if (jeZvolene) {
+        const indicator = document.createElement('span');
+        indicator.textContent = ' ✓';
+        indicator.style.color = '#4CAF50';
+        indicator.style.fontWeight = 'bold';
+        span.appendChild(indicator);
+      }
       
       label.appendChild(checkbox);
       label.appendChild(span);
@@ -4128,7 +4174,6 @@ async function otvorModalUpravyMoichPreferencii() {
       });
       
       // --- AKTUALIZÁCIA LOKÁLNYCH DÁT PRE ADMINA ---
-      // Aktualizujeme dáta v zozname všetkých používateľov
       const updatedUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
       if (updatedUser) {
         updatedUser.teamPreference = vybraneTimy;
@@ -4136,12 +4181,10 @@ async function otvorModalUpravyMoichPreferencii() {
         updatedUser.kategoriaPreference = vybraneKategorie;
       }
       
-      // Aktualizujeme aj v app objekte
       window.app.aktualnyPouzivatelTeam = vybraneTimy;
       window.app.aktualnyPouzivatelSezona = vybraneSezony;
       window.app.aktualnyPouzivatelKategoria = vybraneKategorie;
       
-      // Zostavenie správy o uložení
       let sprava = `✅ Vaše preferencie boli úspešne uložené!<br><br>`;
       sprava += `🏐 <strong>Preferované tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
       sprava += `📅 <strong>Preferované sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Žiadne'}<br>`;
@@ -4149,7 +4192,6 @@ async function otvorModalUpravyMoichPreferencii() {
       
       await showAlert(sprava, 'Úspech', '✅');
       
-      // Zatvoríme modál
       modal.remove();
       
     } catch (error) {
