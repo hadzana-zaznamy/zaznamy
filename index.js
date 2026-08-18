@@ -2173,11 +2173,6 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     detailsHtml += `<p><strong>Hostia:</strong> ${video.hostiaTim || '?'}</p>`;
   }
   
-  // Pre admina zobrazíme indikátor, či má video ID
-  if (sOdstranenim && (!video.videoId || video.videoId.trim() === '')) {
-    detailsHtml += `<p style="color:#ff9800;font-weight:bold;">⚠️ Bez ID videa</p>`;
-  }
-  
   let adminButtonsHtml = '';
   if (sOdstranenim) {
     adminButtonsHtml = `
