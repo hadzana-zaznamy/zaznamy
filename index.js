@@ -2088,8 +2088,11 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
   if (video.sutaz) {
     detailsHtml += `<p><strong>Súťaž:</strong> ${video.sutaz}</p>`;
   }
-  if (video.domaciTim || video.hostiaTim) {
-    detailsHtml += `<p><strong>Zápas:</strong> ${video.domaciTim || '?'} vs ${video.hostiaTim || '?'}</p>`;
+  if (video.domaciTim) {
+    detailsHtml += `<p><strong>Domáci:</strong> ${video.domaciTim || '?'}`;
+  }
+  if (video.hostiaTim) {
+    detailsHtml += `<p><strong>Hostia:</strong> ${video.hostiaTim || '?'}</p>`;
   }
   
   let adminButtonsHtml = '';
