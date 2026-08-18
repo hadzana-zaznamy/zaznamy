@@ -2943,16 +2943,24 @@ window.otvorModalPriradeniaTimov = async function(userId) {
             updatedUser.assignedKategoria = vybraneKategorie;
           }
           
+          // AK SA MENIA PREFERENCIE PRIHLÁSENÉHO POUŽÍVATEĽA - PRERENDERUJ VIDEA
           if (userId === window.app.aktualnyPouzivatel?.uid) {
             window.app.aktualnyPouzivatelTeam = vybraneTimy;
             window.app.aktualnyPouzivatelSezona = vybraneSezony;
             window.app.aktualnyPouzivatelKategoria = vybraneKategorie;
             
+            // KĽÚČOVÁ ZMENA: Znovu načítame videá z databázy a prerenderujeme ich
             if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
+              // Prerenderujeme videá pre používateľa
+              zobrazVideaPouzivatelom(window.app.vsetkyVidea);
+            } else {
+              // Ak nemáme videá načítané, načítame ich
+              await window.app.nacitajVidea();
               zobrazVideaPouzivatelom(window.app.vsetkyVidea);
             }
           }
           
+          // Aktualizácia zoznamu používateľov v admin paneli
           if (window.app.vsetciPouzivatelia.length > 0) {
             zobrazPouzivatelov(window.app.vsetciPouzivatelia);
           }
@@ -2983,6 +2991,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
           saveBtn.style.cursor = 'pointer';
         }
       };
+      
       buttonsDiv.appendChild(saveBtn);
       
       const cancelBtn = document.createElement('button');
@@ -3454,9 +3463,7 @@ function zobrazVideaPouzivatelom(videa) {
   }
   
   // --- KONTROLA: Používateľ musí mať priradené VŠETKY tri zložky ---
-  // Tím, sezóna aj kategória musia byť priradené, inak sa nezobrazia žiadne videá
   if (!jeAdmin) {
-    // Kontrola či má priradený aspoň jeden tím
     if (userTeams.length === 0) {
       container.innerHTML = `
         <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
@@ -3466,7 +3473,6 @@ function zobrazVideaPouzivatelom(videa) {
       return;
     }
     
-    // Kontrola či má priradenú aspoň jednu sezónu
     if (userSezony.length === 0) {
       container.innerHTML = `
         <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
@@ -3476,7 +3482,6 @@ function zobrazVideaPouzivatelom(videa) {
       return;
     }
     
-    // Kontrola či má priradenú aspoň jednu kategóriu
     if (userKategorie.length === 0) {
       container.innerHTML = `
         <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
@@ -3487,23 +3492,19 @@ function zobrazVideaPouzivatelom(videa) {
     }
   }
   
-  // FILTROVANIE - používame PRIADENÉ hodnoty (všetky tri sú povinné)
+  // FILTROVANIE - používame PRIADENÉ hodnoty
   let zobrazeneVidea = videa.filter(v => {
-    // Videá bez ID sa nezobrazujú (okrem admina)
     if (!jeAdmin && (!v.videoId || v.videoId.trim() === '')) return false;
     
-    // Filter podľa PRIADENÝCH tímov
     if (!jeAdmin && userTeams.length > 0) {
       const maTim = userTeams.some(team => v.domaciTim === team || v.hostiaTim === team);
       if (!maTim) return false;
     }
     
-    // Filter podľa PRIADENÝCH sezón
     if (!jeAdmin && userSezony.length > 0) {
       if (!userSezony.includes(v.sezona)) return false;
     }
     
-    // Filter podľa PRIADENÝCH kategórií
     if (!jeAdmin && userKategorie.length > 0) {
       if (!userKategorie.includes(v.kategoria)) return false;
     }
@@ -3511,7 +3512,7 @@ function zobrazVideaPouzivatelom(videa) {
     return true;
   });
   
-  // ZORAĎOVACIA FUNKCIA podľa dátumu (najnovší prvý)
+  // ZORAĎOVACIA FUNKCIA podľa dátumu
   const sortByDate = (a, b) => {
     const dateA = parseDatumacas(a.datumacas);
     const dateB = parseDatumacas(b.datumacas);
@@ -3553,7 +3554,7 @@ function zobrazVideaPouzivatelom(videa) {
     return;
   }
   
-  // Získanie hodnôt pre filtre z filtrovaných videí
+  // Získanie hodnôt pre filtre
   const kategorie = [...new Set(zobrazeneVidea.map(v => v.kategoria).filter(Boolean))];
   const sezony = [...new Set(zobrazeneVidea.map(v => v.sezona).filter(Boolean))];
   const sutaze = [...new Set(zobrazeneVidea.map(v => v.sutaz).filter(Boolean))];
@@ -3605,11 +3606,18 @@ function zobrazVideaPouzivatelom(videa) {
   
   window.filteredVidea = zobrazeneVidea;
   
-  document.getElementById('filterKategoria').addEventListener('change', aplikujFiltre);
-  document.getElementById('filterSezona').addEventListener('change', aplikujFiltre);
-  document.getElementById('filterSutaz').addEventListener('change', aplikujFiltre);
-  document.getElementById('filterTim').addEventListener('change', aplikujFiltre);
-  document.getElementById('filterMesiac').addEventListener('change', aplikujFiltre);
+  // Pridanie event listenerov pre filtre (ak existujú)
+  const filterKategoria = document.getElementById('filterKategoria');
+  const filterSezona = document.getElementById('filterSezona');
+  const filterSutaz = document.getElementById('filterSutaz');
+  const filterTim = document.getElementById('filterTim');
+  const filterMesiac = document.getElementById('filterMesiac');
+  
+  if (filterKategoria) filterKategoria.addEventListener('change', aplikujFiltre);
+  if (filterSezona) filterSezona.addEventListener('change', aplikujFiltre);
+  if (filterSutaz) filterSutaz.addEventListener('change', aplikujFiltre);
+  if (filterTim) filterTim.addEventListener('change', aplikujFiltre);
+  if (filterMesiac) filterMesiac.addEventListener('change', aplikujFiltre);
 }
 
 window.aplikujFiltre = function() {
