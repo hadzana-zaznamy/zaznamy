@@ -2190,13 +2190,39 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     `;
   }
   
-  // Ak video nemá ID, nebude klikateľné (ani pre admina)
-  const onClickAttr = (video.videoId && video.videoId.trim() !== '') 
-    ? `onclick="otvorVideoModal('${video.id}')"` 
+  // Určenie správnej akcie pri kliknutí na kartu
+  let onClickAction = '';
+  if (sOdstranenim) {
+    // V ADMIN PANELI: Ak video nemá ID -> otvorí sa modal na úpravu
+    // Ak video má ID -> otvorí sa prehrávač
+    if (!video.videoId || video.videoId.trim() === '') {
+      onClickAction = `onclick="otvorModalUpravyVidea('${video.id}')"`;
+    } else {
+      onClickAction = `onclick="otvorVideoModal('${video.id}')"`;
+    }
+  } else {
+    // PRE POUŽÍVATEĽOV: iba ak má ID, inak žiadna akcia
+    if (video.videoId && video.videoId.trim() !== '') {
+      onClickAction = `onclick="otvorVideoModal('${video.id}')"`;
+    }
+  }
+  
+  // Štýl kurzora podľa akcie
+  let cursorStyle = 'cursor:default;';
+  if (sOdstranenim) {
+    // V admin paneli je vždy klikateľné (buď na prehrávanie alebo na úpravu)
+    cursorStyle = 'cursor:pointer;';
+  } else if (video.videoId && video.videoId.trim() !== '') {
+    cursorStyle = 'cursor:pointer;';
+  }
+  
+  // Varovanie pre admina - video bez ID
+  const bezIdIndikator = (sOdstranenim && (!video.videoId || video.videoId.trim() === '')) 
+    ? `<p style="color:#f44336;font-weight:bold;font-size:12px;">⚠️ BEZ ID VIDEA - KLIKNUTIE OTVORÍ ÚPRAVU</p>` 
     : '';
   
   return `
-    <div class="video-card" data-video-id="${video.id}" ${onClickAttr} style="${!video.videoId || video.videoId.trim() === '' ? 'cursor:default;' : ''}">
+    <div class="video-card" data-video-id="${video.id}" ${onClickAction} style="${cursorStyle}">
       <div class="video-thumbnail">
         <img src="${thumbnailUrl}" alt="${video.nazov || 'Video'}" loading="lazy" onerror="this.src='https://placehold.co/640x360/1f2937/white?text=Video'">
         ${video.videoId && video.videoId.trim() !== '' ? `
@@ -2205,9 +2231,14 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
               <path d="M8 5v14l11-7z"/>
             </svg>
           </div>
-        ` : ''}
+        ` : `
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,152,0,0.8);border-radius:50%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;color:white;font-size:28px;font-weight:bold;">
+            ✏️
+          </div>
+        `}
       </div>
       <div class="video-details">
+        ${bezIdIndikator}
         ${detailsHtml}
         ${adminButtonsHtml}
       </div>
