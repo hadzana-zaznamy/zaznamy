@@ -4489,6 +4489,57 @@ function vytvorRegistracnyFormular() {
   teamInput.addEventListener('click', updateTeamSuggestionsForRegistration);
   // --- KONIEC FUNKCIE ---
   
+  // --- FUNKCIA NA KONTROLU PRAVIDIEL HESLA ---
+  function updatePasswordRules(password) {
+    const ruleIds = ['ruleLowercase', 'ruleUppercase', 'ruleDigit', 'ruleLength'];
+    const checks = [
+      /[a-z]/.test(password),
+      /[A-Z]/.test(password),
+      /[0-9]/.test(password),
+      password.length >= 8
+    ];
+    
+    ruleIds.forEach((id, index) => {
+      const ruleDiv = document.getElementById(id);
+      if (ruleDiv) {
+        const iconSpan = ruleDiv.querySelector('span:first-child');
+        if (checks[index]) {
+          ruleDiv.style.color = '#28a745';
+          if (iconSpan) iconSpan.textContent = '✓';
+        } else {
+          ruleDiv.style.color = '#dc3545';
+          if (iconSpan) iconSpan.textContent = '✗';
+        }
+      }
+    });
+  }
+  
+  // --- FUNKCIA NA KONTROLU ZHODY HESIEL ---
+  function checkPasswordMatch() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    // Aktualizácia pravidiel hesla
+    updatePasswordRules(password);
+    
+    if (confirmPassword.length === 0) {
+      passwordMatchMessage.style.display = 'none';
+      return true;
+    }
+    if (password === confirmPassword) {
+      passwordMatchMessage.style.display = 'none';
+      return true;
+    } else {
+      passwordMatchMessage.textContent = '❌ Heslá sa nezhodujú!';
+      passwordMatchMessage.style.display = 'block';
+      return false;
+    }
+  }
+  
+  // Event listenery pre kontrolu hesiel
+  passwordInput.addEventListener('input', checkPasswordMatch);
+  confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+  
   switchLink.querySelector('#switchToLogin').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('registerForm').style.display = 'none';
