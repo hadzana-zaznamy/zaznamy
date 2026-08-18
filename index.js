@@ -3588,6 +3588,12 @@ window.otvorVideoModal = async function(videoId) {
     return;
   }
   
+  // --- SKRYTIE TLAČIDLA "MOJE PREFERENCIE" ---
+  const myPreferencesBtn = document.getElementById('myPreferencesBtn');
+  if (myPreferencesBtn) {
+    myPreferencesBtn.style.display = 'none';
+  }
+  
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.textContent = 'Zatvoriť video';
@@ -5149,6 +5155,19 @@ function closeVideoModal() {
     logoutBtn.textContent = 'Odhlásiť sa';
     logoutBtn.style.backgroundColor = '#f44336';
     logoutBtn.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
+  }
+  
+  // --- ZNOVU ZOBRAZENIE TLAČIDLA "MOJE PREFERENCIE" (ak je používateľ user a nie admin) ---
+  const myPreferencesBtn = document.getElementById('myPreferencesBtn');
+  if (myPreferencesBtn) {
+    const jeSchvaleny = window.app.maPristup();
+    const jeAdmin = window.app.jeAdmin();
+    // Zobrazíme tlačidlo len pre userov (nie adminov) a schválených
+    if (jeSchvaleny && !jeAdmin) {
+      myPreferencesBtn.style.display = 'block';
+    } else {
+      myPreferencesBtn.style.display = 'none';
+    }
   }
 }
 
