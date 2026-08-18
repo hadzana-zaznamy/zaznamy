@@ -2392,10 +2392,25 @@ function extrahujVideoId(url) {
   return null;
 }
 
+// Nahraďte existujúcu funkciu vytvorVideoKartu touto verziou
 function vytvorVideoKartu(video, sOdstranenim = false) {
   const thumbnailUrl = video.videoId && video.videoId.trim() !== '' 
     ? `https://smf-hk-zilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`
     : 'https://placehold.co/640x360/1f2937/white?text=Bez+ID+videa';
+  
+  // Formátovanie dátumu a času
+  let dateTimeHtml = '';
+  if (video.datumacas) {
+    const parsedDate = parseDatumacas(video.datumacas);
+    if (parsedDate) {
+      const den = parsedDate.getDate();
+      const mesiac = parsedDate.getMonth() + 1;
+      const rok = parsedDate.getFullYear();
+      const hodiny = String(parsedDate.getHours()).padStart(2, '0');
+      const minuty = String(parsedDate.getMinutes()).padStart(2, '0');
+      dateTimeHtml = `<p><strong>📅 Dátum a čas:</strong> ${den}. ${mesiac}. ${rok} ${hodiny}:${minuty}</p>`;
+    }
+  }
   
   let detailsHtml = '';
   if (video.kategoria) {
@@ -2413,6 +2428,10 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
   }
   if (video.hostiaTim) {
     detailsHtml += `<p><strong>Hostia:</strong> ${video.hostiaTim || '?'}</p>`;
+  }
+  // Pridanie dátumu a času do detailov
+  if (dateTimeHtml) {
+    detailsHtml += dateTimeHtml;
   }
   
   let adminButtonsHtml = '';
@@ -2435,7 +2454,7 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     `;
   }
   
-  // Overlay s tlačidlom prehratia (rovnaké ako v druhom súbore)
+  // Overlay s tlačidlom prehratia
   const overlayHtml = video.videoId && video.videoId.trim() !== '' ? `
     <div class="video-overlay">
       <div class="play-button">
