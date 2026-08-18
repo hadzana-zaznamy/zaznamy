@@ -1945,7 +1945,7 @@ function resetFormulare() {
   }
 }
 
-// Upravená funkcia zobrazPouzivatelov - preferencie v samostatných stĺpcoch + červené podfarbenie LEN pri ODSTRÁNENÝCH preferenciách
+// Upravená funkcia zobrazPouzivatelov - preferencie v samostatných stĺpcoch + červené podfarbenie pri AKOMKOĽVEK nesúlade
 function zobrazPouzivatelov(pouzivatelia) {
   const container = document.getElementById('usersList');
   if (!container) return;
@@ -1955,7 +1955,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     return;
   }
   
-  // Upravená funkcia na zistenie nezhody - LEN odstránené preferencie
+  // Upravená funkcia na zistenie nezhody - AKÝKOĽVEK nesúlad
   function maNezhoduLocal(user) {
     if (user.role === 'admin') return false;
     
@@ -2025,14 +2025,23 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // KĽÚČOVÁ ZMENA: Kontrolujeme LEN priradené hodnoty, ktoré NIE SÚ preferované
-    // (používateľ si ich odstránil z preferencií)
+    const maAkejkolvekPreferencie = preferovaneTimy.length > 0 || preferovaneSezony.length > 0 || preferovaneKategorie.length > 0;
+    const maAkejkolvekPriradenia = priradeneTimy.length > 0 || priradeneSezony.length > 0 || priradeneKategorie.length > 0;
+    
+    if (!maAkejkolvekPreferencie && !maAkejkolvekPriradenia) return false;
+    
+    // KĽÚČOVÁ ZMENA: Akýkoľvek nesúlad medzi preferenciami a priradeniami
     const maOdstranenuPreferenciu = 
       priradeneTimy.some(tim => !preferovaneTimy.includes(tim)) ||
       priradeneSezony.some(sezona => !preferovaneSezony.includes(sezona)) ||
       priradeneKategorie.some(kategoria => !preferovaneKategorie.includes(kategoria));
     
-    return maOdstranenuPreferenciu;
+    const maPridanuPreferenciu = 
+      preferovaneTimy.some(tim => !priradeneTimy.includes(tim)) ||
+      preferovaneSezony.some(sezona => !priradeneSezony.includes(sezona)) ||
+      preferovaneKategorie.some(kategoria => !priradeneKategorie.includes(kategoria));
+    
+    return maOdstranenuPreferenciu || maPridanuPreferenciu;
   }
   
   // ZORAĎOVANIE
@@ -2082,12 +2091,12 @@ function zobrazPouzivatelov(pouzivatelia) {
     const maNezhoduFlag = maNezhoduLocal(user);
     const cakaNaSchvalenie = !jeSchvaleny && !jeAdmin;
     
-    // --- ZVÝRAZNENIE RIADKU - ČERVENÉ PODFARBENIE LEN PRE POUŽÍVATEĽOV S ODSTRÁNENÝMI PREFERENCIAMI ---
+    // --- ZVÝRAZNENIE RIADKU - ČERVENÉ PODFARBENIE PRI AKOMKOĽVEK NESÚLADE ---
     let rowStyle = '';
     if (cakaNaSchvalenie) {
       rowStyle = 'background-color:#fff8e1;border-left:4px solid #ffc107;';
     } 
-    // KĽÚČOVÁ ZMENA: Iba používatelia s ODSTRÁNENOU preferenciou dostanú červené podfarbenie
+    // KĽÚČOVÁ ZMENA: Akýkoľvek nesúlad = červené podfarbenie
     else if (maNezhoduFlag) {
       rowStyle = 'background-color:#ffebee;border-left:4px solid #f44336;';
     }
