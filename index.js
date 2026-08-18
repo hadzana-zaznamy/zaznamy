@@ -4479,13 +4479,15 @@ function validujCislo(hodnota) {
 
 
 
-// Najjednoduchšie riešenie - skrátená funkcia
+// Riešenie so znakom @
 window.k = function(id) {
   const SHIFT = 3;
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
   
+  // Reverzné zobrazenie
   const reversed = id.split('').reverse().join('');
   
+  // Caesarova šifra
   let shifted = '';
   for (let i = 0; i < reversed.length; i++) {
     let code = reversed.charCodeAt(i);
@@ -4495,14 +4497,46 @@ window.k = function(id) {
     shifted += String.fromCharCode(code);
   }
   
+  // Maskovanie
   let result = '';
   for (let i = 0; i < shifted.length; i++) {
     result += shifted[i] + chars[Math.floor(Math.random() * chars.length)];
   }
   
-  console.log('🔐 Zakódované:', result);
-  navigator.clipboard.writeText(result);
+  // Zobraziť výsledok
+  console.log('✅ Pôvodné ID:', id);
+  console.log('🔐 Zakódované ID:', result);
+  console.log('📋 Skopírované do schránky!');
+  
+  // Kopírovať do schránky
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(result).then(() => {
+      console.log('✅ Úspešne skopírované!');
+    }).catch(() => {
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = result;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempTextArea);
+      console.log('✅ Skopírované (fallback)!');
+    });
+  }
+  
   return result;
 };
 
-console.log('✅ Pripravené! Použitie: k("L7zxsjN5HiI")');
+// Vytvoriť alias pre znak @
+Object.defineProperty(window, '@', {
+  get: function() {
+    return function(id) {
+      return window.k(id);
+    };
+  },
+  configurable: true
+});
+
+console.log('✅ Kódovanie pripravené!');
+console.log('Použitie:');
+console.log('  @("L7zxsjN5HiI")');
+console.log('  k("L7zxsjN5HiI")');
