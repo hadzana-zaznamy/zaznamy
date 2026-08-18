@@ -2311,7 +2311,7 @@ function zobrazVideaPouzivatelom(videa) {
           <button class="reset-button" onclick="resetFiltre()">Vymazať filtre</button>
         </div>
       </div>
-      <p style="text-align:center;color:#999;padding:40px;">${aktualnyUserTeam ? `Žiadne videá pre tím: ${aktualnyUserTeam}` : 'Žiadne videá nie sú dostupné'}</p>
+      <p style="text-align:center;color:#999;padding:40px;">${aktualnyUserTeam ? 'Žiadne videá nie sú dostupné' : 'Žiadne videá nie sú dostupné'}</p>
     `;
     return;
   }
