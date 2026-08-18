@@ -2152,9 +2152,6 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     ? `https://smf-hk-zilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`
     : 'https://placehold.co/640x360/1f2937/white?text=Bez+ID+videa';
   
-  // Pre admina sOdstranenim = true, zobrazíme aj bez ID
-  // Pre používateľa sOdstranenim = false, videá bez ID sú už odfiltrované
-  
   let detailsHtml = '';
   if (video.kategoria) {
     const kategoriaDisplay = categoryMap[video.kategoria] || video.kategoria;
@@ -2173,9 +2170,9 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     detailsHtml += `<p><strong>Hostia:</strong> ${video.hostiaTim || '?'}</p>`;
   }
   
-  // Ak video nemá ID, pridáme indikátor pre admina
-  const bezIdIndikator = (!video.videoId || video.videoId.trim() === '') 
-    ? `<p style="color:#f44336;font-weight:bold;font-size:12px;">⚠️ BEZ ID VIDEA</p>` 
+  // Ak video nemá ID, pridáme indikátor LEN pre admina (sOdstranenim = true)
+  const bezIdIndikator = (sOdstranenim && (!video.videoId || video.videoId.trim() === '')) 
+    ? `<p style="color:#f44336;font-weight:bold;font-size:12px;">⚠️ BEZ ID VIDEA - NEBUDE VIDITEĽNÉ PRE POUŽÍVATEĽOV</p>` 
     : '';
   
   let adminButtonsHtml = '';
@@ -2198,18 +2195,13 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     `;
   }
   
-  // Ak video nemá ID, nebude klikateľné pre používateľov
+  // Ak video nemá ID, nebude klikateľné (ani pre admina)
   const onClickAttr = (video.videoId && video.videoId.trim() !== '') 
     ? `onclick="otvorVideoModal('${video.id}')"` 
     : '';
   
-  // Pre admina, aj bez ID necháme klikateľné (ale len ak má aspoň nejaké ID)
-  const finalOnClick = sOdstranenim 
-    ? (video.videoId && video.videoId.trim() !== '' ? `onclick="otvorVideoModal('${video.id}')"` : '')
-    : onClickAttr;
-  
   return `
-    <div class="video-card" data-video-id="${video.id}" ${finalOnClick} style="${!video.videoId || video.videoId.trim() === '' ? 'cursor:default;' : ''}">
+    <div class="video-card" data-video-id="${video.id}" ${onClickAttr} style="${!video.videoId || video.videoId.trim() === '' ? 'cursor:default;' : ''}">
       <div class="video-thumbnail">
         <img src="${thumbnailUrl}" alt="${video.nazov || 'Video'}" loading="lazy" onerror="this.src='https://placehold.co/640x360/1f2937/white?text=Video'">
         ${video.videoId && video.videoId.trim() !== '' ? `
@@ -2246,18 +2238,14 @@ function zobrazVideaPouzivatelom(videa) {
     return;
   }
   
-  // Najprv filter podľa tímu (ak nie je admin)
-  let zobrazeneVidea = videa;
+  // FILTROVANIE: Odstráň videá BEZ ID (pre používateľov)
+  let zobrazeneVidea = videa.filter(v => v.videoId && v.videoId.trim() !== '');
   
   if (!jeAdmin && aktualnyUserTeam) {
     zobrazeneVidea = zobrazeneVidea.filter(v => 
       v.domaciTim === aktualnyUserTeam || v.hostiaTim === aktualnyUserTeam
     );
   }
-  
-  // ROZDELENIE: videá s ID a bez ID
-  const videaSId = zobrazeneVidea.filter(v => v.videoId && v.videoId.trim() !== '');
-  const videaBezId = zobrazeneVidea.filter(v => !v.videoId || v.videoId.trim() === '');
   
   // ZORAĎOVACIA FUNKCIA podľa dátumu (najnovší prvý)
   const sortByDate = (a, b) => {
@@ -2275,12 +2263,7 @@ function zobrazVideaPouzivatelom(videa) {
     return createdB - createdA;
   };
   
-  // Zoraď obe skupiny
-  const zoradeneSId = videaSId.sort(sortByDate);
-  const zoradeneBezId = videaBezId.sort(sortByDate);
-  
-  // SPOJENIE: najprv videá BEZ ID, potom s ID
-  zobrazeneVidea = [...zoradeneBezId, ...zoradeneSId];
+  zobrazeneVidea = zobrazeneVidea.sort(sortByDate);
   
   if (!zobrazeneVidea || zobrazeneVidea.length === 0) {
     container.innerHTML = `
@@ -2367,8 +2350,11 @@ window.aplikujFiltre = function() {
   const tim = document.getElementById('filterTim')?.value || '';
   const mesiac = document.getElementById('filterMesiac')?.value || '';
   
-  // Najprv aplikuj filtre
+  // Najprv odfiltruj videá BEZ ID a aplikuj filtre
   let filtered = videa.filter(v => {
+    // Najprv filter na ID - videá bez ID sa nezobrazia
+    if (!v.videoId || v.videoId.trim() === '') return false;
+    
     if (kategoria && v.kategoria !== kategoria) return false;
     if (sezona && v.sezona !== sezona) return false;
     if (sutaz && v.sutaz !== sutaz) return false;
@@ -2376,10 +2362,6 @@ window.aplikujFiltre = function() {
     if (mesiac && v.mesiac !== mesiac) return false;
     return true;
   });
-  
-  // ROZDELENIE podľa ID
-  const videaSId = filtered.filter(v => v.videoId && v.videoId.trim() !== '');
-  const videaBezId = filtered.filter(v => !v.videoId || v.videoId.trim() === '');
   
   // ZORAĎOVACIA FUNKCIA
   const sortByDate = (a, b) => {
@@ -2397,8 +2379,7 @@ window.aplikujFiltre = function() {
     return createdB - createdA;
   };
   
-  // Zoraď obe skupiny a spoj - najprv BEZ ID, potom S ID
-  filtered = [...videaBezId.sort(sortByDate), ...videaSId.sort(sortByDate)];
+  filtered = filtered.sort(sortByDate);
   
   const container = document.getElementById('videoContainer');
   const noResults = document.getElementById('noResultsMessage');
@@ -2435,7 +2416,7 @@ function nacitajVideaDoAdminPanelu() {
   
   const videa = window.app.vsetkyVidea || [];
   
-  // ROZDELENIE podľa ID
+  // ROZDELENIE podľa ID pre admina
   const videaSId = videa.filter(v => v.videoId && v.videoId.trim() !== '');
   const videaBezId = videa.filter(v => !v.videoId || v.videoId.trim() === '');
   
@@ -2455,7 +2436,7 @@ function nacitajVideaDoAdminPanelu() {
     return createdB - createdA;
   };
   
-  // Zoraď obe skupiny a spoj - najprv BEZ ID, potom S ID
+  // Zoraď obe skupiny a spoj - najprv BEZ ID (aby admin videl, čo treba opraviť), potom S ID
   const zoradeneVidea = [...videaBezId.sort(sortByDate), ...videaSId.sort(sortByDate)];
   
   zobrazVideaAdmin(zoradeneVidea);
@@ -2470,7 +2451,7 @@ function zobrazVideaAdmin(videa) {
     return;
   }
   
-  // ROZDELENIE podľa ID
+  // ROZDELENIE podľa ID pre admina - zobrazí všetky
   const videaSId = videa.filter(v => v.videoId && v.videoId.trim() !== '');
   const videaBezId = videa.filter(v => !v.videoId || v.videoId.trim() === '');
   
@@ -2490,7 +2471,7 @@ function zobrazVideaAdmin(videa) {
     return createdB - createdA;
   };
   
-  // Zoraď obe skupiny a spoj - najprv BEZ ID, potom S ID
+  // Zoraď obe skupiny a spoj - najprv BEZ ID (aby admin videl, čo treba opraviť), potom S ID
   const zoradeneVidea = [...videaBezId.sort(sortByDate), ...videaSId.sort(sortByDate)];
   
   let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">';
