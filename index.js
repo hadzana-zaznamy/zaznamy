@@ -5153,3 +5153,175 @@ window['@'] = function(arg) {
 window.e = window.k;
 
 console.log('k("ID")');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+window.dočasneVlozVideo = async function(videoData) {
+  if (!videoData || typeof videoData !== 'object') {
+    console.error('❌ Chyba: videoData musí byť objekt');
+    console.log('💡 Použitie: dočasneVlozVideo({ videoId: "...", kategoria: "...", sezona: "...", sutaz: "...", tim: "...", HTIM: "...", mesiac: "...", kolo: "...", datumacas: "...", timestamps: {...} })');
+    console.log('📌 Ak zadáte "tim" a "HTIM" → tim = domáci, HTIM = hostia');
+    console.log('📌 Ak zadáte "tim" a "DTIM" → tim = hostia, DTIM = domáci');
+    console.log('📌 Ak zadáte iba "tim" → tim = domáci, hostia = ""');
+    console.log('📌 Ak zadáte "domaciTim" a "hostiaTim" → použijú sa priamo');
+    return;
+  }
+
+  // Spracovanie tímov - logika pre tim, HTIM, DTIM
+  let domaciTim = videoData.domaciTim || '';
+  let hostiaTim = videoData.hostiaTim || '';
+  const tim = videoData.tim || '';
+  const HTIM = videoData.HTIM || '';
+  const DTIM = videoData.DTIM || '';
+
+  // Ak sú zadané priamo domaciTim a hostiaTim, použijeme ich
+  if (videoData.domaciTim && videoData.hostiaTim) {
+    domaciTim = videoData.domaciTim;
+    hostiaTim = videoData.hostiaTim;
+  } 
+  // Inak použijeme logiku s tim, HTIM, DTIM
+  else if (tim) {
+    if (HTIM) {
+      // tim = domáci, HTIM = hostia
+      domaciTim = tim;
+      hostiaTim = HTIM;
+    } else if (DTIM) {
+      // DTIM = domáci, tim = hostia
+      domaciTim = DTIM;
+      hostiaTim = tim;
+    } else {
+      // Iba tim -> domáci
+      domaciTim = tim;
+      hostiaTim = '';
+    }
+  }
+
+  // Kontrola povinných polí
+  const requiredFields = ['kategoria', 'sezona', 'sutaz'];
+  const missingFields = requiredFields.filter(field => !videoData[field] || videoData[field].trim() === '');
+  
+  if (missingFields.length > 0) {
+    console.error(`❌ Chýbajú povinné polia: ${missingFields.join(', ')}`);
+    console.log('💡 Povinné polia: kategoria, sezona, sutaz');
+    return;
+  }
+
+  // Kontrola či je aspoň jeden tím vyplnený
+  if (!domaciTim && !hostiaTim) {
+    console.error('❌ Chyba: Musíte zadať aspoň jeden tím (tim, domaciTim, hostiaTim, HTIM alebo DTIM)');
+    console.log('💡 Príklad: tim: "HC DAC Dunajská Streda" alebo domaciTim: "HC DAC Dunajská Streda"');
+    return;
+  }
+
+  // Kontrola či je používateľ admin
+  if (!window.app || !window.app.jeAdmin()) {
+    console.error('❌ Na vloženie videa musíte byť prihlásený ako admin');
+    return;
+  }
+
+  try {
+    console.log('🔄 Pripravujem vloženie videa...');
+    
+    // Príprava dát
+    const data = {
+      videoId: videoData.videoId || '',
+      kategoria: videoData.kategoria,
+      sezona: videoData.sezona,
+      sutaz: videoData.sutaz,
+      domaciTim: domaciTim,
+      hostiaTim: hostiaTim,
+      mesiac: videoData.mesiac || '',
+      kolo: videoData.kolo || '',
+      datumacas: videoData.datumacas || '',
+      timestamps: videoData.timestamps || {},
+      createdAt: new Date().toISOString(),
+      createdBy: window.app.aktualnyPouzivatel?.uid || '',
+      createdByEmail: window.app.aktualnyPouzivatel?.email || ''
+    };
+
+    // Ak videoId nie je vyplnené, upozorníme ale pokračujeme
+    if (!data.videoId || data.videoId.trim() === '') {
+      console.warn('⚠️ Video ID nie je vyplnené - video nebude prehrávať');
+    }
+
+    console.log('📝 Dáta na vloženie:', data);
+
+    // Vloženie do Firestore
+    const docRef = await addDoc(collection(db, 'matches'), data);
+    
+    console.log('✅ Video bolo úspešne vložené!');
+    console.log(`📄 ID dokumentu: ${docRef.id}`);
+    console.log('🔗 Odkaz na video v aplikácii: https://z-a-z-n-a-m-y.web.app');
+    
+    // Zobrazenie prehľadu vložených dát
+    console.log('📊 Prehľad vložených dát:');
+    console.table({
+      'ID': docRef.id,
+      'Video ID': data.videoId || '(prázdne)',
+      'Kategória': data.kategoria,
+      'Sezóna': data.sezona,
+      'Súťaž': data.sutaz,
+      'Domáci tím': data.domaciTim || '(prázdny)',
+      'Hostia tím': data.hostiaTim || '(prázdny)',
+      'Mesiac': data.mesiac || '(nezadaný)',
+      'Kolo': data.kolo || '(nezadané)',
+      'Dátum a čas': data.datumacas || '(nezadaný)',
+      'Počet timestampov': Object.keys(data.timestamps).length
+    });
+
+    return { success: true, id: docRef.id, data: data };
+
+  } catch (error) {
+    console.error('❌ Chyba pri vkladaní videa:', error.message);
+    console.error('Detail chyby:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Skrátená verzia pre rýchle použitie
+window.v = window.dočasneVlozVideo;
+
+console.log('✅ Dočasná funkcia na vloženie videa je pripravená!');
+console.log('💡 Použitie: dočasneVlozVideo(videoData) alebo v(videoData)');
+console.log('📌 Ak zadáte "tim" a "HTIM" → tim = domáci, HTIM = hostia');
+console.log('📌 Ak zadáte "tim" a "DTIM" → tim = hostia, DTIM = domáci');
+console.log('📌 Ak zadáte iba "tim" → tim = domáci, hostia = ""');
