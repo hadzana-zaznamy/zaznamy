@@ -1143,11 +1143,13 @@ function inicializujAplikaciu() {
           const predoslyApproved = this.aktualnyPouzivatelApproved;
           const predoslaRole = this.aktualnyPouzivatelRole;
           const predoslyTeam = this.aktualnyPouzivatelTeam;
-
+          const predoslaSezona = this.aktualnyPouzivatelSezona;
+          const predoslaKategoria = this.aktualnyPouzivatelKategoria;
+    
           this.aktualnyPouzivatelApproved = userData.approved || false;
           this.aktualnyPouzivatelRole = userData.role || 'user';
       
-          // Načítanie tímov - môže byť pole alebo reťazec
+          // Načítanie PRIADENÝCH tímov - môže byť pole alebo reťazec
           let teamData = userData.teamName || '';
           if (Array.isArray(teamData)) {
             this.aktualnyPouzivatelTeam = teamData;
@@ -1158,19 +1160,46 @@ function inicializujAplikaciu() {
           } else {
             this.aktualnyPouzivatelTeam = [];
           }
-  
-          if (JSON.stringify(predoslyTeam) !== JSON.stringify(this.aktualnyPouzivatelTeam)) {            
+      
+          // Načítanie PRIADENÝCH sezón
+          let sezonaData = userData.assignedSezona || userData.sezonaPreference || '';
+          if (Array.isArray(sezonaData)) {
+            this.aktualnyPouzivatelSezona = sezonaData;
+          } else if (typeof sezonaData === 'string' && sezonaData.includes(',')) {
+            this.aktualnyPouzivatelSezona = sezonaData.split(',').map(t => t.trim()).filter(t => t);
+          } else if (typeof sezonaData === 'string' && sezonaData) {
+            this.aktualnyPouzivatelSezona = [sezonaData];
+          } else {
+            this.aktualnyPouzivatelSezona = [];
+          }
+      
+          // Načítanie PRIADENÝCH kategórií
+          let kategoriaData = userData.assignedKategoria || userData.kategoriaPreference || '';
+          if (Array.isArray(kategoriaData)) {
+            this.aktualnyPouzivatelKategoria = kategoriaData;
+          } else if (typeof kategoriaData === 'string' && kategoriaData.includes(',')) {
+            this.aktualnyPouzivatelKategoria = kategoriaData.split(',').map(t => t.trim()).filter(t => t);
+          } else if (typeof kategoriaData === 'string' && kategoriaData) {
+            this.aktualnyPouzivatelKategoria = [kategoriaData];
+          } else {
+            this.aktualnyPouzivatelKategoria = [];
+          }
+
+          // Ak sa zmenili priradené hodnoty, prekreslíme videá
+          if (JSON.stringify(predoslyTeam) !== JSON.stringify(this.aktualnyPouzivatelTeam) ||
+              JSON.stringify(predoslaSezona) !== JSON.stringify(this.aktualnyPouzivatelSezona) ||
+              JSON.stringify(predoslaKategoria) !== JSON.stringify(this.aktualnyPouzivatelKategoria)) {
             if (this.vsetkyVidea && this.vsetkyVidea.length > 0) {
               zobrazVideaPouzivatelom(this.vsetkyVidea);
             }
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
           }
-  
+
           if (predoslyApproved !== this.aktualnyPouzivatelApproved || 
               predoslaRole !== this.aktualnyPouzivatelRole) {
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
           }
-        } else {          
+        } else {
           showAlert(
             'Váš účet bol odstránený administrátorom. Budete odhlásený.',
             'Účet odstránený',
@@ -1185,6 +1214,8 @@ function inicializujAplikaciu() {
               this.aktualnyPouzivatelRole = null;
               this.aktualnyPouzivatelApproved = null;
               this.aktualnyPouzivatelTeam = [];
+              this.aktualnyPouzivatelSezona = [];
+              this.aktualnyPouzivatelKategoria = [];
               prerenderujPodlaStavu(null);
             }).catch((error) => {
             });
@@ -1689,16 +1720,49 @@ function inicializujAplikaciu() {
         appObj.unsubscribeUser();
         appObj.unsubscribeUser = null;
       }
-      
+    
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           appObj.aktualnyPouzivatelRole = userData.role || 'user';
           appObj.aktualnyPouzivatelApproved = userData.approved || false;
-          appObj.aktualnyPouzivatelTeam = userData.teamName || '';
-          appObj.aktualnyPouzivatelSezona = userData.sezonaPreference || '';
-          appObj.aktualnyPouzivatelKategoria = userData.kategoriaPreference || '';
+        
+          // Načítanie PRIADENÝCH tímov
+          let teamData = userData.teamName || '';
+          if (Array.isArray(teamData)) {
+            appObj.aktualnyPouzivatelTeam = teamData;
+          } else if (typeof teamData === 'string' && teamData.includes(',')) {
+            appObj.aktualnyPouzivatelTeam = teamData.split(',').map(t => t.trim()).filter(t => t);
+          } else if (typeof teamData === 'string' && teamData) {
+            appObj.aktualnyPouzivatelTeam = [teamData];
+          } else {
+            appObj.aktualnyPouzivatelTeam = [];
+          }
+        
+          // Načítanie PRIADENÝCH sezón
+          let sezonaData = userData.assignedSezona || userData.sezonaPreference || '';
+          if (Array.isArray(sezonaData)) {
+            appObj.aktualnyPouzivatelSezona = sezonaData;
+          } else if (typeof sezonaData === 'string' && sezonaData.includes(',')) {
+            appObj.aktualnyPouzivatelSezona = sezonaData.split(',').map(t => t.trim()).filter(t => t);
+          } else if (typeof sezonaData === 'string' && sezonaData) {
+            appObj.aktualnyPouzivatelSezona = [sezonaData];
+          } else {
+            appObj.aktualnyPouzivatelSezona = [];
+          }
+        
+          // Načítanie PRIADENÝCH kategórií
+          let kategoriaData = userData.assignedKategoria || userData.kategoriaPreference || '';
+          if (Array.isArray(kategoriaData)) {
+            appObj.aktualnyPouzivatelKategoria = kategoriaData;
+          } else if (typeof kategoriaData === 'string' && kategoriaData.includes(',')) {
+            appObj.aktualnyPouzivatelKategoria = kategoriaData.split(',').map(t => t.trim()).filter(t => t);
+          } else if (typeof kategoriaData === 'string' && kategoriaData) {
+            appObj.aktualnyPouzivatelKategoria = [kategoriaData];
+          } else {
+            appObj.aktualnyPouzivatelKategoria = [];
+          }
         } else {
           appObj.aktualnyPouzivatelRole = 'user';
           appObj.aktualnyPouzivatelApproved = false;
@@ -1706,12 +1770,12 @@ function inicializujAplikaciu() {
         
         appObj.spustiRealTimeListenerPrePouzivatela(user.uid);
         appObj.spustiRealTimeListenerPreVidea();
-        
+      
       } catch (error) {
         appObj.aktualnyPouzivatelRole = 'user';
         appObj.aktualnyPouzivatelApproved = false;
       }
-      
+    
       prerenderujPodlaStavu(user);
     } else {
       if (appObj.unsubscribeUser) {
@@ -2876,23 +2940,23 @@ function zobrazVideaPouzivatelom(videa) {
     return;
   }
   
-  // FILTROVANIE - používame priradené hodnoty
+  // FILTROVANIE - používame PRIADENÉ hodnoty
   let zobrazeneVidea = videa.filter(v => {
     // Videá bez ID sa nezobrazujú (okrem admina)
     if (!jeAdmin && (!v.videoId || v.videoId.trim() === '')) return false;
     
-    // Filter podľa priradených tímov
+    // Filter podľa PRIADENÝCH tímov
     if (!jeAdmin && userTeams.length > 0) {
       const maTim = userTeams.some(team => v.domaciTim === team || v.hostiaTim === team);
       if (!maTim) return false;
     }
     
-    // Filter podľa priradených sezón
+    // Filter podľa PRIADENÝCH sezón
     if (!jeAdmin && userSezony.length > 0) {
       if (!userSezony.includes(v.sezona)) return false;
     }
     
-    // Filter podľa priradených kategórií
+    // Filter podľa PRIADENÝCH kategórií
     if (!jeAdmin && userKategorie.length > 0) {
       if (!userKategorie.includes(v.kategoria)) return false;
     }
