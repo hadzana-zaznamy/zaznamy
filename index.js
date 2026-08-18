@@ -1126,7 +1126,7 @@ function inicializujAplikaciu() {
       if (this.unsubscribeUser) {
         this.unsubscribeUser();
       }
-  
+
       const userRef = doc(db, 'users', userId);
       this.unsubscribeUser = onSnapshot(userRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
@@ -1134,18 +1134,29 @@ function inicializujAplikaciu() {
           const predoslyApproved = this.aktualnyPouzivatelApproved;
           const predoslaRole = this.aktualnyPouzivatelRole;
           const predoslyTeam = this.aktualnyPouzivatelTeam;
-  
+
           this.aktualnyPouzivatelApproved = userData.approved || false;
           this.aktualnyPouzivatelRole = userData.role || 'user';
-          this.aktualnyPouzivatelTeam = userData.teamName || '';
-      
-          if (predoslyTeam !== this.aktualnyPouzivatelTeam) {            
+          
+          // Načítanie tímov - môže byť pole alebo reťazec
+          let teamData = userData.teamName || '';
+          if (Array.isArray(teamData)) {
+            this.aktualnyPouzivatelTeam = teamData;
+          } else if (typeof teamData === 'string' && teamData.includes(',')) {
+            this.aktualnyPouzivatelTeam = teamData.split(',').map(t => t.trim()).filter(t => t);
+          } else if (typeof teamData === 'string' && teamData) {
+            this.aktualnyPouzivatelTeam = [teamData];
+          } else {
+            this.aktualnyPouzivatelTeam = [];
+          }
+  
+          if (JSON.stringify(predoslyTeam) !== JSON.stringify(this.aktualnyPouzivatelTeam)) {            
             if (this.vsetkyVidea && this.vsetkyVidea.length > 0) {
               zobrazVideaPouzivatelom(this.vsetkyVidea);
             }
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
           }
-      
+  
           if (predoslyApproved !== this.aktualnyPouzivatelApproved || 
               predoslaRole !== this.aktualnyPouzivatelRole) {
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
@@ -1164,7 +1175,7 @@ function inicializujAplikaciu() {
               this.aktualnyPouzivatel = null;
               this.aktualnyPouzivatelRole = null;
               this.aktualnyPouzivatelApproved = null;
-              this.aktualnyPouzivatelTeam = '';
+              this.aktualnyPouzivatelTeam = [];
               prerenderujPodlaStavu(null);
             }).catch((error) => {
             });
@@ -1850,7 +1861,7 @@ function zobrazPouzivatelov(pouzivatelia) {
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Email</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Rola</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Preferovaný tím</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Priradený tím</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Priradené tímy</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Stav</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Registrovaný</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Akcia</th>
@@ -1865,6 +1876,17 @@ function zobrazPouzivatelov(pouzivatelia) {
     const jeSchvaleny = user.approved === true;
     const teamName = user.teamName || '';
     const teamPreference = user.teamPreference || '';
+    // Podpora pre viacero tímov - ak je to string, rozdelíme na pole
+    let priradeneTimy = [];
+    if (user.teamName) {
+      if (Array.isArray(user.teamName)) {
+        priradeneTimy = user.teamName;
+      } else if (typeof user.teamName === 'string' && user.teamName.includes(',')) {
+        priradeneTimy = user.teamName.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.teamName === 'string' && user.teamName) {
+        priradeneTimy = [user.teamName];
+      }
+    }
     
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}">
@@ -1879,11 +1901,13 @@ function zobrazPouzivatelov(pouzivatelia) {
         </td>
         <td style="padding:12px;">
           ${!jeAdmin ? `
-            <select onchange="zmenTimPouzivatela('${user.id}', this.value)" 
-                    style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;background-color:white;cursor:pointer;">
-              <option value="">Žiadny tím</option>
-              ${vsetkyTimy.map(t => `<option value="${t}" ${teamName === t ? 'selected' : ''}>${t}</option>`).join('')}
-            </select>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+              ${priradeneTimy.length > 0 ? priradeneTimy.map(t => `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;">${t}</span>`).join('') : '<span style="font-size:12px;color:#999;">Žiadny</span>'}
+              <button onclick="otvorModalPriradeniaTimov('${user.id}')" 
+                      style="padding:2px 8px;font-size:11px;border:none;border-radius:4px;background-color:#2196F3;color:white;cursor:pointer;margin-left:4px;">
+                ✏️
+              </button>
+            </div>
           ` : '<span style="font-size:12px;color:#999;">Všetky tímy</span>'}
         </td>
         <td style="padding:12px;">
@@ -1938,6 +1962,211 @@ function getVsetkyTimy() {
   
   return [...timy].sort();
 }
+
+window.otvorModalPriradeniaTimov = async function(userId) {
+  const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+  if (!user) {
+    await showAlert('Používateľ sa nenašiel', 'Chyba', '❌');
+    return;
+  }
+  
+  // Získanie aktuálnych priradených tímov
+  let aktualneTimy = [];
+  if (user.teamName) {
+    if (Array.isArray(user.teamName)) {
+      aktualneTimy = user.teamName;
+    } else if (typeof user.teamName === 'string' && user.teamName.includes(',')) {
+      aktualneTimy = user.teamName.split(',').map(t => t.trim()).filter(t => t);
+    } else if (typeof user.teamName === 'string' && user.teamName) {
+      aktualneTimy = [user.teamName];
+    }
+  }
+  
+  const vsetkyTimy = getVsetkyTimy();
+  
+  // Vytvorenie modálneho okna
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay active';
+  modal.id = 'modalPriradenieTimov';
+  
+  const modalBox = document.createElement('div');
+  modalBox.className = 'modal-box';
+  modalBox.style.maxWidth = '500px';
+  modalBox.style.maxHeight = '80vh';
+  modalBox.style.overflow = 'auto';
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'modal-close';
+  closeBtn.innerHTML = '×';
+  closeBtn.onclick = () => {
+    modal.remove();
+  };
+  modalBox.appendChild(closeBtn);
+  
+  const icon = document.createElement('div');
+  icon.className = 'modal-icon';
+  icon.textContent = '🏐';
+  modalBox.appendChild(icon);
+  
+  const title = document.createElement('h3');
+  title.textContent = `Priradiť tímy pre: ${user.email}`;
+  title.style.marginBottom = '10px';
+  modalBox.appendChild(title);
+  
+  const infoText = document.createElement('p');
+  infoText.textContent = 'Vyberte tímy, ktoré chcete priradiť používateľovi. Videá z týchto tímov sa mu budú zobrazovať.';
+  infoText.style.fontSize = '14px';
+  infoText.style.color = '#666';
+  infoText.style.marginBottom = '20px';
+  modalBox.appendChild(infoText);
+  
+  const container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.gap = '8px';
+  container.style.marginBottom = '20px';
+  container.style.maxHeight = '300px';
+  container.style.overflow = 'auto';
+  container.style.padding = '5px';
+  
+  // Zoznam všetkých tímov s checkboxmi
+  if (vsetkyTimy.length === 0) {
+    const emptyMsg = document.createElement('p');
+    emptyMsg.textContent = 'Žiadne tímy nie sú dostupné. Najprv pridajte videá s tímami.';
+    emptyMsg.style.color = '#999';
+    emptyMsg.style.textAlign = 'center';
+    emptyMsg.style.padding = '20px';
+    container.appendChild(emptyMsg);
+  } else {
+    vsetkyTimy.forEach(tim => {
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.gap = '10px';
+      label.style.padding = '8px 12px';
+      label.style.borderRadius = '6px';
+      label.style.cursor = 'pointer';
+      label.style.transition = 'background-color 0.2s';
+      label.style.border = '1px solid #eee';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = tim;
+      checkbox.checked = aktualneTimy.includes(tim);
+      checkbox.style.width = '18px';
+      checkbox.style.height = '18px';
+      checkbox.style.cursor = 'pointer';
+      
+      const span = document.createElement('span');
+      span.textContent = tim;
+      span.style.fontSize = '14px';
+      
+      label.appendChild(checkbox);
+      label.appendChild(span);
+      
+      label.addEventListener('mouseenter', () => {
+        label.style.backgroundColor = '#f5f5f5';
+      });
+      label.addEventListener('mouseleave', () => {
+        label.style.backgroundColor = 'transparent';
+      });
+      
+      container.appendChild(label);
+    });
+  }
+  
+  modalBox.appendChild(container);
+  
+  const buttonsDiv = document.createElement('div');
+  buttonsDiv.className = 'modal-buttons';
+  
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-confirm';
+  saveBtn.textContent = '💾 Uložiť zmeny';
+  saveBtn.style.padding = '10px 30px';
+  saveBtn.style.fontSize = '15px';
+  saveBtn.onclick = async () => {
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+    const vybraneTimy = [];
+    checkboxes.forEach(cb => {
+      if (cb.checked) {
+        vybraneTimy.push(cb.value);
+      }
+    });
+    
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Ukladám...';
+    saveBtn.style.opacity = '0.7';
+    
+    try {
+      const userRef = doc(db, 'users', userId);
+      // Uložíme ako pole (Firestore to podporuje)
+      await updateDoc(userRef, {
+        teamName: vybraneTimy,
+        teamUpdatedAt: new Date().toISOString(),
+        teamUpdatedBy: window.app.aktualnyPouzivatel?.uid || ''
+      });
+      
+      // Aktualizácia lokálnych dát
+      const updatedUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+      if (updatedUser) {
+        updatedUser.teamName = vybraneTimy;
+      }
+      
+      // Ak sa mení tím prihláseného používateľa
+      if (userId === window.app.aktualnyPouzivatel?.uid) {
+        window.app.aktualnyPouzivatelTeam = vybraneTimy;
+        if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
+          zobrazVideaPouzivatelom(window.app.vsetkyVidea);
+        }
+      }
+      
+      await showAlert(
+        `✅ Používateľovi <strong>${user.email}</strong> boli úspešne priradené tímy:<br><br>${vybraneTimy.length > 0 ? vybraneTimy.map(t => `🏐 ${t}`).join('<br>') : 'Žiadne tímy'}`,
+        'Úspech',
+        '✅'
+      );
+      
+      modal.remove();
+      // Obnovenie zobrazenia používateľov
+      if (window.app.vsetciPouzivatelia.length > 0) {
+        zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+      }
+    } catch (error) {
+      await showAlert(
+        `❌ Chyba pri priraďovaní tímov: ${error.message}`,
+        'Chyba',
+        '❌'
+      );
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Uložiť zmeny';
+      saveBtn.style.opacity = '1';
+    }
+  };
+  buttonsDiv.appendChild(saveBtn);
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn-cancel';
+  cancelBtn.textContent = 'Zrušiť';
+  cancelBtn.style.padding = '10px 30px';
+  cancelBtn.style.fontSize = '15px';
+  cancelBtn.onclick = () => {
+    modal.remove();
+  };
+  buttonsDiv.appendChild(cancelBtn);
+  
+  modalBox.appendChild(buttonsDiv);
+  modal.appendChild(modalBox);
+  document.body.appendChild(modal);
+  
+  // Zatvorenie kliknutím mimo modálu
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+};
 
 window.zmenTimPouzivatela = async function(userId, teamName) {
   // Nájdenie používateľa pre zobrazenie emailu a tímu
