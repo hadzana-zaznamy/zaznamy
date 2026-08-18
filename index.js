@@ -1987,7 +1987,6 @@ window.schvalPouzivatela = async function(userId) {
           user.email,
           user.firstName || '',
           user.lastName || '',
-          adminName
         );
       }
       
