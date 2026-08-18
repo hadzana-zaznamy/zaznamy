@@ -2020,10 +2020,10 @@ function extrahujVideoId(url) {
   return null;
 }
 
-// Vytvorenie HTML pre video kartu
+// Opravená funkcia pre thumbnail - tiež potrebuje dekódovanie
 function vytvorVideoKartu(video, sOdstranenim = false) {
-  const embedUrl = `${YOUTUBE_EMBED_URL}${video.videoId}`;
-  const thumbnailUrl = `https://smf-hk-zilina.smfhkzilina.workers.dev/?id=${video.videoId}`;
+  // Pre thumbnail použijeme tiež worker na dekódovanie
+  const thumbnailUrl = `https://smfhkzilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`;
   
   // Zostavenie detailov videa
   let detailsHtml = '';
@@ -2241,7 +2241,7 @@ function zobrazVideaAdmin(videa) {
   container.innerHTML = html;
 }
 
-// Opravená funkcia otvorVideoModal
+// Opravená funkcia otvorVideoModal s dekódovaním cez worker
 window.otvorVideoModal = async function(videoId) {
   console.log('otvorVideoModal volaný s ID:', videoId);
   
@@ -2299,6 +2299,31 @@ window.otvorVideoModal = async function(videoId) {
   const modalErrorDiv = document.getElementById('modalError');
   if (modalErrorDiv) modalErrorDiv.style.display = 'none';
   
+  // DEKÓDOVANIE VIDEO ID pomocou workera
+  let decodedVideoId = video.videoId;
+  
+  try {
+    console.log('Dekódujem video ID:', video.videoId);
+    
+    // Zavolať worker na dekódovanie
+    const workerUrl = `https://smfhkzilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`;
+    const response = await fetch(workerUrl);
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.videoId) {
+        decodedVideoId = data.videoId;
+        console.log('Dekódované video ID:', decodedVideoId);
+      } else {
+        console.warn('Worker nevrátil videoId, používam pôvodné ID');
+      }
+    } else {
+      console.warn('Worker vrátil chybu:', response.status, 'používam pôvodné ID');
+    }
+  } catch (error) {
+    console.warn('Chyba pri dekódovaní, používam pôvodné ID:', error);
+  }
+  
   // Skontrolovať či je YT API dostupné
   if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
     // Počkáme na načítanie YT API
@@ -2338,10 +2363,12 @@ window.otvorVideoModal = async function(videoId) {
     return;
   }
   
-  // Vytvoriť prehrávač
+  // Vytvoriť prehrávač s dekódovaným ID
   try {
+    console.log('Vytváram prehrávač s ID:', decodedVideoId);
+    
     window.youtubePlayer = new YT.Player('youtubePlayer', {
-      videoId: video.videoId,
+      videoId: decodedVideoId,
       playerVars: { 
         autoplay: 1, 
         controls: 0, 
