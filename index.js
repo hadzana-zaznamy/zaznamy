@@ -2132,7 +2132,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       }
       
       await showAlert(
-        `✅ Používateľovi <strong>${user.email}</strong> boli úspešne priradené tímy:<br><br>${vybraneTimy.length > 0 ? vybraneTimy.map(t => `🏐 ${t}`).join('<br>') : 'Žiadne tímy'}`,
+        `✅ Používateľovi <strong>${user.email}</strong> boli priradené tímy:<br><br>${vybraneTimy.length > 0 ? vybraneTimy.map(t => `🏐 ${t}`).join('<br>') : 'Žiadne tímy'}`,
         'Úspech',
         '✅'
       );
@@ -2223,7 +2223,7 @@ window.zmenTimPouzivatela = async function(userId, teamName) {
     }
     
     await showAlert(
-      `✅ Používateľovi <strong>${user.email}</strong> bol úspešne priradený tím <strong>${displayTeamName}</strong>!`,
+      `✅ Používateľovi <strong>${user.email}</strong> bol priradený tím <strong>${displayTeamName}</strong>!`,
       'Úspech',
       '✅'
     );
@@ -2264,7 +2264,7 @@ window.schvalPouzivatela = async function(userId) {
       );
       
       await showAlert(
-        `Používateľ <strong>${user.email}</strong> bol úspešne schválený!<br><br>`,
+        `Používateľ <strong>${user.email}</strong> bol schválený!<br><br>`,
         'Úspech',
         '✅'
       );
@@ -2953,7 +2953,7 @@ window.odstranVideo = async function(videoId) {
   
   const result = await window.app.odstranVideo(videoId);
   if (result.success) {
-    await showAlert('✅ Video bolo úspešne odstránené!', 'Úspech', '✅');
+    await showAlert('✅ Video bolo odstránené!', 'Úspech', '✅');
   } else {
     await showAlert('❌ ' + result.error, 'Chyba', '❌');
   }
@@ -3521,7 +3521,7 @@ function otvorModalVidea(video = null) {
     }
     
     if (result.success) {
-      messageDiv.innerHTML = jeUprava ? '✅ Video bolo úspešne upravené!' : '✅ Video bolo úspešne pridané!';
+      messageDiv.innerHTML = jeUprava ? '✅ Video bolo upravené!' : '✅ Video bolo pridané!';
       messageDiv.style.color = 'green';
       
       setTimeout(() => {
