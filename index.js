@@ -1176,10 +1176,7 @@ function inicializujAplikaciu() {
           createdAt: new Date().toISOString(),
           role: role,
           approved: approved
-        });
-
-        await sendRegistrationEmail(email);
-        
+        });        
         return { success: true, user: user, role: role, approved: approved };
       } catch (error) {
         let errorMessage = error.message;
@@ -4098,7 +4095,6 @@ function vytvorRegistracnyFormular() {
       try {
         const result = await window.app.registruj(email, password);
         if (result.success) {
-          // ✅ PRIDAŤ TÚTO ČASŤ - odoslanie emailu
           await sendRegistrationEmail(email);
           
           const roleText = result.role === 'admin' ? 'ADMINISTRÁTOR' : 'Používateľ';
