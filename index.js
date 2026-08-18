@@ -760,13 +760,17 @@ style.textContent = `
     transition: opacity 0.3s ease;
     white-space: nowrap;
   }
-  
+
   #centerPlayButtonContainer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: opacity 0.2s ease;
+    display: none !important;
   }
+  
+//  #centerPlayButtonContainer {
+//    display: flex;
+//    justify-content: center;
+//    align-items: center;
+//    transition: opacity 0.2s ease;
+//  }
   
 //  #customPlayerOverlay.playing #centerPlayButtonContainer {
 //    opacity: 0;
