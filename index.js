@@ -2018,7 +2018,7 @@ window.schvalPouzivatela = async function(userId) {
       );
       
       await showAlert(
-        `Používateľ <strong>${user.email}</strong> bol úspešne schválený!<br><br>Ak bol schválený práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.<br><br>📧 E-mail o schválení bol odoslaný.`,
+        `Používateľ <strong>${user.email}</strong> bol úspešne schválený!<br><br>`,
         'Úspech',
         '✅'
       );
