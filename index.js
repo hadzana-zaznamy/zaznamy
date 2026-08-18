@@ -2942,7 +2942,8 @@ function zobrazVideaPouzivatelom(videa) {
     userKategorie = [];
   }
   
-  // Ak nie je admin a nemá priradený žiadny tím - zobraziť správu
+  // --- NOVÁ KONTROLA: Ak nie je admin a nemá priradené žiadne hodnoty ---
+  // Používateľ musí mať priradený aspoň jeden tím, inak sa mu nezobrazia žiadne videá
   if (!jeAdmin && userTeams.length === 0) {
     container.innerHTML = `
       <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
@@ -2953,23 +2954,26 @@ function zobrazVideaPouzivatelom(videa) {
     return;
   }
   
+  // Ak má používateľ priradené tímy, ale nemá priradené žiadne sezóny ani kategórie,
+  // zobrazia sa mu videá len podľa tímov (sezóny a kategórie sa nefiltrujú)
+  
   // FILTROVANIE - používame PRIADENÉ hodnoty
   let zobrazeneVidea = videa.filter(v => {
     // Videá bez ID sa nezobrazujú (okrem admina)
     if (!jeAdmin && (!v.videoId || v.videoId.trim() === '')) return false;
     
-    // Filter podľa PRIADENÝCH tímov
+    // Filter podľa PRIADENÝCH tímov - POVINNÉ pre používateľov
     if (!jeAdmin && userTeams.length > 0) {
       const maTim = userTeams.some(team => v.domaciTim === team || v.hostiaTim === team);
       if (!maTim) return false;
     }
     
-    // Filter podľa PRIADENÝCH sezón
+    // Filter podľa PRIADENÝCH sezón - IBA AK sú priradené
     if (!jeAdmin && userSezony.length > 0) {
       if (!userSezony.includes(v.sezona)) return false;
     }
     
-    // Filter podľa PRIADENÝCH kategórií
+    // Filter podľa PRIADENÝCH kategórií - IBA AK sú priradené
     if (!jeAdmin && userKategorie.length > 0) {
       if (!userKategorie.includes(v.kategoria)) return false;
     }
