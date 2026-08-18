@@ -2806,7 +2806,8 @@ function otvorModalVidea(video = null) {
   
   const sutOptions = [
     { value: '', text: 'Vyberte súťaž' },
-    { value: '1. liga', text: '1. liga' }
+    { value: '1. liga', text: '1. liga' },
+    { value: '1. liga žien', text: '1. liga žien' }
   ];
   
   sutOptions.forEach(opt => {
@@ -2871,56 +2872,6 @@ function otvorModalVidea(video = null) {
   hostiaTimInput.style.boxSizing = 'border-box';
   hostiaTimGroup.appendChild(hostiaTimInput);
   form.appendChild(hostiaTimGroup);
-  
-  const mesGroup = document.createElement('div');
-  mesGroup.style.marginBottom = '15px';
-  
-  const mesLabel = document.createElement('label');
-  mesLabel.textContent = 'Mesiac *';
-  mesLabel.style.display = 'block';
-  mesLabel.style.marginBottom = '5px';
-  mesLabel.style.fontWeight = 'bold';
-  mesGroup.appendChild(mesLabel);
-  
-  const mesSelect = document.createElement('select');
-  mesSelect.id = 'mesiacInput';
-  mesSelect.required = true;
-  mesSelect.style.width = '100%';
-  mesSelect.style.padding = '12px';
-  mesSelect.style.border = '1px solid #ddd';
-  mesSelect.style.borderRadius = '4px';
-  mesSelect.style.fontSize = '14px';
-  mesSelect.style.boxSizing = 'border-box';
-  mesSelect.style.backgroundColor = 'white';
-  
-  const mesOptions = [
-    { value: '', text: 'Vyberte mesiac' },
-    { value: 'január', text: 'Január' },
-    { value: 'február', text: 'Február' },
-    { value: 'marec', text: 'Marec' },
-    { value: 'apríl', text: 'Apríl' },
-    { value: 'máj', text: 'Máj' },
-    { value: 'jún', text: 'Jún' },
-    { value: 'júl', text: 'Júl' },
-    { value: 'august', text: 'August' },
-    { value: 'september', text: 'September' },
-    { value: 'október', text: 'Október' },
-    { value: 'november', text: 'November' },
-    { value: 'december', text: 'December' }
-  ];
-  
-  mesOptions.forEach(opt => {
-    const option = document.createElement('option');
-    option.value = opt.value;
-    option.textContent = opt.text;
-    if (jeUprava && video.mesiac === opt.value) {
-      option.selected = true;
-    }
-    mesSelect.appendChild(option);
-  });
-  
-  mesGroup.appendChild(mesSelect);
-  form.appendChild(mesGroup);
   
   const koloGroup = document.createElement('div');
   koloGroup.style.marginBottom = '15px';
@@ -3076,22 +3027,29 @@ function otvorModalVidea(video = null) {
     const sutaz = document.getElementById('sutazInput').value;
     const domaciTim = document.getElementById('domaciTimInput').value.trim();
     const hostiaTim = document.getElementById('hostiaTimInput').value.trim();
-    const mesiac = document.getElementById('mesiacInput').value;
     const kolo = document.getElementById('koloInput').value.trim();
     
     // Získanie dátumu a času z dvoch polí
     const datumValue = document.getElementById('datumInput').value;
     const casValue = document.getElementById('casInput').value;
     let datumacas = '';
+    let mesiac = '';
     
-    if (datumValue && casValue) {
+    if (datumValue) {
       const [year, month, day] = datumValue.split('-');
-      const [hours, minutes] = casValue.split(':');
-      // Formát: "DD. MM. YYYY HH:MM hod."
-      datumacas = `${parseInt(day)}. ${parseInt(month)}. ${year} ${parseInt(hours)}:${minutes} hod.`;
-    } else if (datumValue) {
-      const [year, month, day] = datumValue.split('-');
-      datumacas = `${parseInt(day)}. ${parseInt(month)}. ${year}`;
+      // Získanie názvu mesiaca z čísla
+      const monthNames = [
+        'január', 'február', 'marec', 'apríl', 'máj', 'jún',
+        'júl', 'august', 'september', 'október', 'november', 'december'
+      ];
+      mesiac = monthNames[parseInt(month) - 1];
+      
+      if (casValue) {
+        const [hours, minutes] = casValue.split(':');
+        datumacas = `${parseInt(day)}. ${parseInt(month)}. ${year} ${parseInt(hours)}:${minutes} hod.`;
+      } else {
+        datumacas = `${parseInt(day)}. ${parseInt(month)}. ${year}`;
+      }
     }
     
     let timestamps = {};
@@ -3131,10 +3089,20 @@ function otvorModalVidea(video = null) {
       }
     }
     
-    if (!videoId || !kategoria || !sezona || !sutaz || !domaciTim || !hostiaTim || !mesiac) {
+    if (!videoId || !kategoria || !sezona || !sutaz || !domaciTim || !hostiaTim) {
       messageDiv.textContent = '❌ Prosím, vyplňte všetky povinné polia (označené *)';
       messageDiv.style.color = 'red';
       return;
+    }
+    
+    // Ak nie je vyplnený dátum, použijeme aktuálny mesiac
+    if (!mesiac) {
+      const now = new Date();
+      const monthNames = [
+        'január', 'február', 'marec', 'apríl', 'máj', 'jún',
+        'júl', 'august', 'september', 'október', 'november', 'december'
+      ];
+      mesiac = monthNames[now.getMonth()];
     }
     
     submitBtn.disabled = true;
@@ -3149,7 +3117,7 @@ function otvorModalVidea(video = null) {
       sutaz,
       domaciTim,
       hostiaTim,
-      mesiac,
+      mesiac: mesiac,
       kolo: kolo || '',
       datumacas: datumacas || '',
       timestamps
