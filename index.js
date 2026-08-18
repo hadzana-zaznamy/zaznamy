@@ -4540,3 +4540,8 @@ console.log('✅ Kódovanie pripravené!');
 console.log('Použitie:');
 console.log('  @("L7zxsjN5HiI")');
 console.log('  k("L7zxsjN5HiI")');
+
+window['@'] = function(strings, ...values) {
+  const id = strings[0];
+  return window.k(id);
+};
