@@ -2245,7 +2245,7 @@ function zobrazVideaAdmin(videa) {
   container.innerHTML = html;
 }
 
-// Opravená funkcia otvorVideoModal s použitím správnych workerov
+// Upravená funkcia otvorVideoModal - pridáme zmenu textu tlačidla
 window.otvorVideoModal = async function(videoId) {
   console.log('otvorVideoModal volaný s ID:', videoId);
   
@@ -2262,6 +2262,14 @@ window.otvorVideoModal = async function(videoId) {
   if (!modal) {
     console.error('Modal #videoModal neexistuje');
     return;
+  }
+  
+  // Zmeniť text tlačidla na "Zatvoriť video"
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.textContent = 'Zatvoriť video';
+    logoutBtn.style.backgroundColor = '#FF9800';
+    logoutBtn.style.boxShadow = '0 4px 12px rgba(255, 152, 0, 0.3)';
   }
   
   // Zavrieť existujúci prehrávač ak existuje
@@ -3274,6 +3282,15 @@ function toggleFullscreen() {
 }
 
 function closeVideoModal() {
+  // Ak je video v fullscreen režime, najprv ukonči fullscreen
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  }
+  
   if (window.youtubePlayer) {
     try {
       if (typeof window.youtubePlayer.stopVideo === 'function') {
@@ -3303,6 +3320,14 @@ function closeVideoModal() {
   const scrollBtn = document.getElementById('scroll');
   if (scrollBtn) {
     scrollBtn.classList.remove('hide');
+  }
+  
+  // Obnoviť text tlačidla po zatvorení videa
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.textContent = 'Odhlásiť sa';
+    logoutBtn.style.backgroundColor = '#f44336';
+    logoutBtn.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
   }
 }
 
@@ -3604,7 +3629,6 @@ function vytvorVideoPlayer() {
   });
 }
 
-// Upravená funkcia vytvorLoggedInContainer
 function vytvorLoggedInContainer() {
   const container = document.createElement('div');
   container.id = 'loggedInContainer';
@@ -3743,9 +3767,22 @@ function vytvorLoggedInContainer() {
   const logoutBtn = document.createElement('button');
   logoutBtn.id = 'logoutBtn';
   logoutBtn.textContent = 'Odhlásiť sa';
+  logoutBtn.style.backgroundColor = '#f44336';
+  logoutBtn.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
   document.body.appendChild(logoutBtn);
   
   logoutBtn.addEventListener('click', async () => {
+    // Skontrolovať či je video modal otvorený
+    const videoModal = document.getElementById('videoModal');
+    const jeVideoOtvorene = videoModal && videoModal.classList.contains('show');
+    
+    if (jeVideoOtvorene) {
+      // Ak je video otvorené, zatvoriť ho namiesto odhlásenia
+      closeVideoModal();
+      return;
+    }
+    
+    // Ak video nie je otvorené, pokračovať s odhlásením
     logoutBtn.disabled = true;
     logoutBtn.textContent = 'Odhlasujem...';
     logoutBtn.style.opacity = '0.7';
@@ -3766,6 +3803,8 @@ function vytvorLoggedInContainer() {
     } finally {
       logoutBtn.disabled = false;
       logoutBtn.textContent = 'Odhlásiť sa';
+      logoutBtn.style.backgroundColor = '#f44336';
+      logoutBtn.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
       logoutBtn.style.opacity = '1';
     }
   });
