@@ -1113,7 +1113,7 @@ function inicializujAplikaciu() {
       if (this.unsubscribeUser) {
         this.unsubscribeUser();
       }
-      
+  
       const userRef = doc(db, 'users', userId);
       this.unsubscribeUser = onSnapshot(userRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
@@ -1121,16 +1121,33 @@ function inicializujAplikaciu() {
           const predoslyApproved = this.aktualnyPouzivatelApproved;
           const predoslaRole = this.aktualnyPouzivatelRole;
           const predoslyTeam = this.aktualnyPouzivatelTeam;
-      
+  
           this.aktualnyPouzivatelApproved = userData.approved || false;
           this.aktualnyPouzivatelRole = userData.role || 'user';
           this.aktualnyPouzivatelTeam = userData.teamName || '';
-          
-          if (predoslyApproved !== this.aktualnyPouzivatelApproved || 
-              predoslaRole !== this.aktualnyPouzivatelRole) {
+      
+          // Kontrola zmeny tímu
+          if (predoslyTeam !== this.aktualnyPouzivatelTeam) {
+            console.log('Tím sa zmenil z:', predoslyTeam, 'na:', this.aktualnyPouzivatelTeam);
+            
+            // Aktualizovať zoznam videí pri zmene tímu
+            if (this.vsetkyVidea && this.vsetkyVidea.length > 0) {
+              zobrazVideaPouzivatelom(this.vsetkyVidea);
+            }
+        
+            // Prekresliť UI
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
           }
-        } else {          
+      
+          // Kontrola zmeny schválenia alebo roly
+          if (predoslyApproved !== this.aktualnyPouzivatelApproved || 
+              predoslaRole !== this.aktualnyPouzivatelRole) {
+            console.log('Stav sa zmenil - Approved:', this.aktualnyPouzivatelApproved, 'Rola:', this.aktualnyPouzivatelRole);
+            prerenderujPodlaStavu(this.aktualnyPouzivatel);
+          }
+        } else {
+          console.log('Používateľský dokument bol odstránený, odhlasujem používateľa');
+          
           showAlert(
             'Váš účet bol odstránený administrátorom. Budete odhlásený.',
             'Účet odstránený',
@@ -1144,12 +1161,15 @@ function inicializujAplikaciu() {
               this.aktualnyPouzivatel = null;
               this.aktualnyPouzivatelRole = null;
               this.aktualnyPouzivatelApproved = null;
+              this.aktualnyPouzivatelTeam = '';
               prerenderujPodlaStavu(null);
             }).catch((error) => {
+              console.error('Chyba pri odhlásení:', error);
             });
           });
         }
       }, (error) => {
+        console.error('Chyba v real-time listeneri používateľa:', error);
       });
     },
     
