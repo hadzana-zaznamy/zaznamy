@@ -1137,7 +1137,7 @@ function inicializujAplikaciu() {
 
           this.aktualnyPouzivatelApproved = userData.approved || false;
           this.aktualnyPouzivatelRole = userData.role || 'user';
-          
+      
           // Načítanie tímov - môže byť pole alebo reťazec
           let teamData = userData.teamName || '';
           if (Array.isArray(teamData)) {
@@ -2486,14 +2486,26 @@ function zobrazVideaPouzivatelom(videa) {
   const container = document.getElementById('videaPrePouzivatelov');
   if (!container) return;
   
-  const aktualnyUserTeam = window.app.aktualnyPouzivatelTeam || '';
   const jeAdmin = window.app.aktualnyPouzivatelRole === 'admin';
+  let aktualnyUserTeam = window.app.aktualnyPouzivatelTeam || [];
   
-  if (!jeAdmin && !aktualnyUserTeam) {
+  // Ak je to reťazec, rozdelíme na pole
+  let userTeams = [];
+  if (aktualnyUserTeam) {
+    if (Array.isArray(aktualnyUserTeam)) {
+      userTeams = aktualnyUserTeam;
+    } else if (typeof aktualnyUserTeam === 'string' && aktualnyUserTeam.includes(',')) {
+      userTeams = aktualnyUserTeam.split(',').map(t => t.trim()).filter(t => t);
+    } else if (typeof aktualnyUserTeam === 'string' && aktualnyUserTeam) {
+      userTeams = [aktualnyUserTeam];
+    }
+  }
+  
+  if (!jeAdmin && userTeams.length === 0) {
     container.innerHTML = `
       <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
         <p style="font-size:18px;color:#666;margin-bottom:10px;">⚠️ Nemáte priradený žiadny tím</p>
-        <p style="font-size:14px;color:#999;">Kontaktujte administrátora, aby vám priradil tím.</p>
+        <p style="font-size:14px;color:#999;">Kontaktujte administrátora, aby vám priradil tímy.</p>
       </div>
     `;
     return;
@@ -2502,9 +2514,10 @@ function zobrazVideaPouzivatelom(videa) {
   // FILTROVANIE: Odstráň videá BEZ ID (pre používateľov)
   let zobrazeneVidea = videa.filter(v => v.videoId && v.videoId.trim() !== '');
   
-  if (!jeAdmin && aktualnyUserTeam) {
+  // FILTROVANIE PODĽA TÍMOV - používame SOME pre kontrolu viacerých tímov
+  if (!jeAdmin && userTeams.length > 0) {
     zobrazeneVidea = zobrazeneVidea.filter(v => 
-      v.domaciTim === aktualnyUserTeam || v.hostiaTim === aktualnyUserTeam
+      userTeams.some(team => v.domaciTim === team || v.hostiaTim === team)
     );
   }
   
@@ -2540,7 +2553,7 @@ function zobrazVideaPouzivatelom(videa) {
           <button class="reset-button" onclick="resetFiltre()">Vymazať filtre</button>
         </div>
       </div>
-      <p style="text-align:center;color:#999;padding:40px;">${aktualnyUserTeam ? 'Žiadne videá nie sú dostupné' : 'Žiadne videá nie sú dostupné'}</p>
+      <p style="text-align:center;color:#999;padding:40px;">${userTeams.length > 0 ? `Žiadne videá pre tímy: ${userTeams.join(', ')}` : 'Žiadne videá nie sú dostupné'}</p>
     `;
     return;
   }
