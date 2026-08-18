@@ -1345,15 +1345,16 @@ function inicializujAplikaciu() {
       });
     },
     
+    // Upravená funkcia spustiRealTimeListener - zoraďuje používateľov podľa emailu
     spustiRealTimeListener: function() {
       if (this.unsubscribeUsers) {
         this.unsubscribeUsers();
       }
 
       const usersRef = collection(db, 'users');
-      const q = query(usersRef, orderBy('createdAt', 'asc'));
-
-      this.unsubscribeUsers = onSnapshot(q, (querySnapshot) => {
+      // Odstránime orderBy('createdAt', 'asc') a budeme radiť lokálne
+    
+      this.unsubscribeUsers = onSnapshot(usersRef, (querySnapshot) => {
         const pouzivatelia = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
@@ -1368,10 +1369,18 @@ function inicializujAplikaciu() {
             teamPreference: data.teamPreference || '',
             sezonaPreference: data.sezonaPreference || '',
             kategoriaPreference: data.kategoriaPreference || '',
-            assignedSezona: data.assignedSezona || '',    // NOVÉ - priradené adminom
-            assignedKategoria: data.assignedKategoria || '' // NOVÉ - priradené adminom
+            assignedSezona: data.assignedSezona || '',
+            assignedKategoria: data.assignedKategoria || ''
           });
         });
+    
+        // ZORAĎOVANIE PODĽA EMAILU (abecedne)
+        pouzivatelia.sort((a, b) => {
+          const emailA = (a.email || '').toLowerCase();
+          const emailB = (b.email || '').toLowerCase();
+          return emailA.localeCompare(emailB, 'sk');
+        });
+    
         this.vsetciPouzivatelia = pouzivatelia;
         if (document.getElementById('adminPanel').style.display !== 'none' && 
             document.getElementById('usersList')) {
@@ -1430,8 +1439,7 @@ function inicializujAplikaciu() {
       }
       try {
         const usersRef = collection(db, 'users');
-        const q = query(usersRef, orderBy('createdAt', 'asc'));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(usersRef);
         const pouzivatelia = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
@@ -1446,10 +1454,18 @@ function inicializujAplikaciu() {
             teamPreference: data.teamPreference || '',
             sezonaPreference: data.sezonaPreference || '',
             kategoriaPreference: data.kategoriaPreference || '',
-            assignedSezona: data.assignedSezona || '',    // NOVÉ - priradené adminom
-            assignedKategoria: data.assignedKategoria || '' // NOVÉ - priradené adminom
+            assignedSezona: data.assignedSezona || '',
+            assignedKategoria: data.assignedKategoria || ''
           });
         });
+    
+        // ZORAĎOVANIE PODĽA EMAILU (abecedne)
+        pouzivatelia.sort((a, b) => {
+          const emailA = (a.email || '').toLowerCase();
+          const emailB = (b.email || '').toLowerCase();
+          return emailA.localeCompare(emailB, 'sk');
+        });
+    
         this.vsetciPouzivatelia = pouzivatelia;
         return { success: true, pouzivatelia: pouzivatelia };
       } catch (error) {
@@ -1929,7 +1945,7 @@ function resetFormulare() {
   }
 }
 
-// Upravená funkcia zobrazPouzivatelov - časť zobrazujúca preferovaný tím
+// Upravená funkcia zobrazPouzivatelov - zoraďuje používateľov podľa emailu
 function zobrazPouzivatelov(pouzivatelia) {
   const container = document.getElementById('usersList');
   if (!container) return;
@@ -1938,6 +1954,13 @@ function zobrazPouzivatelov(pouzivatelia) {
     container.innerHTML = '<p style="text-align:center;color:#999;">Žiadni používatelia</p>';
     return;
   }
+  
+  // ZORAĎOVANIE PODĽA EMAILU (abecedne) - pre istotu ešte raz
+  const zoradeni = [...pouzivatelia].sort((a, b) => {
+    const emailA = (a.email || '').toLowerCase();
+    const emailB = (b.email || '').toLowerCase();
+    return emailA.localeCompare(emailB, 'sk');
+  });
   
   let html = '<div style="overflow-x:auto;">';
   html += '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
@@ -1957,12 +1980,12 @@ function zobrazPouzivatelov(pouzivatelia) {
     <tbody>
   `;
   
-  pouzivatelia.forEach((user) => {
+  zoradeni.forEach((user) => {
     const jeAdmin = user.role === 'admin';
     const jeAktualny = user.uid === window.app.aktualnyPouzivatel?.uid;
     const jeSchvaleny = user.approved === true;
     
-    // --- PREFEROVANÉ HODNOTY (z registrácie) - TERAZ KAŽDÝ TÍM V SAMOSTATNOM ŠTÍTKU ---
+    // --- PREFEROVANÉ HODNOTY (z registrácie) ---
     let teamPreferences = [];
     if (user.teamPreference) {
       if (Array.isArray(user.teamPreference)) {
@@ -1974,7 +1997,6 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // Spracovanie preferovaných sezón (z registrácie)
     let sezonaPreferences = [];
     if (user.sezonaPreference) {
       if (Array.isArray(user.sezonaPreference)) {
