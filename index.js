@@ -4874,7 +4874,7 @@ function vytvorRegistracnyFormular() {
   const teamInput = document.createElement('input');
   teamInput.type = 'text';
   teamInput.id = 'regTeamPreference';
-  teamInput.placeholder = 'Názov tímu (napr. HK Žilina)';
+  teamInput.placeholder = 'Názov tímu';
   teamInput.style.width = '100%';
   teamInput.style.padding = '12px';
   teamInput.style.border = '1px solid #ddd';
