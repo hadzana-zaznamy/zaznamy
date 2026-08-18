@@ -597,7 +597,7 @@ style.textContent = `
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
     padding: 20px 0;
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
   }
   
