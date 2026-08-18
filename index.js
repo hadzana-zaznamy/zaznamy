@@ -5115,9 +5115,12 @@ function vytvorLoggedInContainer() {
     top: 20px;
     right: 20px;
     display: flex;
+    flex-direction: row;
     gap: 10px;
     z-index: 9999;
     align-items: center;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
   `;
   
   // Tlačidlo "Moje preferencie" (zobrazené pre userov, nie adminov)
@@ -5137,6 +5140,7 @@ function vytvorLoggedInContainer() {
     box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
     display: none;
     white-space: nowrap;
+    flex-shrink: 0;
   `;
   myPreferencesBtn.onmouseover = () => {
     myPreferencesBtn.style.backgroundColor = '#388E3C';
@@ -5168,6 +5172,7 @@ function vytvorLoggedInContainer() {
     transition: background-color 0.3s, transform 0.2s;
     box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
     white-space: nowrap;
+    flex-shrink: 0;
   `;
   logoutBtn.onmouseover = () => {
     logoutBtn.style.backgroundColor = '#d32f2f';
