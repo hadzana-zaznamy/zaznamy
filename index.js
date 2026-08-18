@@ -1867,13 +1867,15 @@ function zobrazPouzivatelov(pouzivatelia) {
   html += `
     <thead>
       <tr style="background-color:#f5f5f5;">
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Email</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Rola</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Preferovaný tím</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Priradené tímy</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Stav</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Registrovaný</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Akcia</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:180px;">Email</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:80px;">Rola</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:150px;">Preferovaný tím</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:130px;">Preferovaná sezóna</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:150px;">Preferovaná kategória</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:150px;">Priradené tímy</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:80px;">Stav</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:150px;">Registrovaný</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:200px;">Akcia</th>
       </tr>
     </thead>
     <tbody>
@@ -1884,31 +1886,33 @@ function zobrazPouzivatelov(pouzivatelia) {
     const jeAktualny = user.uid === window.app.aktualnyPouzivatel?.uid;
     const jeSchvaleny = user.approved === true;
     const teamPreference = user.teamPreference || '';
+    const sezonaPreference = user.sezonaPreference || '';
+    const kategoriaPreference = user.kategoriaPreference || '';
     
-    // Získanie preferencií ako polia
+    // Spracovanie preferencií ako polí
     let sezonaPreferences = [];
-    if (user.sezonaPreference) {
-      if (Array.isArray(user.sezonaPreference)) {
-        sezonaPreferences = user.sezonaPreference;
-      } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference.includes(',')) {
-        sezonaPreferences = user.sezonaPreference.split(',').map(t => t.trim()).filter(t => t);
-      } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference) {
-        sezonaPreferences = [user.sezonaPreference];
+    if (sezonaPreference) {
+      if (Array.isArray(sezonaPreference)) {
+        sezonaPreferences = sezonaPreference;
+      } else if (typeof sezonaPreference === 'string' && sezonaPreference.includes(',')) {
+        sezonaPreferences = sezonaPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof sezonaPreference === 'string' && sezonaPreference) {
+        sezonaPreferences = [sezonaPreference];
       }
     }
     
     let kategoriaPreferences = [];
-    if (user.kategoriaPreference) {
-      if (Array.isArray(user.kategoriaPreference)) {
-        kategoriaPreferences = user.kategoriaPreference;
-      } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference.includes(',')) {
-        kategoriaPreferences = user.kategoriaPreference.split(',').map(t => t.trim()).filter(t => t);
-      } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference) {
-        kategoriaPreferences = [user.kategoriaPreference];
+    if (kategoriaPreference) {
+      if (Array.isArray(kategoriaPreference)) {
+        kategoriaPreferences = kategoriaPreference;
+      } else if (typeof kategoriaPreference === 'string' && kategoriaPreference.includes(',')) {
+        kategoriaPreferences = kategoriaPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof kategoriaPreference === 'string' && kategoriaPreference) {
+        kategoriaPreferences = [kategoriaPreference];
       }
     }
     
-    // Podpora pre viacero tímov
+    // Podpora pre viacero priradených tímov
     let priradeneTimy = [];
     if (user.teamName) {
       if (Array.isArray(user.teamName)) {
@@ -1920,36 +1924,41 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // Zostavenie preferencií pre zobrazenie
-    let preferencieText = '';
-    if (teamPreference) {
-      preferencieText = teamPreference;
-    }
-    if (sezonaPreferences.length > 0) {
-      preferencieText += (preferencieText ? ' | ' : '') + 'Sezóny: ' + sezonaPreferences.join(', ');
-    }
-    if (kategoriaPreferences.length > 0) {
-      preferencieText += (preferencieText ? ' | ' : '') + 'Kategórie: ' + kategoriaPreferences.map(k => categoryMap[k] || k).join(', ');
-    }
-    if (!preferencieText) preferencieText = 'Nezadané';
-    
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}">
-        <td style="padding:12px;">${user.email}</td>
+        <td style="padding:12px;font-weight:${jeAktualny ? 'bold' : 'normal'};">${user.email}</td>
         <td style="padding:12px;">
           <span style="padding:4px 12px;border-radius:12px;font-size:12px;${jeAdmin ? 'background-color:#fff3e0;color:#e65100;' : 'background-color:#e3f2fd;color:#1565c0;'}">
             ${jeAdmin ? 'Admin' : 'User'}
           </span>
         </td>
         <td style="padding:12px;">
-          <span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e8f5e9;color:#2e7d32;">${preferencieText}</span>
+          ${teamPreference ? 
+            `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 0;">${teamPreference}</span>` : 
+            '<span style="font-size:12px;color:#999;">—</span>'
+          }
+        </td>
+        <td style="padding:12px;">
+          ${sezonaPreferences.length > 0 ? 
+            sezonaPreferences.map(s => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 2px;">${s}</span>`).join('') : 
+            '<span style="font-size:12px;color:#999;">—</span>'
+          }
+        </td>
+        <td style="padding:12px;">
+          ${kategoriaPreferences.length > 0 ? 
+            kategoriaPreferences.map(k => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`).join('') : 
+            '<span style="font-size:12px;color:#999;">—</span>'
+          }
         </td>
         <td style="padding:12px;">
           ${!jeAdmin ? `
             <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-              ${priradeneTimy.length > 0 ? priradeneTimy.map(t => `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;">${t}</span>`).join('') : '<span style="font-size:12px;color:#999;">Žiadny</span>'}
+              ${priradeneTimy.length > 0 ? 
+                priradeneTimy.map(t => `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 0;">${t}</span>`).join('') : 
+                '<span style="font-size:12px;color:#999;">—</span>'
+              }
             </div>
-          ` : '<span style="font-size:12px;color:#999;">Všetky tímy</span>'}
+          ` : '<span style="font-size:12px;color:#999;">Všetky</span>'}
         </td>
         <td style="padding:12px;">
           <span style="padding:4px 12px;border-radius:12px;font-size:12px;${jeSchvaleny ? 'background-color:#c8e6c9;color:#2e7d32;' : 'background-color:#ffcdd2;color:#c62828;'}">
@@ -2361,7 +2370,6 @@ window.otvorModalPriradeniaTimov = async function(userId) {
         if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
           zobrazVideaPouzivatelom(window.app.vsetkyVidea);
         } else {
-          // Ak ešte nie sú načítané videá, načítame ich
           await window.app.nacitajVidea();
           zobrazVideaPouzivatelom(window.app.vsetkyVidea);
         }
