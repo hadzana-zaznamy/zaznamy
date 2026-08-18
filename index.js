@@ -2216,11 +2216,6 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     cursorStyle = 'cursor:pointer;';
   }
   
-  // Varovanie pre admina - video bez ID
-  const bezIdIndikator = (sOdstranenim && (!video.videoId || video.videoId.trim() === '')) 
-    ? `<p style="color:#f44336;font-weight:bold;font-size:12px;">⚠️ BEZ ID VIDEA - KLIKNUTIE OTVORÍ ÚPRAVU</p>` 
-    : '';
-  
   return `
     <div class="video-card" data-video-id="${video.id}" ${onClickAction} style="${cursorStyle}">
       <div class="video-thumbnail">
