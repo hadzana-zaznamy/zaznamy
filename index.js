@@ -1326,7 +1326,8 @@ function inicializujAplikaciu() {
             kategoria: data.kategoria || '',
             sezona: data.sezona || '',
             sutaz: data.sutaz || '',
-            tim: data.tim || '',
+            domaciTim: data.domaciTim || '',
+            hostiaTim: data.hostiaTim || '',
             mesiac: data.mesiac || '',
             kolo: data.kolo || '',
             datumacas: data.datumacas || '',
@@ -1337,7 +1338,7 @@ function inicializujAplikaciu() {
           });
         });
         this.vsetkyVidea = videa;
-        
+    
         // Aktualizovať zobrazenie videí
         if (document.getElementById('contentArea').style.display !== 'none') {
           zobrazVideaPouzivatelom(videa);
@@ -1553,7 +1554,8 @@ function inicializujAplikaciu() {
           kategoria: videoData.kategoria || '',
           sezona: videoData.sezona || '',
           sutaz: videoData.sutaz || '',
-          tim: videoData.tim || '',
+          domaciTim: videoData.domaciTim || '',
+          hostiaTim: videoData.hostiaTim || '',
           mesiac: videoData.mesiac || '',
           kolo: videoData.kolo || '',
           datumacas: videoData.datumacas || '',
@@ -1579,7 +1581,8 @@ function inicializujAplikaciu() {
           kategoria: videoData.kategoria || '',
           sezona: videoData.sezona || '',
           sutaz: videoData.sutaz || '',
-          tim: videoData.tim || '',
+          domaciTim: videoData.domaciTim || '',
+          hostiaTim: videoData.hostiaTim || '',
           mesiac: videoData.mesiac || '',
           kolo: videoData.kolo || '',
           datumacas: videoData.datumacas || '',
@@ -1897,7 +1900,10 @@ function zobrazPouzivatelov(pouzivatelia) {
 
 function getVsetkyTimy() {
   const videa = window.app.vsetkyVidea || [];
-  const timy = [...new Set(videa.map(v => v.tim).filter(Boolean))];
+  const timy = [...new Set([
+    ...videa.map(v => v.domaciTim).filter(Boolean),
+    ...videa.map(v => v.hostiaTim).filter(Boolean)
+  ])];
   return timy.sort();
 }
 
@@ -2058,12 +2064,9 @@ function extrahujVideoId(url) {
   return null;
 }
 
-// Opravená funkcia pre thumbnail - používa thumbnail worker
 function vytvorVideoKartu(video, sOdstranenim = false) {
-  // Pre thumbnail použijeme thumbnail worker
   const thumbnailUrl = `https://smf-hk-zilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`;
   
-  // Zostavenie detailov videa
   let detailsHtml = '';
   if (video.kategoria) {
     const kategoriaDisplay = categoryMap[video.kategoria] || video.kategoria;
@@ -2075,25 +2078,14 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
   if (video.sutaz) {
     detailsHtml += `<p><strong>Súťaž:</strong> ${video.sutaz}</p>`;
   }
-  if (video.tim) {
-    detailsHtml += `<p><strong>Tím:</strong> ${video.tim}</p>`;
+  if (video.domaciTim || video.hostiaTim) {
+    detailsHtml += `<p><strong>Zápas:</strong> ${video.domaciTim || '?'} vs ${video.hostiaTim || '?'}</p>`;
   }
-//  if (video.mesiac) {
-//    detailsHtml += `<p><strong>Mesiac:</strong> ${video.mesiac}</p>`;
-//  }
-//  if (video.kolo) {
-//    detailsHtml += `<p><strong>Kolo:</strong> ${video.kolo}</p>`;
-//  }
-//  if (video.datumacas) {
-//    detailsHtml += `<p><strong>Dátum a čas:</strong> ${video.datumacas}</p>`;
-//  }
   
-  // Pre admin zobrazenie - tlačidlá Upraviť a Odstrániť
   let adminButtonsHtml = '';
   if (sOdstranenim) {
     adminButtonsHtml = `
       <div class="video-meta">
-//        <span>Pridané: ${formatujDatum(video.createdAt)}</span>
         <div style="display:flex;gap:5px;" onclick="event.stopPropagation();">
           <button onclick="otvorModalUpravyVidea('${video.id}')" 
                   class="btn-edit-video"
@@ -2108,8 +2100,6 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
         </div>
       </div>
     `;
-  } else {
-//    adminButtonsHtml = video.createdAt ? `<div class="video-meta"><span>Pridané: ${formatujDatum(video.createdAt)}</span></div>` : '';
   }
   
   return `
@@ -2140,7 +2130,9 @@ function zobrazVideaPouzivatelom(videa) {
   // Filtrovať videá podľa tímu používateľa (ak nie je admin)
   let zobrazeneVidea = videa;
   if (window.app.aktualnyPouzivatelRole !== 'admin' && aktualnyUserTeam) {
-    zobrazeneVidea = videa.filter(v => v.tim === aktualnyUserTeam);
+    zobrazeneVidea = videa.filter(v => 
+      v.domaciTim === aktualnyUserTeam || v.hostiaTim === aktualnyUserTeam
+    );
   }
   
   if (!zobrazeneVidea || zobrazeneVidea.length === 0) {
@@ -2166,7 +2158,10 @@ function zobrazVideaPouzivatelom(videa) {
   const kategorie = [...new Set(zobrazeneVidea.map(v => v.kategoria).filter(Boolean))];
   const sezony = [...new Set(zobrazeneVidea.map(v => v.sezona).filter(Boolean))];
   const sutaze = [...new Set(zobrazeneVidea.map(v => v.sutaz).filter(Boolean))];
-  const timy = [...new Set(zobrazeneVidea.map(v => v.tim).filter(Boolean))];
+  const vsetkyTimy = [...new Set([
+    ...zobrazeneVidea.map(v => v.domaciTim).filter(Boolean),
+    ...zobrazeneVidea.map(v => v.hostiaTim).filter(Boolean)
+  ])];
   const mesiace = [...new Set(zobrazeneVidea.map(v => v.mesiac).filter(Boolean))];
   
   let html = `
@@ -2186,7 +2181,7 @@ function zobrazVideaPouzivatelom(videa) {
         </select>
         <select id="filterTim">
           <option value="">Tím</option>
-          ${timy.map(t => `<option value="${t}">${t}</option>`).join('')}
+          ${vsetkyTimy.map(t => `<option value="${t}">${t}</option>`).join('')}
         </select>
         <select id="filterMesiac">
           <option value="">Mesiac</option>
@@ -2200,7 +2195,6 @@ function zobrazVideaPouzivatelom(videa) {
     <div id="videoContainer">
   `;
   
-  // Zobrazenie filtrovaných videí
   zobrazeneVidea.forEach((video) => {
     html += vytvorVideoKartu(video, false);
   });
@@ -2210,10 +2204,8 @@ function zobrazVideaPouzivatelom(videa) {
   
   container.innerHTML = html;
   
-  // Uložiť filtrované videá pre použitie vo filtroch
   window.filteredVidea = zobrazeneVidea;
   
-  // Pridať event listenery pre filtre
   document.getElementById('filterKategoria').addEventListener('change', aplikujFiltre);
   document.getElementById('filterSezona').addEventListener('change', aplikujFiltre);
   document.getElementById('filterSutaz').addEventListener('change', aplikujFiltre);
@@ -2222,7 +2214,6 @@ function zobrazVideaPouzivatelom(videa) {
 }
 
 window.aplikujFiltre = function() {
-  // Použiť filtrované videá podľa tímu
   const videa = window.filteredVidea || window.app.vsetkyVidea || [];
   const kategoria = document.getElementById('filterKategoria')?.value || '';
   const sezona = document.getElementById('filterSezona')?.value || '';
@@ -2234,7 +2225,7 @@ window.aplikujFiltre = function() {
     if (kategoria && v.kategoria !== kategoria) return false;
     if (sezona && v.sezona !== sezona) return false;
     if (sutaz && v.sutaz !== sutaz) return false;
-    if (tim && v.tim !== tim) return false;
+    if (tim && v.domaciTim !== tim && v.hostiaTim !== tim) return false;
     if (mesiac && v.mesiac !== mesiac) return false;
     return true;
   });
@@ -2699,31 +2690,57 @@ function otvorModalVidea(video = null) {
   sutGroup.appendChild(sutSelect);
   form.appendChild(sutGroup);
   
-  // Tím
-  const timGroup = document.createElement('div');
-  timGroup.style.marginBottom = '15px';
+    // Domáci tím
+  const domaciTimGroup = document.createElement('div');
+  domaciTimGroup.style.marginBottom = '15px';
   
-  const timLabel = document.createElement('label');
-  timLabel.textContent = 'Tím *';
-  timLabel.style.display = 'block';
-  timLabel.style.marginBottom = '5px';
-  timLabel.style.fontWeight = 'bold';
-  timGroup.appendChild(timLabel);
+  const domaciTimLabel = document.createElement('label');
+  domaciTimLabel.textContent = 'Názov domáci tím *';
+  domaciTimLabel.style.display = 'block';
+  domaciTimLabel.style.marginBottom = '5px';
+  domaciTimLabel.style.fontWeight = 'bold';
+  domaciTimGroup.appendChild(domaciTimLabel);
   
-  const timInput = document.createElement('input');
-  timInput.type = 'text';
-  timInput.id = 'timInput';
-  timInput.required = true;
-  timInput.placeholder = 'Názov tímu';
-  timInput.value = jeUprava ? video.tim : '';
-  timInput.style.width = '100%';
-  timInput.style.padding = '12px';
-  timInput.style.border = '1px solid #ddd';
-  timInput.style.borderRadius = '4px';
-  timInput.style.fontSize = '14px';
-  timInput.style.boxSizing = 'border-box';
-  timGroup.appendChild(timInput);
-  form.appendChild(timGroup);
+  const domaciTimInput = document.createElement('input');
+  domaciTimInput.type = 'text';
+  domaciTimInput.id = 'domaciTimInput';
+  domaciTimInput.required = true;
+  domaciTimInput.placeholder = 'Názov domáceho tímu';
+  domaciTimInput.value = jeUprava ? (video.domaciTim || '') : '';
+  domaciTimInput.style.width = '100%';
+  domaciTimInput.style.padding = '12px';
+  domaciTimInput.style.border = '1px solid #ddd';
+  domaciTimInput.style.borderRadius = '4px';
+  domaciTimInput.style.fontSize = '14px';
+  domaciTimInput.style.boxSizing = 'border-box';
+  domaciTimGroup.appendChild(domaciTimInput);
+  form.appendChild(domaciTimGroup);
+
+  // Hostia tím
+  const hostiaTimGroup = document.createElement('div');
+  hostiaTimGroup.style.marginBottom = '15px';
+  
+  const hostiaTimLabel = document.createElement('label');
+  hostiaTimLabel.textContent = 'Názov hostia tím *';
+  hostiaTimLabel.style.display = 'block';
+  hostiaTimLabel.style.marginBottom = '5px';
+  hostiaTimLabel.style.fontWeight = 'bold';
+  hostiaTimGroup.appendChild(hostiaTimLabel);
+  
+  const hostiaTimInput = document.createElement('input');
+  hostiaTimInput.type = 'text';
+  hostiaTimInput.id = 'hostiaTimInput';
+  hostiaTimInput.required = true;
+  hostiaTimInput.placeholder = 'Názov hosťujúceho tímu';
+  hostiaTimInput.value = jeUprava ? (video.hostiaTim || '') : '';
+  hostiaTimInput.style.width = '100%';
+  hostiaTimInput.style.padding = '12px';
+  hostiaTimInput.style.border = '1px solid #ddd';
+  hostiaTimInput.style.borderRadius = '4px';
+  hostiaTimInput.style.fontSize = '14px';
+  hostiaTimInput.style.boxSizing = 'border-box';
+  hostiaTimGroup.appendChild(hostiaTimInput);
+  form.appendChild(hostiaTimGroup);
   
   // Mesiac
   const mesGroup = document.createElement('div');
@@ -2888,7 +2905,8 @@ function otvorModalVidea(video = null) {
     const kategoria = document.getElementById('kategoriaInput').value;
     const sezona = document.getElementById('sezonaInput').value;
     const sutaz = document.getElementById('sutazInput').value;
-    const tim = document.getElementById('timInput').value.trim();
+    const domaciTim = document.getElementById('domaciTimInput').value.trim();
+    const hostiaTim = document.getElementById('hostiaTimInput').value.trim();
     const mesiac = document.getElementById('mesiacInput').value;
     const kolo = document.getElementById('koloInput').value.trim();
     const datumacas = document.getElementById('datumacasInput').value.trim();
@@ -2937,7 +2955,7 @@ function otvorModalVidea(video = null) {
     }
     
     // Validate required fields
-    if (!videoId || !kategoria || !sezona || !sutaz || !tim || !mesiac) {
+    if (!videoId || !kategoria || !sezona || !sutaz || !domaciTim || !hostiaTim || !mesiac) {
       messageDiv.textContent = '❌ Prosím, vyplňte všetky povinné polia (označené *)';
       messageDiv.style.color = 'red';
       return;
@@ -2953,7 +2971,8 @@ function otvorModalVidea(video = null) {
       kategoria,
       sezona,
       sutaz,
-      tim,
+      domaciTim,
+      hostiaTim,
       mesiac,
       kolo: kolo || '',
       datumacas: datumacas || '',
