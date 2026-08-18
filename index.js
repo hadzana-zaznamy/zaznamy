@@ -4097,15 +4097,6 @@ async function otvorModalUpravyMoichPreferencii() {
       span.style.fontSize = '14px';
       span.style.fontWeight = '500';
       
-      // Ak je tím zvolený, pridáme indikátor
-      if (jeZvolene) {
-        const indicator = document.createElement('span');
-        indicator.textContent = ' ✓';
-        indicator.style.color = '#4CAF50';
-        indicator.style.fontWeight = 'bold';
-        span.appendChild(indicator);
-      }
-      
       label.appendChild(checkbox);
       label.appendChild(span);
       
