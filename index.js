@@ -2546,7 +2546,8 @@ window.otvorModalPriradeniaTimov = async function(userId) {
         teamUpdatedBy: window.app.aktualnyPouzivatel?.uid || ''
       });
       
-      // Aktualizácia lokálnych dát
+      // --- AKTUALIZÁCIA LOKÁLNYCH DÁT ---
+      // 1. Aktualizácia v zozname všetkých používateľov
       const updatedUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
       if (updatedUser) {
         updatedUser.teamName = vybraneTimy;
@@ -2554,7 +2555,13 @@ window.otvorModalPriradeniaTimov = async function(userId) {
         updatedUser.assignedKategoria = vybraneKategorie;
       }
       
-      // Ak sa mení prihlásený používateľ - OKAMŽITE AKTUALIZUJEME
+      // 2. AKTUALIZÁCIA PREHLIADKY - OKAMŽITE PRERENDEROVANIE TABUĽKY
+      // Znovu zobrazíme používateľov s aktualizovanými dátami
+      if (window.app.vsetciPouzivatelia.length > 0) {
+        zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+      }
+      
+      // 3. Ak sa mení prihlásený používateľ - aktualizujeme aj jeho zobrazenie videí
       if (userId === window.app.aktualnyPouzivatel?.uid) {
         window.app.aktualnyPouzivatelTeam = vybraneTimy;
         window.app.aktualnyPouzivatelSezona = vybraneSezony;
@@ -2568,7 +2575,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
         }
       }
       
-      // Zostavenie správy o uložení
+      // --- ZOSTAVENIE SPRÁVY O ULOŽENÍ ---
       let sprava = `✅ Používateľovi <strong>${user.email}</strong> boli aktualizované priradené preferencie.<br><br>`;
       sprava += `🏐 <strong>Priradené tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
       sprava += `📅 <strong>Priradené sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Žiadne'}<br>`;
@@ -2577,9 +2584,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       await showAlert(sprava, 'Úspech', '✅');
       
       modal.remove();
-      if (window.app.vsetciPouzivatelia.length > 0) {
-        zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      }
+      
     } catch (error) {
       await showAlert(
         `❌ Chyba pri ukladaní preferencií: ${error.message}`,
