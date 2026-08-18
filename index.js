@@ -1933,6 +1933,26 @@ function getVsetkyTimy() {
 }
 
 window.zmenTimPouzivatela = async function(userId, teamName) {
+  // Nájdenie používateľa pre zobrazenie emailu a tímu
+  const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+  if (!user) {
+    await showAlert('Používateľ sa nenašiel', 'Chyba', '❌');
+    return;
+  }
+  
+  // Získanie zobrazenia názvu tímu (ak je prázdny, zobraziť "Žiadny tím")
+  const displayTeamName = teamName || 'Žiadny tím';
+  const oldTeamName = user.teamName || 'Žiadny tím';
+  
+  // Potvrdenie zmeny tímu
+  const confirmed = await showWarningConfirm(
+    `Naozaj chcete priradiť používateľovi <strong>${user.email}</strong> tím <strong>${displayTeamName}</strong>?<br><br>Pôvodný tím: <strong>${oldTeamName}</strong>`,
+    'Priradenie tímu',
+    '🏐'
+  );
+  
+  if (confirmed !== 'confirm') return;
+  
   try {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
@@ -1941,11 +1961,13 @@ window.zmenTimPouzivatela = async function(userId, teamName) {
       teamUpdatedBy: window.app.aktualnyPouzivatel?.uid || ''
     });
     
-    const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
-    if (user) {
-      user.teamName = teamName || '';
+    // Aktualizácia lokálneho zoznamu používateľov
+    const updatedUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+    if (updatedUser) {
+      updatedUser.teamName = teamName || '';
     }
     
+    // Ak sa mení tím prihláseného používateľa, aktualizovať aj jeho zobrazenie
     if (userId === window.app.aktualnyPouzivatel?.uid) {
       window.app.aktualnyPouzivatelTeam = teamName || '';
       
@@ -1954,9 +1976,17 @@ window.zmenTimPouzivatela = async function(userId, teamName) {
       }
     }
     
-    await showAlert('✅ Tím bol úspešne priradený!', 'Úspech', '✅');
+    await showAlert(
+      `✅ Používateľovi <strong>${user.email}</strong> bol úspešne priradený tím <strong>${displayTeamName}</strong>!`,
+      'Úspech',
+      '✅'
+    );
   } catch (error) {
-    await showAlert('❌ Chyba pri priraďovaní tímu: ' + error.message, 'Chyba', '❌');
+    await showAlert(
+      `❌ Chyba pri priraďovaní tímu používateľovi <strong>${user.email}</strong>: ${error.message}`,
+      'Chyba',
+      '❌'
+    );
   }
 };
 
