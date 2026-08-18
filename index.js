@@ -2623,7 +2623,7 @@ function zobrazVideaPouzivatelom(videa) {
   });
   
   html += '</div>';
-  html += '<div id="noResultsMessage" class="no-results" style="display:none;">Žiadne videá nevyhovujú filtrom</div>';
+  html += '<div id="noResultsMessage" class="no-results" style="display:none;">Žiadne videá.</div>';
   
   container.innerHTML = html;
   
