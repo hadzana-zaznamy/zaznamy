@@ -2806,8 +2806,7 @@ function otvorModalVidea(video = null) {
   
   const sutOptions = [
     { value: '', text: 'Vyberte súťaž' },
-    { value: '1. liga', text: '1. liga' },
-    { value: '1. liga žien', text: '1. liga žien' }
+    { value: '1. liga', text: '1. liga' }
   ];
   
   sutOptions.forEach(opt => {
