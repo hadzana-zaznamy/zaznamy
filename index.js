@@ -1849,8 +1849,8 @@ function zobrazPouzivatelov(pouzivatelia) {
       <tr style="background-color:#f5f5f5;">
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Email</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Rola</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Priradený tím</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Preferovaný tím</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Priradený tím</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Stav</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Registrovaný</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Akcia</th>
@@ -1875,6 +1875,9 @@ function zobrazPouzivatelov(pouzivatelia) {
           </span>
         </td>
         <td style="padding:12px;">
+          ${teamPreference ? `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e8f5e9;color:#2e7d32;">${teamPreference}</span>` : '<span style="font-size:12px;color:#999;">Nezadané</span>'}
+        </td>
+        <td style="padding:12px;">
           ${!jeAdmin ? `
             <select onchange="zmenTimPouzivatela('${user.id}', this.value)" 
                     style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;background-color:white;cursor:pointer;">
@@ -1882,9 +1885,6 @@ function zobrazPouzivatelov(pouzivatelia) {
               ${vsetkyTimy.map(t => `<option value="${t}" ${teamName === t ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
           ` : '<span style="font-size:12px;color:#999;">Všetky tímy</span>'}
-        </td>
-        <td style="padding:12px;">
-          ${teamPreference ? `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e8f5e9;color:#2e7d32;">${teamPreference}</span>` : '<span style="font-size:12px;color:#999;">Nezadané</span>'}
         </td>
         <td style="padding:12px;">
           <span style="padding:4px 12px;border-radius:12px;font-size:12px;${jeSchvaleny ? 'background-color:#c8e6c9;color:#2e7d32;' : 'background-color:#ffcdd2;color:#c62828;'}">
