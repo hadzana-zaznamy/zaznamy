@@ -768,16 +768,16 @@ style.textContent = `
     transition: opacity 0.2s ease;
   }
   
-  #customPlayerOverlay.playing #centerPlayButtonContainer {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
+//  #customPlayerOverlay.playing #centerPlayButtonContainer {
+//    opacity: 0;
+//    pointer-events: none;
+//    transition: opacity 0.2s ease;
+//  }
   
-  #customPlayerOverlay.paused #centerPlayButtonContainer {
-    opacity: 1;
-    pointer-events: all;
-  }
+//  #customPlayerOverlay.paused #centerPlayButtonContainer {
+//    opacity: 1;
+//    pointer-events: all;
+//  }
   
   #customPlayerOverlay.playing:hover #centerPlayButtonContainer {
     opacity: 0;
