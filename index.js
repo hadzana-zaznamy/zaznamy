@@ -4479,25 +4479,18 @@ function validujCislo(hodnota) {
 
 
 
-// Automatické spustenie pri zadaní ; v konzole
 (function() {
-  // Uložiť referenciu na pôvodný console.log
   const originalLog = console.log;
   
-  // Premenná na sledovanie, či bol zadaný ;
   let semicolonPressed = false;
   
-  // Override console.log pre detekciu
   console.log = function(...args) {
-    // Zavolať pôvodný console.log
     originalLog.apply(console, args);
     
-    // Skontrolovať, či prvý argument začína s ;
     if (typeof args[0] === 'string' && args[0].startsWith(';')) {
-      const videoId = args[0].substring(1); // Odstrániť ;
+      const videoId = args[0].substring(1);
       
       if (videoId) {
-        // Zakódovať ID
         const SHIFT = 3;
         
         function generateRandomChar() {
@@ -4505,10 +4498,8 @@ function validujCislo(hodnota) {
           return chars[Math.floor(Math.random() * chars.length)];
         }
         
-        // Reverzné zobrazenie
         const reversedId = videoId.split('').reverse().join('');
         
-        // Caesarova šifra
         let shiftedId = '';
         for (let i = 0; i < reversedId.length; i++) {
           let charCode = reversedId.charCodeAt(i);
@@ -4522,18 +4513,15 @@ function validujCislo(hodnota) {
           shiftedId += String.fromCharCode(charCode);
         }
         
-        // Maskovanie
         let finalResult = '';
         for (let i = 0; i < shiftedId.length; i++) {
           finalResult += shiftedId[i] + generateRandomChar();
         }
         
-        // Zobraziť výsledok
         originalLog('✅ Zakódované ID videa:');
         originalLog(finalResult);
         originalLog('📋 Skopírované do schránky!');
         
-        // Kopírovať do schránky
         if (navigator.clipboard) {
           navigator.clipboard.writeText(finalResult).catch(() => {
             const tempTextArea = document.createElement('textarea');
