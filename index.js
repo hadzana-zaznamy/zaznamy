@@ -2475,7 +2475,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     sezonaContainer.style.border = '1px solid #e0e0e0';
     
     const sezonaLabel = document.createElement('div');
-    sezonaLabel.textContent = '📅 Priradené sezóny (viac možností):';
+    sezonaLabel.textContent = '📅 Priradené sezóny:';
     sezonaLabel.style.fontWeight = 'bold';
     sezonaLabel.style.marginBottom = '8px';
     sezonaLabel.style.fontSize = '13px';
@@ -2542,7 +2542,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     kategoriaContainer.style.border = '1px solid #e0e0e0';
     
     const kategoriaLabel = document.createElement('div');
-    kategoriaLabel.textContent = '🏆 Priradené kategórie (viac možností):';
+    kategoriaLabel.textContent = '🏆 Priradené kategórie:';
     kategoriaLabel.style.fontWeight = 'bold';
     kategoriaLabel.style.marginBottom = '8px';
     kategoriaLabel.style.fontSize = '13px';
@@ -3911,7 +3911,7 @@ async function otvorModalUpravyMoichPreferencii() {
   sezonaContainer.style.border = '1px solid #e0e0e0';
   
   const sezonaLabel = document.createElement('div');
-  sezonaLabel.textContent = '📅 Moje preferované sezóny (viac možností):';
+  sezonaLabel.textContent = '📅 Moje preferované sezóny:';
   sezonaLabel.style.fontWeight = 'bold';
   sezonaLabel.style.marginBottom = '8px';
   sezonaLabel.style.fontSize = '13px';
@@ -3972,7 +3972,7 @@ async function otvorModalUpravyMoichPreferencii() {
   kategoriaContainer.style.border = '1px solid #e0e0e0';
   
   const kategoriaLabel = document.createElement('div');
-  kategoriaLabel.textContent = '🏆 Moje preferované kategórie (viac možností):';
+  kategoriaLabel.textContent = '🏆 Moje preferované kategórie:';
   kategoriaLabel.style.fontWeight = 'bold';
   kategoriaLabel.style.marginBottom = '8px';
   kategoriaLabel.style.fontSize = '13px';
