@@ -1085,6 +1085,7 @@ function inicializujAplikaciu() {
     aktualnyPouzivatel: null,
     aktualnyPouzivatelRole: null,
     aktualnyPouzivatelApproved: null,
+    aktualnyPouzivatelTeam: '',
     vsetciPouzivatelia: [],
     zobrazenieAdmin: 'aplikacia',
     unsubscribeUsers: null,
@@ -1122,6 +1123,7 @@ function inicializujAplikaciu() {
       
           this.aktualnyPouzivatelApproved = userData.approved || false;
           this.aktualnyPouzivatelRole = userData.role || 'user';
+          this.aktualnyPouzivatelTeam = userData.teamName || '';
           
           if (predoslyApproved !== this.aktualnyPouzivatelApproved || 
               predoslaRole !== this.aktualnyPouzivatelRole) {
@@ -1292,7 +1294,8 @@ function inicializujAplikaciu() {
             role: data.role || 'user',
             createdAt: data.createdAt || 'Neznámy',
             uid: data.uid,
-            approved: data.approved || false
+            approved: data.approved || false,
+            teamName: data.teamName || ''
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
@@ -1367,7 +1370,8 @@ function inicializujAplikaciu() {
             role: data.role || 'user',
             createdAt: data.createdAt || 'Neznámy',
             uid: data.uid,
-            approved: data.approved || false
+            approved: data.approved || false,
+            teamName: data.teamName || ''
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
@@ -1649,6 +1653,7 @@ function inicializujAplikaciu() {
           const userData = userDoc.data();
           appObj.aktualnyPouzivatelRole = userData.role || 'user';
           appObj.aktualnyPouzivatelApproved = userData.approved || false;
+          appObj.aktualnyPouzivatelTeam = userData.teamName || '';
         } else {
           appObj.aktualnyPouzivatelRole = 'user';
           appObj.aktualnyPouzivatelApproved = false;
@@ -1821,6 +1826,7 @@ function zobrazPouzivatelov(pouzivatelia) {
       <tr style="background-color:#f5f5f5;">
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Email</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Rola</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Tím</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Stav</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Registrovaný</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Akcia</th>
@@ -1833,6 +1839,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     const jeAdmin = user.role === 'admin';
     const jeAktualny = user.uid === window.app.aktualnyPouzivatel?.uid;
     const jeSchvaleny = user.approved === true;
+    const teamName = user.teamName || '';
     
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}">
@@ -1841,6 +1848,15 @@ function zobrazPouzivatelov(pouzivatelia) {
           <span style="padding:4px 12px;border-radius:12px;font-size:12px;${jeAdmin ? 'background-color:#fff3e0;color:#e65100;' : 'background-color:#e3f2fd;color:#1565c0;'}">
             ${jeAdmin ? 'Admin' : 'User'}
           </span>
+        </td>
+        <td style="padding:12px;">
+          ${!jeAdmin ? `
+            <select onchange="zmenTimPouzivatela('${user.id}', this.value)" 
+                    style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;background-color:white;cursor:pointer;">
+              <option value="">Žiadny tím</option>
+              ${getVsetkyTimy().map(t => `<option value="${t}" ${teamName === t ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>
+          ` : '<span style="font-size:12px;color:#999;">Všetky tímy</span>'}
         </td>
         <td style="padding:12px;">
           <span style="padding:4px 12px;border-radius:12px;font-size:12px;${jeSchvaleny ? 'background-color:#c8e6c9;color:#2e7d32;' : 'background-color:#ffcdd2;color:#c62828;'}">
@@ -1878,6 +1894,33 @@ function zobrazPouzivatelov(pouzivatelia) {
   html += '</tbody></table></div>';
   container.innerHTML = html;
 }
+
+function getVsetkyTimy() {
+  const videa = window.app.vsetkyVidea || [];
+  const timy = [...new Set(videa.map(v => v.tim).filter(Boolean))];
+  return timy.sort();
+}
+
+window.zmenTimPouzivatela = async function(userId, teamName) {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      teamName: teamName || '',
+      teamUpdatedAt: new Date().toISOString(),
+      teamUpdatedBy: window.app.aktualnyPouzivatel?.uid || ''
+    });
+    
+    // Aktualizovať lokálne dáta
+    const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+    if (user) {
+      user.teamName = teamName || '';
+    }
+    
+    await showAlert('✅ Tím bol úspešne priradený!', 'Úspech', '✅');
+  } catch (error) {
+    await showAlert('❌ Chyba pri priraďovaní tímu: ' + error.message, 'Chyba', '❌');
+  }
+};
 
 window.schvalPouzivatela = async function(userId) {
   const confirmed = await showWarningConfirm(
@@ -2087,12 +2130,20 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
   `;
 }
 
-// Zobrazenie videí pre používateľov
 function zobrazVideaPouzivatelom(videa) {
   const container = document.getElementById('videaPrePouzivatelov');
   if (!container) return;
   
-  if (!videa || videa.length === 0) {
+  // Získať tím aktuálneho používateľa
+  const aktualnyUserTeam = window.app.aktualnyPouzivatelTeam || '';
+  
+  // Filtrovať videá podľa tímu používateľa (ak nie je admin)
+  let zobrazeneVidea = videa;
+  if (window.app.aktualnyPouzivatelRole !== 'admin' && aktualnyUserTeam) {
+    zobrazeneVidea = videa.filter(v => v.tim === aktualnyUserTeam);
+  }
+  
+  if (!zobrazeneVidea || zobrazeneVidea.length === 0) {
     container.innerHTML = `
       <div class="filters-container">
         <div class="filters">
@@ -2106,17 +2157,17 @@ function zobrazVideaPouzivatelom(videa) {
           <button class="reset-button" onclick="resetFiltre()">Vymazať filtre</button>
         </div>
       </div>
-      <p style="text-align:center;color:#999;padding:40px;">Žiadne videá nie sú dostupné</p>
+      <p style="text-align:center;color:#999;padding:40px;">${aktualnyUserTeam ? `Žiadne videá pre tím: ${aktualnyUserTeam}` : 'Žiadne videá nie sú dostupné'}</p>
     `;
     return;
   }
   
   // Získanie unikátnych hodnôt pre filtre
-  const kategorie = [...new Set(videa.map(v => v.kategoria).filter(Boolean))];
-  const sezony = [...new Set(videa.map(v => v.sezona).filter(Boolean))];
-  const sutaze = [...new Set(videa.map(v => v.sutaz).filter(Boolean))];
-  const timy = [...new Set(videa.map(v => v.tim).filter(Boolean))];
-  const mesiace = [...new Set(videa.map(v => v.mesiac).filter(Boolean))];
+  const kategorie = [...new Set(zobrazeneVidea.map(v => v.kategoria).filter(Boolean))];
+  const sezony = [...new Set(zobrazeneVidea.map(v => v.sezona).filter(Boolean))];
+  const sutaze = [...new Set(zobrazeneVidea.map(v => v.sutaz).filter(Boolean))];
+  const timy = [...new Set(zobrazeneVidea.map(v => v.tim).filter(Boolean))];
+  const mesiace = [...new Set(zobrazeneVidea.map(v => v.mesiac).filter(Boolean))];
   
   let html = `
     <div class="filters-container">
@@ -2149,8 +2200,8 @@ function zobrazVideaPouzivatelom(videa) {
     <div id="videoContainer">
   `;
   
-  // Zobrazenie všetkých videí (filtrovanie sa robí cez JS)
-  videa.forEach((video) => {
+  // Zobrazenie filtrovaných videí
+  zobrazeneVidea.forEach((video) => {
     html += vytvorVideoKartu(video, false);
   });
   
@@ -2158,6 +2209,9 @@ function zobrazVideaPouzivatelom(videa) {
   html += '<div id="noResultsMessage" class="no-results" style="display:none;">Žiadne videá nevyhovujú filtrom</div>';
   
   container.innerHTML = html;
+  
+  // Uložiť filtrované videá pre použitie vo filtroch
+  window.filteredVidea = zobrazeneVidea;
   
   // Pridať event listenery pre filtre
   document.getElementById('filterKategoria').addEventListener('change', aplikujFiltre);
@@ -2167,9 +2221,9 @@ function zobrazVideaPouzivatelom(videa) {
   document.getElementById('filterMesiac').addEventListener('change', aplikujFiltre);
 }
 
-// Globálna funkcia pre filtre
 window.aplikujFiltre = function() {
-  const videa = window.app.vsetkyVidea || [];
+  // Použiť filtrované videá podľa tímu
+  const videa = window.filteredVidea || window.app.vsetkyVidea || [];
   const kategoria = document.getElementById('filterKategoria')?.value || '';
   const sezona = document.getElementById('filterSezona')?.value || '';
   const sutaz = document.getElementById('filterSutaz')?.value || '';
