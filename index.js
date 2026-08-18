@@ -1127,9 +1127,7 @@ function inicializujAplikaciu() {
               predoslaRole !== this.aktualnyPouzivatelRole) {
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
           }
-        } else {
-          console.log('Používateľský dokument bol odstránený, odhlasujem používateľa');
-          
+        } else {          
           showAlert(
             'Váš účet bol odstránený administrátorom. Budete odhlásený.',
             'Účet odstránený',
@@ -1145,12 +1143,10 @@ function inicializujAplikaciu() {
               this.aktualnyPouzivatelApproved = null;
               prerenderujPodlaStavu(null);
             }).catch((error) => {
-              console.error('Chyba pri odhlásení:', error);
             });
           });
         }
       }, (error) => {
-        console.error('Chyba v listeneri používateľa:', error);
       });
     },
     
@@ -1161,7 +1157,6 @@ function inicializujAplikaciu() {
         const querySnapshot = await getDocs(q);
         return querySnapshot.empty;
       } catch (error) {
-        console.error('Chyba pri kontrole prvého používateľa:', error);
         return false;
       }
     },
@@ -1267,7 +1262,6 @@ function inicializujAplikaciu() {
                 this.aktualnyPouzivatelApproved = userData.approved || false;
               }
             } catch (error) {
-              console.error('Chyba pri načítaní údajov:', error);
               this.aktualnyPouzivatelRole = 'user';
               this.aktualnyPouzivatelApproved = false;
             }
@@ -1308,7 +1302,6 @@ function inicializujAplikaciu() {
           zobrazPouzivatelov(pouzivatelia);
         }
       }, (error) => {
-        console.error('Chyba v real-time listeneri:', error);
       });
     },
     
@@ -1354,7 +1347,6 @@ function inicializujAplikaciu() {
           zobrazVideaPouzivatelom(videa);
         }
       }, (error) => {
-        console.error('Chyba v real-time listeneri pre videá:', error);
       });
     },
     
@@ -1666,7 +1658,6 @@ function inicializujAplikaciu() {
         appObj.spustiRealTimeListenerPreVidea();
         
       } catch (error) {
-        console.error('Chyba pri načítaní údajov:', error);
         appObj.aktualnyPouzivatelRole = 'user';
         appObj.aktualnyPouzivatelApproved = false;
       }
@@ -2054,9 +2045,33 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     detailsHtml += `<p><strong>Dátum a čas:</strong> ${video.datumacas}</p>`;
   }
   
+  // Pre admin zobrazenie - tlačidlá Upraviť a Odstrániť
+  let adminButtonsHtml = '';
+  if (sOdstranenim) {
+    adminButtonsHtml = `
+      <div class="video-meta">
+        <span>Pridané: ${formatujDatum(video.createdAt)}</span>
+        <div style="display:flex;gap:5px;" onclick="event.stopPropagation();">
+          <button onclick="otvorModalUpravyVidea('${video.id}')" 
+                  class="btn-edit-video"
+                  style="padding:4px 10px;font-size:11px;">
+            ✏️ Upraviť
+          </button>
+          <button onclick="odstranVideo('${video.id}')" 
+                  class="btn-remove-user"
+                  style="padding:4px 10px;font-size:11px;">
+            🗑️ Odstrániť
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    adminButtonsHtml = video.createdAt ? `<div class="video-meta"><span>Pridané: ${formatujDatum(video.createdAt)}</span></div>` : '';
+  }
+  
   return `
-    <div class="video-card" data-video-id="${video.id}">
-      <div class="video-thumbnail" onclick="otvorVideoModal('${video.id}')">
+    <div class="video-card" data-video-id="${video.id}" onclick="otvorVideoModal('${video.id}')">
+      <div class="video-thumbnail">
         <img src="${thumbnailUrl}" alt="${video.nazov || 'Video'}" loading="lazy" onerror="this.src='https://placehold.co/640x360/1f2937/white?text=Video'">
         <div class="play-button">
           <svg viewBox="0 0 24 24">
@@ -2066,25 +2081,7 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
       </div>
       <div class="video-details">
         ${detailsHtml}
-        ${sOdstranenim ? `
-          <div class="video-meta">
-            <span>Pridané: ${formatujDatum(video.createdAt)}</span>
-            <div style="display:flex;gap:5px;">
-              <button onclick="otvorModalUpravyVidea('${video.id}')" 
-                      class="btn-edit-video"
-                      style="padding:4px 10px;font-size:11px;">
-                ✏️ Upraviť
-              </button>
-              <button onclick="odstranVideo('${video.id}')" 
-                      class="btn-remove-user"
-                      style="padding:4px 10px;font-size:11px;">
-                🗑️ Odstrániť
-              </button>
-            </div>
-          </div>
-        ` : `
-          ${video.createdAt ? `<div class="video-meta"><span>Pridané: ${formatujDatum(video.createdAt)}</span></div>` : ''}
-        `}
+        ${adminButtonsHtml}
       </div>
     </div>
   `;
@@ -2247,20 +2244,15 @@ function zobrazVideaAdmin(videa) {
 
 // Upravená funkcia otvorVideoModal - pridáme zmenu textu tlačidla
 window.otvorVideoModal = async function(videoId) {
-  console.log('otvorVideoModal volaný s ID:', videoId);
   
   const video = window.app.vsetkyVidea.find(v => v.id === videoId);
   if (!video) {
-    console.error('Video sa nenašlo, ID:', videoId);
     await showAlert('Video sa nenašlo', 'Chyba', '❌');
     return;
-  }
-  
-  console.log('Nájdené video:', video);
+  }  
   
   const modal = document.getElementById('videoModal');
   if (!modal) {
-    console.error('Modal #videoModal neexistuje');
     return;
   }
   
@@ -2281,7 +2273,6 @@ window.otvorVideoModal = async function(videoId) {
         window.youtubePlayer.stopVideo();
       }
     } catch(e) {
-      console.warn('Chyba pri zatváraní starého prehrávača:', e);
     }
     window.youtubePlayer = null;
   }
@@ -2314,9 +2305,7 @@ window.otvorVideoModal = async function(videoId) {
   // DEKÓDOVANIE VIDEO ID pomocou workera
   let decodedVideoId = video.videoId;
   
-  try {
-    console.log('Dekódujem video ID:', video.videoId);
-    
+  try {    
     // Zavolať worker na dekódovanie
     const workerUrl = `https://smfhkzilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`;
     const response = await fetch(workerUrl);
@@ -2325,22 +2314,14 @@ window.otvorVideoModal = async function(videoId) {
       const data = await response.json();
       if (data.videoId) {
         decodedVideoId = data.videoId;
-        console.log('Dekódované video ID:', decodedVideoId);
-      } else {
-        console.warn('Worker nevrátil videoId, používam pôvodné ID');
-      }
-    } else {
-      console.warn('Worker vrátil chybu:', response.status, 'používam pôvodné ID');
-    }
+      } 
+    } 
   } catch (error) {
-    console.warn('Chyba pri dekódovaní, používam pôvodné ID:', error);
   }
   
   // Skontrolovať či je YT API dostupné
   if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
-    // Počkáme na načítanie YT API
-    console.log('YT API nie je dostupné, čakám...');
-    
+    // Počkáme na načítanie YT API    
     // Načítanie YouTube API ak nie je dostupné
     if (!document.getElementById('youtube-api-script')) {
       const tag = document.createElement('script');
@@ -2376,9 +2357,7 @@ window.otvorVideoModal = async function(videoId) {
   }
   
   // Vytvoriť prehrávač s dekódovaným ID
-  try {
-    console.log('Vytváram prehrávač s ID:', decodedVideoId);
-    
+  try {   
     window.youtubePlayer = new YT.Player('youtubePlayer', {
       videoId: decodedVideoId,
       playerVars: { 
@@ -2390,7 +2369,6 @@ window.otvorVideoModal = async function(videoId) {
       },
       events: {
         onReady: (e) => {
-          console.log('YT Player ready');
           if (e.target && typeof e.target.playVideo === 'function') {
             e.target.playVideo();
             let dur = e.target.getDuration();
@@ -2407,12 +2385,10 @@ window.otvorVideoModal = async function(videoId) {
                 e.target.setPlaybackQuality('hd1080');
               }
             } catch (qError) {
-              console.warn('Nastavenie kvality zlyhalo:', qError);
             }
           }
         },
         onStateChange: (e) => {
-          console.log('YT Player state change:', e.data);
           updatePlayButtons(e.data);
           if (e.data === 1) {
             if (window.progressInterval) clearInterval(window.progressInterval);
@@ -2427,7 +2403,6 @@ window.otvorVideoModal = async function(videoId) {
           }
         },
         onError: (e) => {
-          console.error('YT Player error:', e);
           if (modalErrorDiv) {
             modalErrorDiv.style.display = 'flex';
             modalErrorDiv.innerHTML = '<p>Video nie je dostupné. Skontrolujte ID videa.</p>';
@@ -2439,7 +2414,6 @@ window.otvorVideoModal = async function(videoId) {
       }
     });
   } catch (error) {
-    console.error('Chyba pri vytváraní prehrávača:', error);
     if (modalErrorDiv) {
       modalErrorDiv.style.display = 'flex';
       modalErrorDiv.innerHTML = '<p>Chyba pri načítaní prehrávača: ' + error.message + '</p>';
@@ -2895,7 +2869,6 @@ function otvorModalVidea(video = null) {
             throw new Error('Musí byť objekt');
           }
         } catch (error) {
-          console.error('Chyba pri parsovaní:', error);
           messageDiv.textContent = '❌ Neplatný formát časových značiek. Použite JSON alebo JavaScript objekt bez "timestamps:" prefixu.';
           messageDiv.style.color = 'red';
           return;
@@ -3300,7 +3273,6 @@ function closeVideoModal() {
         window.youtubePlayer.destroy();
       }
     } catch(e) {
-      console.warn('Chyba pri zatváraní prehrávača:', e);
     }
     window.youtubePlayer = null;
   }
