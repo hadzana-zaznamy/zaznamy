@@ -1599,8 +1599,6 @@ function inicializujAplikaciu() {
           datumacas: videoData.datumacas || '',
           timestamps: videoData.timestamps || {},
           createdAt: new Date().toISOString(),
-          createdBy: this.aktualnyPouzivatel.uid,
-          createdByEmail: this.aktualnyPouzivatel.email
         });
         return { success: true, id: docRef.id };
       } catch (error) {
