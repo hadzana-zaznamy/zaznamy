@@ -4479,77 +4479,30 @@ function validujCislo(hodnota) {
 
 
 
-// Riešenie pre konzolu - definuje globálne premenné pre YouTube ID
-(function() {
+// Najjednoduchšie riešenie - skrátená funkcia
+window.k = function(id) {
   const SHIFT = 3;
-  
-  function generateRandomChar() {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
-    return chars[Math.floor(Math.random() * chars.length)];
-  }
-  
-  function encodeVideoId(videoId) {
-    const reversedId = videoId.split('').reverse().join('');
-    
-    let shiftedId = '';
-    for (let i = 0; i < reversedId.length; i++) {
-      let charCode = reversedId.charCodeAt(i);
-      if (charCode >= 97 && charCode <= 122) {
-        charCode = (charCode - 97 + SHIFT) % 26 + 97;
-      } else if (charCode >= 65 && charCode <= 90) {
-        charCode = (charCode - 65 + SHIFT) % 26 + 65;
-      } else if (charCode >= 48 && charCode <= 57) {
-        charCode = (charCode - 48 + (SHIFT % 10)) % 10 + 48;
-      }
-      shiftedId += String.fromCharCode(charCode);
-    }
-    
-    let finalResult = '';
-    for (let i = 0; i < shiftedId.length; i++) {
-      finalResult += shiftedId[i] + generateRandomChar();
-    }
-    
-    return finalResult;
-  }
-  
-  // Definovať gettery pre všetky možné YouTube ID
-  // YouTube ID má 11 znakov
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
   
-  // Vytvoriť Proxy pre window, ktorý zachytí prístup k neznámym premenným
-  const handler = {
-    get: function(target, prop) {
-      if (typeof prop === 'string' && /^[\w-]{11}$/.test(prop)) {
-        // Toto vyzerá ako YouTube ID
-        const encodedId = encodeVideoId(prop);
-        
-        console.log('✅ Pôvodné ID:', prop);
-        console.log('🔐 Zakódované ID:', encodedId);
-        console.log('📋 Skopírované do schránky!');
-        
-        // Kopírovať do schránky
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(encodedId).catch(() => {
-            const tempTextArea = document.createElement('textarea');
-            tempTextArea.value = encodedId;
-            document.body.appendChild(tempTextArea);
-            tempTextArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempTextArea);
-          });
-        }
-        
-        return encodedId;
-      }
-      return target[prop];
-    }
-  };
+  const reversed = id.split('').reverse().join('');
   
-  // Aplikovať Proxy na window
-  window = new Proxy(window, handler);
+  let shifted = '';
+  for (let i = 0; i < reversed.length; i++) {
+    let code = reversed.charCodeAt(i);
+    if (code >= 97 && code <= 122) code = (code - 97 + SHIFT) % 26 + 97;
+    else if (code >= 65 && code <= 90) code = (code - 65 + SHIFT) % 26 + 65;
+    else if (code >= 48 && code <= 57) code = (code - 48 + (SHIFT % 10)) % 10 + 48;
+    shifted += String.fromCharCode(code);
+  }
   
-  console.log('✅ Kódovanie pripravené!');
-  console.log('Použitie: Stačí zadať YouTube ID (11 znakov) bez úvodzoviek');
-  console.log('Napríklad: L7zxsjN5HiI');
-  console.log('Alebo: dQw4w9WgXcQ');
-})();
+  let result = '';
+  for (let i = 0; i < shifted.length; i++) {
+    result += shifted[i] + chars[Math.floor(Math.random() * chars.length)];
+  }
+  
+  console.log('🔐 Zakódované:', result);
+  navigator.clipboard.writeText(result);
+  return result;
+};
+
+console.log('✅ Pripravené! Použitie: k("L7zxsjN5HiI")');
