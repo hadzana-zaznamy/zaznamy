@@ -2942,38 +2942,60 @@ function zobrazVideaPouzivatelom(videa) {
     userKategorie = [];
   }
   
-  // --- NOVÁ KONTROLA: Ak nie je admin a nemá priradené žiadne hodnoty ---
-  // Používateľ musí mať priradený aspoň jeden tím, inak sa mu nezobrazia žiadne videá
-  if (!jeAdmin && userTeams.length === 0) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
-        <p style="font-size:18px;color:#666;margin-bottom:10px;">⚠️ Nemáte priradený žiadny tím</p>
-        <p style="font-size:14px;color:#999;">Kontaktujte administrátora, aby vám priradil tímy.</p>
-      </div>
-    `;
-    return;
+  // --- KONTROLA: Používateľ musí mať priradené VŠETKY tri zložky ---
+  // Tím, sezóna aj kategória musia byť priradené, inak sa nezobrazia žiadne videá
+  if (!jeAdmin) {
+    // Kontrola či má priradený aspoň jeden tím
+    if (userTeams.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
+          <p style="font-size:18px;color:#666;margin-bottom:10px;">⚠️ Nemáte priradený žiadny tím</p>
+          <p style="font-size:14px;color:#999;">Kontaktujte administrátora, aby vám priradil tímy.</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Kontrola či má priradenú aspoň jednu sezónu
+    if (userSezony.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
+          <p style="font-size:18px;color:#666;margin-bottom:10px;">⚠️ Nemáte priradenú žiadnu sezónu</p>
+          <p style="font-size:14px;color:#999;">Kontaktujte administrátora, aby vám priradil sezóny.</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Kontrola či má priradenú aspoň jednu kategóriu
+    if (userKategorie.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
+          <p style="font-size:18px;color:#666;margin-bottom:10px;">⚠️ Nemáte priradenú žiadnu kategóriu</p>
+          <p style="font-size:14px;color:#999;">Kontaktujte administrátora, aby vám priradil kategórie.</p>
+        </div>
+      `;
+      return;
+    }
   }
   
-  // Ak má používateľ priradené tímy, ale nemá priradené žiadne sezóny ani kategórie,
-  // zobrazia sa mu videá len podľa tímov (sezóny a kategórie sa nefiltrujú)
-  
-  // FILTROVANIE - používame PRIADENÉ hodnoty
+  // FILTROVANIE - používame PRIADENÉ hodnoty (všetky tri sú povinné)
   let zobrazeneVidea = videa.filter(v => {
     // Videá bez ID sa nezobrazujú (okrem admina)
     if (!jeAdmin && (!v.videoId || v.videoId.trim() === '')) return false;
     
-    // Filter podľa PRIADENÝCH tímov - POVINNÉ pre používateľov
+    // Filter podľa PRIADENÝCH tímov
     if (!jeAdmin && userTeams.length > 0) {
       const maTim = userTeams.some(team => v.domaciTim === team || v.hostiaTim === team);
       if (!maTim) return false;
     }
     
-    // Filter podľa PRIADENÝCH sezón - IBA AK sú priradené
+    // Filter podľa PRIADENÝCH sezón
     if (!jeAdmin && userSezony.length > 0) {
       if (!userSezony.includes(v.sezona)) return false;
     }
     
-    // Filter podľa PRIADENÝCH kategórií - IBA AK sú priradené
+    // Filter podľa PRIADENÝCH kategórií
     if (!jeAdmin && userKategorie.length > 0) {
       if (!userKategorie.includes(v.kategoria)) return false;
     }
@@ -3001,10 +3023,8 @@ function zobrazVideaPouzivatelom(videa) {
   
   if (!zobrazeneVidea || zobrazeneVidea.length === 0) {
     let sprava = 'Žiadne videá nie sú dostupné';
-    if (!jeAdmin && userTeams.length > 0) {
-      sprava = `Žiadne videá pre tímy: ${userTeams.join(', ')}`;
-      if (userSezony.length > 0) sprava += `, sezóny: ${userSezony.join(', ')}`;
-      if (userKategorie.length > 0) sprava += `, kategórie: ${userKategorie.map(k => categoryMap[k] || k).join(', ')}`;
+    if (!jeAdmin && userTeams.length > 0 && userSezony.length > 0 && userKategorie.length > 0) {
+      sprava = `Žiadne videá pre tímy: ${userTeams.join(', ')}, sezóny: ${userSezony.join(', ')}, kategórie: ${userKategorie.map(k => categoryMap[k] || k).join(', ')}`;
     }
     
     container.innerHTML = `
