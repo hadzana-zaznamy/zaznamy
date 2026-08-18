@@ -2277,7 +2277,8 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = sezona;
-    checkbox.checked = aktualneSezony.includes(sezona);
+    const jeAktualne = aktualneSezony.includes(sezona);
+    checkbox.checked = jeAktualne;
     checkbox.style.width = '16px';
     checkbox.style.height = '16px';
     checkbox.style.cursor = 'pointer';
@@ -2285,6 +2286,11 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     
     const span = document.createElement('span');
     span.textContent = sezona;
+    // Ak je položka už priradená, zobrazíme ju červenou farbou
+    if (jeAktualne) {
+      span.style.color = '#dc3545';
+      span.style.fontWeight = 'bold';
+    }
     
     label.appendChild(checkbox);
     label.appendChild(span);
@@ -2338,7 +2344,8 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = kategoria;
-    checkbox.checked = aktualneKategorie.includes(kategoria);
+    const jeAktualne = aktualneKategorie.includes(kategoria);
+    checkbox.checked = jeAktualne;
     checkbox.style.width = '16px';
     checkbox.style.height = '16px';
     checkbox.style.cursor = 'pointer';
@@ -2346,6 +2353,11 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     
     const span = document.createElement('span');
     span.textContent = categoryMap[kategoria] || kategoria;
+    // Ak je položka už priradená, zobrazíme ju červenou farbou
+    if (jeAktualne) {
+      span.style.color = '#dc3545';
+      span.style.fontWeight = 'bold';
+    }
     
     label.appendChild(checkbox);
     label.appendChild(span);
@@ -2409,7 +2421,8 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = tim;
-      checkbox.checked = aktualneTimy.includes(tim);
+      const jeAktualne = aktualneTimy.includes(tim);
+      checkbox.checked = jeAktualne;
       checkbox.style.width = '18px';
       checkbox.style.height = '18px';
       checkbox.style.cursor = 'pointer';
@@ -2419,6 +2432,11 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       span.textContent = tim;
       span.style.fontSize = '14px';
       span.style.fontWeight = '500';
+      // Ak je tím už priradený, zobrazíme ho červenou farbou
+      if (jeAktualne) {
+        span.style.color = '#dc3545';
+        span.style.fontWeight = 'bold';
+      }
       
       label.appendChild(checkbox);
       label.appendChild(span);
@@ -2481,7 +2499,6 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     try {
       const userRef = doc(db, 'users', userId);
       await updateDoc(userRef, {
-        // Priradené hodnoty sa ukladajú do samostatných polí
         teamName: vybraneTimy,
         assignedSezona: vybraneSezony,
         assignedKategoria: vybraneKategorie,
