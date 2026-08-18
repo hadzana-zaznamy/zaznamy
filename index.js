@@ -2160,85 +2160,12 @@ function getVsetkyTimy() {
 }
 
 window.otvorModalPriradeniaTimov = async function(userId) {
-  const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+  // Najprv nájdeme používateľa v lokálnych dátach
+  let user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
   if (!user) {
     await showAlert('Používateľ sa nenašiel', 'Chyba', '❌');
     return;
   }
-  
-  // Získanie aktuálnych priradených tímov (adminom)
-  let aktualneTimy = [];
-  if (user.teamName) {
-    if (Array.isArray(user.teamName)) {
-      aktualneTimy = user.teamName;
-    } else if (typeof user.teamName === 'string' && user.teamName.includes(',')) {
-      aktualneTimy = user.teamName.split(',').map(t => t.trim()).filter(t => t);
-    } else if (typeof user.teamName === 'string' && user.teamName) {
-      aktualneTimy = [user.teamName];
-    }
-  }
-  
-  // Získanie aktuálnych priradených sezón (adminom)
-  let aktualneSezony = [];
-  if (user.assignedSezona) {
-    if (Array.isArray(user.assignedSezona)) {
-      aktualneSezony = user.assignedSezona;
-    } else if (typeof user.assignedSezona === 'string' && user.assignedSezona.includes(',')) {
-      aktualneSezony = user.assignedSezona.split(',').map(t => t.trim()).filter(t => t);
-    } else if (typeof user.assignedSezona === 'string' && user.assignedSezona) {
-      aktualneSezony = [user.assignedSezona];
-    }
-  }
-  
-  // Získanie aktuálnych priradených kategórií (adminom)
-  let aktualneKategorie = [];
-  if (user.assignedKategoria) {
-    if (Array.isArray(user.assignedKategoria)) {
-      aktualneKategorie = user.assignedKategoria;
-    } else if (typeof user.assignedKategoria === 'string' && user.assignedKategoria.includes(',')) {
-      aktualneKategorie = user.assignedKategoria.split(',').map(t => t.trim()).filter(t => t);
-    } else if (typeof user.assignedKategoria === 'string' && user.assignedKategoria) {
-      aktualneKategorie = [user.assignedKategoria];
-    }
-  }
-  
-  // --- PREFEROVANÉ HODNOTY POUŽÍVATEĽA (z registrácie) ---
-  let preferovaneTimy = [];
-  if (user.teamPreference) {
-    if (Array.isArray(user.teamPreference)) {
-      preferovaneTimy = user.teamPreference;
-    } else if (typeof user.teamPreference === 'string' && user.teamPreference.includes(',')) {
-      preferovaneTimy = user.teamPreference.split(',').map(t => t.trim()).filter(t => t);
-    } else if (typeof user.teamPreference === 'string' && user.teamPreference) {
-      preferovaneTimy = [user.teamPreference];
-    }
-  }
-  
-  let preferovaneSezony = [];
-  if (user.sezonaPreference) {
-    if (Array.isArray(user.sezonaPreference)) {
-      preferovaneSezony = user.sezonaPreference;
-    } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference.includes(',')) {
-      preferovaneSezony = user.sezonaPreference.split(',').map(t => t.trim()).filter(t => t);
-    } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference) {
-      preferovaneSezony = [user.sezonaPreference];
-    }
-  }
-  
-  let preferovaneKategorie = [];
-  if (user.kategoriaPreference) {
-    if (Array.isArray(user.kategoriaPreference)) {
-      preferovaneKategorie = user.kategoriaPreference;
-    } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference.includes(',')) {
-      preferovaneKategorie = user.kategoriaPreference.split(',').map(t => t.trim()).filter(t => t);
-    } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference) {
-      preferovaneKategorie = [user.kategoriaPreference];
-    }
-  }
-  
-  const vsetkyTimy = getVsetkyTimy();
-  const vsetkySezony = ['2026/2027', '2025/2026', '2024/2025', '2023/2024'];
-  const vsetkyKategorie = ['MLDKY', 'STDKY', 'MLDCI', 'STDCI'];
   
   // Vytvorenie modálneho okna...
   const modal = document.createElement('div');
@@ -2256,6 +2183,11 @@ window.otvorModalPriradeniaTimov = async function(userId) {
   closeBtn.innerHTML = '×';
   closeBtn.onclick = () => {
     modal.remove();
+    // Odpojíme listener pri zatvorení
+    if (window._unsubscribeModalUser) {
+      window._unsubscribeModalUser();
+      window._unsubscribeModalUser = null;
+    }
   };
   modalBox.appendChild(closeBtn);
   
@@ -2276,203 +2208,135 @@ window.otvorModalPriradeniaTimov = async function(userId) {
   infoText.style.marginBottom = '20px';
   modalBox.appendChild(infoText);
   
-  // --- SEKCE: SEZÓNY (viacnásobný výber) ---
-  const sezonaContainer = document.createElement('div');
-  sezonaContainer.style.marginBottom = '15px';
-  sezonaContainer.style.padding = '12px';
-  sezonaContainer.style.backgroundColor = '#f5f7fa';
-  sezonaContainer.style.borderRadius = '8px';
-  sezonaContainer.style.border = '1px solid #e0e0e0';
+  // --- KONTAJNER PRE OBSAH (budeme ho aktualizovať) ---
+  const contentContainer = document.createElement('div');
+  contentContainer.id = 'modalContentContainer';
+  modalBox.appendChild(contentContainer);
   
-  const sezonaLabel = document.createElement('div');
-  sezonaLabel.textContent = '📅 Priradené sezóny (viac možností):';
-  sezonaLabel.style.fontWeight = 'bold';
-  sezonaLabel.style.marginBottom = '8px';
-  sezonaLabel.style.fontSize = '13px';
-  sezonaContainer.appendChild(sezonaLabel);
-  
-  const sezonaCheckboxContainer = document.createElement('div');
-  sezonaCheckboxContainer.style.display = 'flex';
-  sezonaCheckboxContainer.style.flexWrap = 'wrap';
-  sezonaCheckboxContainer.style.gap = '8px';
-  
-  vsetkySezony.forEach(sezona => {
-    const label = document.createElement('label');
-    label.style.display = 'flex';
-    label.style.alignItems = 'center';
-    label.style.gap = '6px';
-    label.style.cursor = 'pointer';
-    label.style.fontSize = '13px';
-    label.style.padding = '4px 8px';
-    label.style.borderRadius = '4px';
-    label.style.backgroundColor = 'white';
-    label.style.border = '1px solid #ddd';
+  // --- FUNKCIA NA VYTVORENIE OBSAHU MODÁLU ---
+  function vytvorModalnyObsah(userData) {
+    // Vyčistíme kontajner
+    contentContainer.innerHTML = '';
     
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.value = sezona;
-    // ZAŠKRTNUTÉ budú tie, ktoré sú PRIADENÉ adminom (assignedSezona)
-    const jePriradene = aktualneSezony.includes(sezona);
-    checkbox.checked = jePriradene;
-    checkbox.style.width = '16px';
-    checkbox.style.height = '16px';
-    checkbox.style.cursor = 'pointer';
-    checkbox.style.accentColor = '#4CAF50';
-    
-    const span = document.createElement('span');
-    span.textContent = sezona;
-    // ČERVENOU a BOLDOM budú tie, ktoré sú v PREFERENCIÁCH používateľa
-    const jePreferovane = preferovaneSezony.includes(sezona);
-    if (jePreferovane) {
-      span.style.color = '#dc3545';
-      span.style.fontWeight = 'bold';
+    // Získanie aktuálnych priradených tímov (adminom)
+    let aktualneTimy = [];
+    if (userData.teamName) {
+      if (Array.isArray(userData.teamName)) {
+        aktualneTimy = userData.teamName;
+      } else if (typeof userData.teamName === 'string' && userData.teamName.includes(',')) {
+        aktualneTimy = userData.teamName.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof userData.teamName === 'string' && userData.teamName) {
+        aktualneTimy = [userData.teamName];
+      }
     }
     
-    label.appendChild(checkbox);
-    label.appendChild(span);
-    
-    label.addEventListener('mouseenter', () => {
-      label.style.backgroundColor = '#f0f7ff';
-      label.style.borderColor = '#90CAF9';
-    });
-    label.addEventListener('mouseleave', () => {
-      label.style.backgroundColor = 'white';
-      label.style.borderColor = '#ddd';
-    });
-    
-    sezonaCheckboxContainer.appendChild(label);
-  });
-  sezonaContainer.appendChild(sezonaCheckboxContainer);
-  modalBox.appendChild(sezonaContainer);
-  
-  // --- SEKCE: KATEGÓRIE (viacnásobný výber) ---
-  const kategoriaContainer = document.createElement('div');
-  kategoriaContainer.style.marginBottom = '15px';
-  kategoriaContainer.style.padding = '12px';
-  kategoriaContainer.style.backgroundColor = '#f5f7fa';
-  kategoriaContainer.style.borderRadius = '8px';
-  kategoriaContainer.style.border = '1px solid #e0e0e0';
-  
-  const kategoriaLabel = document.createElement('div');
-  kategoriaLabel.textContent = '🏆 Priradené kategórie (viac možností):';
-  kategoriaLabel.style.fontWeight = 'bold';
-  kategoriaLabel.style.marginBottom = '8px';
-  kategoriaLabel.style.fontSize = '13px';
-  kategoriaContainer.appendChild(kategoriaLabel);
-  
-  const kategoriaCheckboxContainer = document.createElement('div');
-  kategoriaCheckboxContainer.style.display = 'flex';
-  kategoriaCheckboxContainer.style.flexWrap = 'wrap';
-  kategoriaCheckboxContainer.style.gap = '8px';
-  
-  vsetkyKategorie.forEach(kategoria => {
-    const label = document.createElement('label');
-    label.style.display = 'flex';
-    label.style.alignItems = 'center';
-    label.style.gap = '6px';
-    label.style.cursor = 'pointer';
-    label.style.fontSize = '13px';
-    label.style.padding = '4px 8px';
-    label.style.borderRadius = '4px';
-    label.style.backgroundColor = 'white';
-    label.style.border = '1px solid #ddd';
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.value = kategoria;
-    // ZAŠKRTNUTÉ budú tie, ktoré sú PRIADENÉ adminom (assignedKategoria)
-    const jePriradene = aktualneKategorie.includes(kategoria);
-    checkbox.checked = jePriradene;
-    checkbox.style.width = '16px';
-    checkbox.style.height = '16px';
-    checkbox.style.cursor = 'pointer';
-    checkbox.style.accentColor = '#4CAF50';
-    
-    const span = document.createElement('span');
-    span.textContent = categoryMap[kategoria] || kategoria;
-    // ČERVENOU a BOLDOM budú tie, ktoré sú v PREFERENCIÁCH používateľa
-    const jePreferovane = preferovaneKategorie.includes(kategoria);
-    if (jePreferovane) {
-      span.style.color = '#dc3545';
-      span.style.fontWeight = 'bold';
+    // Získanie aktuálnych priradených sezón (adminom)
+    let aktualneSezony = [];
+    if (userData.assignedSezona) {
+      if (Array.isArray(userData.assignedSezona)) {
+        aktualneSezony = userData.assignedSezona;
+      } else if (typeof userData.assignedSezona === 'string' && userData.assignedSezona.includes(',')) {
+        aktualneSezony = userData.assignedSezona.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof userData.assignedSezona === 'string' && userData.assignedSezona) {
+        aktualneSezony = [userData.assignedSezona];
+      }
     }
     
-    label.appendChild(checkbox);
-    label.appendChild(span);
+    // Získanie aktuálnych priradených kategórií (adminom)
+    let aktualneKategorie = [];
+    if (userData.assignedKategoria) {
+      if (Array.isArray(userData.assignedKategoria)) {
+        aktualneKategorie = userData.assignedKategoria;
+      } else if (typeof userData.assignedKategoria === 'string' && userData.assignedKategoria.includes(',')) {
+        aktualneKategorie = userData.assignedKategoria.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof userData.assignedKategoria === 'string' && userData.assignedKategoria) {
+        aktualneKategorie = [userData.assignedKategoria];
+      }
+    }
     
-    label.addEventListener('mouseenter', () => {
-      label.style.backgroundColor = '#f0f7ff';
-      label.style.borderColor = '#90CAF9';
-    });
-    label.addEventListener('mouseleave', () => {
-      label.style.backgroundColor = 'white';
-      label.style.borderColor = '#ddd';
-    });
+    // --- PREFEROVANÉ HODNOTY POUŽÍVATEĽA (z registrácie) ---
+    let preferovaneTimy = [];
+    if (userData.teamPreference) {
+      if (Array.isArray(userData.teamPreference)) {
+        preferovaneTimy = userData.teamPreference;
+      } else if (typeof userData.teamPreference === 'string' && userData.teamPreference.includes(',')) {
+        preferovaneTimy = userData.teamPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof userData.teamPreference === 'string' && userData.teamPreference) {
+        preferovaneTimy = [userData.teamPreference];
+      }
+    }
     
-    kategoriaCheckboxContainer.appendChild(label);
-  });
-  kategoriaContainer.appendChild(kategoriaCheckboxContainer);
-  modalBox.appendChild(kategoriaContainer);
-  
-  // --- SEKCE: VÝBER TÍMOV ---
-  const timyLabel = document.createElement('div');
-  timyLabel.textContent = '🏐 Priradené tímy:';
-  timyLabel.style.fontWeight = 'bold';
-  timyLabel.style.marginBottom = '8px';
-  timyLabel.style.fontSize = '14px';
-  timyLabel.style.color = '#333';
-  modalBox.appendChild(timyLabel);
-  
-  const container = document.createElement('div');
-  container.style.display = 'flex';
-  container.style.flexDirection = 'column';
-  container.style.gap = '6px';
-  container.style.marginBottom = '20px';
-  container.style.maxHeight = '200px';
-  container.style.overflow = 'auto';
-  container.style.padding = '5px';
-  container.style.border = '1px solid #eee';
-  container.style.borderRadius = '6px';
-  container.style.backgroundColor = '#fafafa';
-  
-  if (vsetkyTimy.length === 0) {
-    const emptyMsg = document.createElement('p');
-    emptyMsg.textContent = 'Žiadne tímy nie sú dostupné. Najprv pridajte videá s tímami.';
-    emptyMsg.style.color = '#999';
-    emptyMsg.style.textAlign = 'center';
-    emptyMsg.style.padding = '20px';
-    emptyMsg.style.fontSize = '14px';
-    container.appendChild(emptyMsg);
-  } else {
-    vsetkyTimy.forEach(tim => {
+    let preferovaneSezony = [];
+    if (userData.sezonaPreference) {
+      if (Array.isArray(userData.sezonaPreference)) {
+        preferovaneSezony = userData.sezonaPreference;
+      } else if (typeof userData.sezonaPreference === 'string' && userData.sezonaPreference.includes(',')) {
+        preferovaneSezony = userData.sezonaPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof userData.sezonaPreference === 'string' && userData.sezonaPreference) {
+        preferovaneSezony = [userData.sezonaPreference];
+      }
+    }
+    
+    let preferovaneKategorie = [];
+    if (userData.kategoriaPreference) {
+      if (Array.isArray(userData.kategoriaPreference)) {
+        preferovaneKategorie = userData.kategoriaPreference;
+      } else if (typeof userData.kategoriaPreference === 'string' && userData.kategoriaPreference.includes(',')) {
+        preferovaneKategorie = userData.kategoriaPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof userData.kategoriaPreference === 'string' && userData.kategoriaPreference) {
+        preferovaneKategorie = [userData.kategoriaPreference];
+      }
+    }
+    
+    const vsetkyTimy = getVsetkyTimy();
+    const vsetkySezony = ['2026/2027', '2025/2026', '2024/2025', '2023/2024'];
+    const vsetkyKategorie = ['MLDKY', 'STDKY', 'MLDCI', 'STDCI'];
+    
+    // --- SEKCE: SEZÓNY (viacnásobný výber) ---
+    const sezonaContainer = document.createElement('div');
+    sezonaContainer.style.marginBottom = '15px';
+    sezonaContainer.style.padding = '12px';
+    sezonaContainer.style.backgroundColor = '#f5f7fa';
+    sezonaContainer.style.borderRadius = '8px';
+    sezonaContainer.style.border = '1px solid #e0e0e0';
+    
+    const sezonaLabel = document.createElement('div');
+    sezonaLabel.textContent = '📅 Priradené sezóny (viac možností):';
+    sezonaLabel.style.fontWeight = 'bold';
+    sezonaLabel.style.marginBottom = '8px';
+    sezonaLabel.style.fontSize = '13px';
+    sezonaContainer.appendChild(sezonaLabel);
+    
+    const sezonaCheckboxContainer = document.createElement('div');
+    sezonaCheckboxContainer.style.display = 'flex';
+    sezonaCheckboxContainer.style.flexWrap = 'wrap';
+    sezonaCheckboxContainer.style.gap = '8px';
+    
+    vsetkySezony.forEach(sezona => {
       const label = document.createElement('label');
       label.style.display = 'flex';
       label.style.alignItems = 'center';
-      label.style.gap = '10px';
-      label.style.padding = '8px 12px';
-      label.style.borderRadius = '6px';
+      label.style.gap = '6px';
       label.style.cursor = 'pointer';
-      label.style.transition = 'background-color 0.2s';
-      label.style.border = '1px solid #eee';
+      label.style.fontSize = '13px';
+      label.style.padding = '4px 8px';
+      label.style.borderRadius = '4px';
       label.style.backgroundColor = 'white';
+      label.style.border = '1px solid #ddd';
       
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.value = tim;
-      // ZAŠKRTNUTÉ budú tie, ktoré sú PRIADENÉ adminom (teamName)
-      const jePriradene = aktualneTimy.includes(tim);
+      checkbox.value = sezona;
+      const jePriradene = aktualneSezony.includes(sezona);
       checkbox.checked = jePriradene;
-      checkbox.style.width = '18px';
-      checkbox.style.height = '18px';
+      checkbox.style.width = '16px';
+      checkbox.style.height = '16px';
       checkbox.style.cursor = 'pointer';
       checkbox.style.accentColor = '#4CAF50';
       
       const span = document.createElement('span');
-      span.textContent = tim;
-      span.style.fontSize = '14px';
-      span.style.fontWeight = '500';
-      // ČERVENOU a BOLDOM budú tie, ktoré sú v PREFERENCIÁCH používateľa
-      const jePreferovane = preferovaneTimy.includes(tim);
+      span.textContent = sezona;
+      const jePreferovane = preferovaneSezony.includes(sezona);
       if (jePreferovane) {
         span.style.color = '#dc3545';
         span.style.fontWeight = 'bold';
@@ -2487,132 +2351,326 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       });
       label.addEventListener('mouseleave', () => {
         label.style.backgroundColor = 'white';
-        label.style.borderColor = '#eee';
+        label.style.borderColor = '#ddd';
       });
       
-      container.appendChild(label);
+      sezonaCheckboxContainer.appendChild(label);
     });
+    sezonaContainer.appendChild(sezonaCheckboxContainer);
+    contentContainer.appendChild(sezonaContainer);
+    
+    // --- SEKCE: KATEGÓRIE (viacnásobný výber) ---
+    const kategoriaContainer = document.createElement('div');
+    kategoriaContainer.style.marginBottom = '15px';
+    kategoriaContainer.style.padding = '12px';
+    kategoriaContainer.style.backgroundColor = '#f5f7fa';
+    kategoriaContainer.style.borderRadius = '8px';
+    kategoriaContainer.style.border = '1px solid #e0e0e0';
+    
+    const kategoriaLabel = document.createElement('div');
+    kategoriaLabel.textContent = '🏆 Priradené kategórie (viac možností):';
+    kategoriaLabel.style.fontWeight = 'bold';
+    kategoriaLabel.style.marginBottom = '8px';
+    kategoriaLabel.style.fontSize = '13px';
+    kategoriaContainer.appendChild(kategoriaLabel);
+    
+    const kategoriaCheckboxContainer = document.createElement('div');
+    kategoriaCheckboxContainer.style.display = 'flex';
+    kategoriaCheckboxContainer.style.flexWrap = 'wrap';
+    kategoriaCheckboxContainer.style.gap = '8px';
+    
+    vsetkyKategorie.forEach(kategoria => {
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.gap = '6px';
+      label.style.cursor = 'pointer';
+      label.style.fontSize = '13px';
+      label.style.padding = '4px 8px';
+      label.style.borderRadius = '4px';
+      label.style.backgroundColor = 'white';
+      label.style.border = '1px solid #ddd';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = kategoria;
+      const jePriradene = aktualneKategorie.includes(kategoria);
+      checkbox.checked = jePriradene;
+      checkbox.style.width = '16px';
+      checkbox.style.height = '16px';
+      checkbox.style.cursor = 'pointer';
+      checkbox.style.accentColor = '#4CAF50';
+      
+      const span = document.createElement('span');
+      span.textContent = categoryMap[kategoria] || kategoria;
+      const jePreferovane = preferovaneKategorie.includes(kategoria);
+      if (jePreferovane) {
+        span.style.color = '#dc3545';
+        span.style.fontWeight = 'bold';
+      }
+      
+      label.appendChild(checkbox);
+      label.appendChild(span);
+      
+      label.addEventListener('mouseenter', () => {
+        label.style.backgroundColor = '#f0f7ff';
+        label.style.borderColor = '#90CAF9';
+      });
+      label.addEventListener('mouseleave', () => {
+        label.style.backgroundColor = 'white';
+        label.style.borderColor = '#ddd';
+      });
+      
+      kategoriaCheckboxContainer.appendChild(label);
+    });
+    kategoriaContainer.appendChild(kategoriaCheckboxContainer);
+    contentContainer.appendChild(kategoriaContainer);
+    
+    // --- SEKCE: VÝBER TÍMOV ---
+    const timyLabel = document.createElement('div');
+    timyLabel.textContent = '🏐 Priradené tímy:';
+    timyLabel.style.fontWeight = 'bold';
+    timyLabel.style.marginBottom = '8px';
+    timyLabel.style.fontSize = '14px';
+    timyLabel.style.color = '#333';
+    contentContainer.appendChild(timyLabel);
+    
+    const timyContainer = document.createElement('div');
+    timyContainer.style.display = 'flex';
+    timyContainer.style.flexDirection = 'column';
+    timyContainer.style.gap = '6px';
+    timyContainer.style.marginBottom = '20px';
+    timyContainer.style.maxHeight = '200px';
+    timyContainer.style.overflow = 'auto';
+    timyContainer.style.padding = '5px';
+    timyContainer.style.border = '1px solid #eee';
+    timyContainer.style.borderRadius = '6px';
+    timyContainer.style.backgroundColor = '#fafafa';
+    
+    if (vsetkyTimy.length === 0) {
+      const emptyMsg = document.createElement('p');
+      emptyMsg.textContent = 'Žiadne tímy nie sú dostupné. Najprv pridajte videá s tímami.';
+      emptyMsg.style.color = '#999';
+      emptyMsg.style.textAlign = 'center';
+      emptyMsg.style.padding = '20px';
+      emptyMsg.style.fontSize = '14px';
+      timyContainer.appendChild(emptyMsg);
+    } else {
+      vsetkyTimy.forEach(tim => {
+        const label = document.createElement('label');
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '10px';
+        label.style.padding = '8px 12px';
+        label.style.borderRadius = '6px';
+        label.style.cursor = 'pointer';
+        label.style.transition = 'background-color 0.2s';
+        label.style.border = '1px solid #eee';
+        label.style.backgroundColor = 'white';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = tim;
+        const jePriradene = aktualneTimy.includes(tim);
+        checkbox.checked = jePriradene;
+        checkbox.style.width = '18px';
+        checkbox.style.height = '18px';
+        checkbox.style.cursor = 'pointer';
+        checkbox.style.accentColor = '#4CAF50';
+        
+        const span = document.createElement('span');
+        span.textContent = tim;
+        span.style.fontSize = '14px';
+        span.style.fontWeight = '500';
+        const jePreferovane = preferovaneTimy.includes(tim);
+        if (jePreferovane) {
+          span.style.color = '#dc3545';
+          span.style.fontWeight = 'bold';
+        }
+        
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        
+        label.addEventListener('mouseenter', () => {
+          label.style.backgroundColor = '#f0f7ff';
+          label.style.borderColor = '#90CAF9';
+        });
+        label.addEventListener('mouseleave', () => {
+          label.style.backgroundColor = 'white';
+          label.style.borderColor = '#eee';
+        });
+        
+        timyContainer.appendChild(label);
+      });
+    }
+    contentContainer.appendChild(timyContainer);
+    
+    // --- TLAČIDLÁ (pridávame ich len raz, nie pri každom refresh) ---
+    // Ak už existujú, nepridávame ich znova
+    if (!contentContainer.querySelector('.modal-buttons')) {
+      const buttonsDiv = document.createElement('div');
+      buttonsDiv.className = 'modal-buttons';
+      buttonsDiv.style.marginTop = '10px';
+      
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'btn-confirm';
+      saveBtn.textContent = '💾 Uložiť zmeny';
+      saveBtn.style.padding = '12px 30px';
+      saveBtn.style.fontSize = '15px';
+      saveBtn.style.fontWeight = '600';
+      saveBtn.style.borderRadius = '8px';
+      
+      saveBtn.onclick = async () => {
+        // Získanie vybraných tímov
+        const timCheckboxes = timyContainer.querySelectorAll('input[type="checkbox"]');
+        const vybraneTimy = [];
+        timCheckboxes.forEach(cb => {
+          if (cb.checked) vybraneTimy.push(cb.value);
+        });
+        
+        const sezonaCheckboxes = sezonaCheckboxContainer.querySelectorAll('input[type="checkbox"]');
+        const vybraneSezony = [];
+        sezonaCheckboxes.forEach(cb => {
+          if (cb.checked) vybraneSezony.push(cb.value);
+        });
+        
+        const kategoriaCheckboxes = kategoriaCheckboxContainer.querySelectorAll('input[type="checkbox"]');
+        const vybraneKategorie = [];
+        kategoriaCheckboxes.forEach(cb => {
+          if (cb.checked) vybraneKategorie.push(cb.value);
+        });
+        
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Ukladám...';
+        saveBtn.style.opacity = '0.7';
+        saveBtn.style.cursor = 'not-allowed';
+        
+        try {
+          const userRef = doc(db, 'users', userId);
+          await updateDoc(userRef, {
+            teamName: vybraneTimy,
+            assignedSezona: vybraneSezony,
+            assignedKategoria: vybraneKategorie,
+            teamUpdatedAt: new Date().toISOString(),
+            teamUpdatedBy: window.app.aktualnyPouzivatel?.uid || ''
+          });
+          
+          // Aktualizácia lokálnych dát
+          const updatedUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+          if (updatedUser) {
+            updatedUser.teamName = vybraneTimy;
+            updatedUser.assignedSezona = vybraneSezony;
+            updatedUser.assignedKategoria = vybraneKategorie;
+          }
+          
+          if (userId === window.app.aktualnyPouzivatel?.uid) {
+            window.app.aktualnyPouzivatelTeam = vybraneTimy;
+            window.app.aktualnyPouzivatelSezona = vybraneSezony;
+            window.app.aktualnyPouzivatelKategoria = vybraneKategorie;
+            
+            if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
+              zobrazVideaPouzivatelom(window.app.vsetkyVidea);
+            }
+          }
+          
+          if (window.app.vsetciPouzivatelia.length > 0) {
+            zobrazPouzivatelov(window.app.vsetciPouzivatelia);
+          }
+          
+          let sprava = `✅ Používateľovi <strong>${userData.email}</strong> boli aktualizované priradené preferencie.<br><br>`;
+          sprava += `🏐 <strong>Priradené tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
+          sprava += `📅 <strong>Priradené sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Žiadne'}<br>`;
+          sprava += `🏆 <strong>Priradené kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Žiadne'}`;
+          
+          await showAlert(sprava, 'Úspech', '✅');
+          
+          modal.remove();
+          if (window._unsubscribeModalUser) {
+            window._unsubscribeModalUser();
+            window._unsubscribeModalUser = null;
+          }
+          
+        } catch (error) {
+          await showAlert(
+            `❌ Chyba pri ukladaní preferencií: ${error.message}`,
+            'Chyba',
+            '❌'
+          );
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = '💾 Uložiť zmeny';
+          saveBtn.style.opacity = '1';
+          saveBtn.style.cursor = 'pointer';
+        }
+      };
+      buttonsDiv.appendChild(saveBtn);
+      
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn-cancel';
+      cancelBtn.textContent = 'Zrušiť';
+      cancelBtn.style.padding = '12px 30px';
+      cancelBtn.style.fontSize = '15px';
+      cancelBtn.style.fontWeight = '600';
+      cancelBtn.style.borderRadius = '8px';
+      cancelBtn.onclick = () => {
+        modal.remove();
+        if (window._unsubscribeModalUser) {
+          window._unsubscribeModalUser();
+          window._unsubscribeModalUser = null;
+        }
+      };
+      buttonsDiv.appendChild(cancelBtn);
+      
+      contentContainer.appendChild(buttonsDiv);
+    }
   }
   
-  modalBox.appendChild(container);
+  // --- PRVOTNÉ VYTVORENIE OBSAHU ---
+  vytvorModalnyObsah(user);
   
-  // --- TLAČIDLÁ ---
-  const buttonsDiv = document.createElement('div');
-  buttonsDiv.className = 'modal-buttons';
-  buttonsDiv.style.marginTop = '10px';
+  // --- SPUSTENIE REAL-TIME LISTENERA NA POUŽÍVATEĽA ---
+  // Odpojíme predchádzajúci listener ak existuje
+  if (window._unsubscribeModalUser) {
+    window._unsubscribeModalUser();
+    window._unsubscribeModalUser = null;
+  }
   
-  const saveBtn = document.createElement('button');
-  saveBtn.className = 'btn-confirm';
-  saveBtn.textContent = '💾 Uložiť zmeny';
-  saveBtn.style.padding = '12px 30px';
-  saveBtn.style.fontSize = '15px';
-  saveBtn.style.fontWeight = '600';
-  saveBtn.style.borderRadius = '8px';
-  
-  saveBtn.onclick = async () => {
-    // Získanie vybraných tímov
-    const timCheckboxes = container.querySelectorAll('input[type="checkbox"]');
-    const vybraneTimy = [];
-    timCheckboxes.forEach(cb => {
-      if (cb.checked) vybraneTimy.push(cb.value);
-    });
-    
-    // Získanie vybraných sezón
-    const sezonaCheckboxes = sezonaCheckboxContainer.querySelectorAll('input[type="checkbox"]');
-    const vybraneSezony = [];
-    sezonaCheckboxes.forEach(cb => {
-      if (cb.checked) vybraneSezony.push(cb.value);
-    });
-    
-    // Získanie vybraných kategórií
-    const kategoriaCheckboxes = kategoriaCheckboxContainer.querySelectorAll('input[type="checkbox"]');
-    const vybraneKategorie = [];
-    kategoriaCheckboxes.forEach(cb => {
-      if (cb.checked) vybraneKategorie.push(cb.value);
-    });
-    
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Ukladám...';
-    saveBtn.style.opacity = '0.7';
-    saveBtn.style.cursor = 'not-allowed';
-    
-    try {
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        teamName: vybraneTimy,
-        assignedSezona: vybraneSezony,
-        assignedKategoria: vybraneKategorie,
-        teamUpdatedAt: new Date().toISOString(),
-        teamUpdatedBy: window.app.aktualnyPouzivatel?.uid || ''
-      });
-      
-      // --- AKTUALIZÁCIA LOKÁLNYCH DÁT ---
-      // 1. Aktualizácia v zozname všetkých používateľov
-      const updatedUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
-      if (updatedUser) {
-        updatedUser.teamName = vybraneTimy;
-        updatedUser.assignedSezona = vybraneSezony;
-        updatedUser.assignedKategoria = vybraneKategorie;
+  const userRef = doc(db, 'users', userId);
+  window._unsubscribeModalUser = onSnapshot(userRef, (docSnapshot) => {
+    if (docSnapshot.exists()) {
+      const freshUserData = docSnapshot.data();
+      // Aktualizujeme lokálne dáta
+      const localUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+      if (localUser) {
+        localUser.teamPreference = freshUserData.teamPreference || '';
+        localUser.sezonaPreference = freshUserData.sezonaPreference || '';
+        localUser.kategoriaPreference = freshUserData.kategoriaPreference || '';
+        localUser.teamName = freshUserData.teamName || '';
+        localUser.assignedSezona = freshUserData.assignedSezona || '';
+        localUser.assignedKategoria = freshUserData.assignedKategoria || '';
       }
       
-      // 2. AKTUALIZÁCIA PREHLIADKY - OKAMŽITE PRERENDEROVANIE TABUĽKY
-      // Znovu zobrazíme používateľov s aktualizovanými dátami
-      if (window.app.vsetciPouzivatelia.length > 0) {
-        zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      }
+      // Ak sa zmenili preferencie, PREKRESLÍME OBSAH MODÁLU
+      // Skombinujeme čerstvé dáta s existujúcim user objektom
+      const updatedUserData = {
+        ...user,
+        teamPreference: freshUserData.teamPreference || '',
+        sezonaPreference: freshUserData.sezonaPreference || '',
+        kategoriaPreference: freshUserData.kategoriaPreference || '',
+        teamName: freshUserData.teamName || '',
+        assignedSezona: freshUserData.assignedSezona || '',
+        assignedKategoria: freshUserData.assignedKategoria || ''
+      };
       
-      // 3. Ak sa mení prihlásený používateľ - aktualizujeme aj jeho zobrazenie videí
-      if (userId === window.app.aktualnyPouzivatel?.uid) {
-        window.app.aktualnyPouzivatelTeam = vybraneTimy;
-        window.app.aktualnyPouzivatelSezona = vybraneSezony;
-        window.app.aktualnyPouzivatelKategoria = vybraneKategorie;
-        
-        if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
-          zobrazVideaPouzivatelom(window.app.vsetkyVidea);
-        } else {
-          await window.app.nacitajVidea();
-          zobrazVideaPouzivatelom(window.app.vsetkyVidea);
-        }
-      }
-      
-      // --- ZOSTAVENIE SPRÁVY O ULOŽENÍ ---
-      let sprava = `✅ Používateľovi <strong>${user.email}</strong> boli aktualizované priradené preferencie.<br><br>`;
-      sprava += `🏐 <strong>Priradené tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
-      sprava += `📅 <strong>Priradené sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Žiadne'}<br>`;
-      sprava += `🏆 <strong>Priradené kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Žiadne'}`;
-      
-      await showAlert(sprava, 'Úspech', '✅');
-      
-      modal.remove();
-      
-    } catch (error) {
-      await showAlert(
-        `❌ Chyba pri ukladaní preferencií: ${error.message}`,
-        'Chyba',
-        '❌'
-      );
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Uložiť zmeny';
-      saveBtn.style.opacity = '1';
-      saveBtn.style.cursor = 'pointer';
+      // Prekreslíme obsah modálu s novými dátami
+      vytvorModalnyObsah(updatedUserData);
     }
-  };
-  buttonsDiv.appendChild(saveBtn);
+  }, (error) => {
+    console.warn('Chyba pri real-time listeneri na používateľa:', error);
+  });
   
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'btn-cancel';
-  cancelBtn.textContent = 'Zrušiť';
-  cancelBtn.style.padding = '12px 30px';
-  cancelBtn.style.fontSize = '15px';
-  cancelBtn.style.fontWeight = '600';
-  cancelBtn.style.borderRadius = '8px';
-  cancelBtn.onclick = () => {
-    modal.remove();
-  };
-  buttonsDiv.appendChild(cancelBtn);
-  
-  modalBox.appendChild(buttonsDiv);
+  // --- PRIDANIE MODÁLU DO TELA ---
+  modalBox.appendChild(contentContainer);
   modal.appendChild(modalBox);
   document.body.appendChild(modal);
   
@@ -2620,6 +2678,10 @@ window.otvorModalPriradeniaTimov = async function(userId) {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       modal.remove();
+      if (window._unsubscribeModalUser) {
+        window._unsubscribeModalUser();
+        window._unsubscribeModalUser = null;
+      }
     }
   });
   
@@ -2627,6 +2689,10 @@ window.otvorModalPriradeniaTimov = async function(userId) {
   const escHandler = (e) => {
     if (e.key === 'Escape') {
       modal.remove();
+      if (window._unsubscribeModalUser) {
+        window._unsubscribeModalUser();
+        window._unsubscribeModalUser = null;
+      }
       document.removeEventListener('keydown', escHandler);
     }
   };
