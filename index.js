@@ -451,7 +451,6 @@ style.textContent = `
   transform: scale(0.99);
 }
 
-/* Nové štýly pre overlay efekt pri hovore */
 .video-thumbnail {
   position: relative;
   padding-bottom: 56.25%;
@@ -473,12 +472,12 @@ style.textContent = `
 .video-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.25s ease;
   pointer-events: none;
 }
 
@@ -488,14 +487,15 @@ style.textContent = `
 }
 
 .video-overlay .play-button {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   background: rgba(255, 0, 0, 0.85);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 0.2s, background 0.3s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
 .video-card:hover .video-overlay .play-button {
@@ -509,32 +509,6 @@ style.textContent = `
   fill: white;
   margin-left: 4px;
 }
-  
-  .video-thumbnail .play-button {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60px;
-    height: 60px;
-    background: rgba(255, 0, 0, 0.8);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.3s;
-  }
-  
-  .video-thumbnail .play-button:hover {
-    background: rgba(255, 0, 0, 1);
-  }
-  
-  .video-thumbnail .play-button svg {
-    width: 30px;
-    height: 30px;
-    fill: white;
-    margin-left: 4px;
-  }
   
   .video-details {
     padding: 12px 16px;
@@ -1018,16 +992,6 @@ style.textContent = `
     .modal-box .modal-buttons button {
       padding: 8px 16px;
       font-size: 13px;
-    }
-    
-    .video-thumbnail .play-button {
-      width: 40px;
-      height: 40px;
-    }
-    
-    .video-thumbnail .play-button svg {
-      width: 20px;
-      height: 20px;
     }
     
     #videoContainer {
