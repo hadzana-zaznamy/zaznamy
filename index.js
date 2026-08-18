@@ -111,7 +111,6 @@ style.textContent = `
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    background-color: #f5f7fa;
   }
   
   #authContainer, #loggedInContainer {
