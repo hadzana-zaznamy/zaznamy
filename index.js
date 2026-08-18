@@ -4549,6 +4549,4 @@ function validujCislo(hodnota) {
   };
   
   console.log('✅ Kódovanie pripravené!');
-  console.log('Použitie: Stačí zadať ;VaseVideoID');
-  console.log('Napríklad: ;Gn-ACwC2phE');
 })();
