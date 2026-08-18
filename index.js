@@ -439,7 +439,7 @@ style.textContent = `
   background: white;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.12);
   transition: transform 0.2s ease, box-shadow 0.2s;
   cursor: pointer;
   width: 100%;
