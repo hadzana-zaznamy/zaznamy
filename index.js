@@ -4479,86 +4479,72 @@ function validujCislo(hodnota) {
 
 
 
-// Funkcia na zakódovanie YouTube ID videa
-window.zakodujVideoId = function(videoId) {
-  const SHIFT = 3;
+// Funkcia, ktorá sa spustí pri zadaní ; v konzole
+(function() {
+  // Uložiť pôvodnú hodnotu pre prípad, že by sa používala
+  const originalValue = window[';'];
   
-  // Pomocná funkcia na generovanie náhodného znaku
-  function generateRandomChar() {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
-    const randomIndex = Math.floor(Math.random() * chars.length);
-    return chars[randomIndex];
-  }
-  
-  // Krok 1: Reverzné zobrazenie
-  const reversedId = videoId.split('').reverse().join('');
-  
-  // Krok 2: Caesarova šifra
-  let shiftedId = '';
-  for (let i = 0; i < reversedId.length; i++) {
-    let char = reversedId[i];
-    let charCode = char.charCodeAt(0);
-    
-    if (charCode >= 97 && charCode <= 122) { // Malé písmená (a-z)
-      charCode = (charCode - 97 + SHIFT) % 26 + 97;
-    } else if (charCode >= 65 && charCode <= 90) { // Veľké písmená (A-Z)
-      charCode = (charCode - 65 + SHIFT) % 26 + 65;
-    } else if (charCode >= 48 && charCode <= 57) { // Číslice (0-9)
-      charCode = (charCode - 48 + (SHIFT % 10)) % 10 + 48;
-    }
-    
-    shiftedId += String.fromCharCode(charCode);
-  }
-  
-  // Krok 3: Vloženie maskovacích znakov na liché indexy
-  let finalResult = '';
-  for (let i = 0; i < shiftedId.length; i++) {
-    finalResult += shiftedId[i]; // Pôvodný znak na sudý index
-    finalResult += generateRandomChar(); // Maskovací znak na lichý index
-  }
-  
-  // Vrátiť výsledok
-  return finalResult;
-};
-
-// Skrátená verzia pre použitie v konzole so znakom ;
-window.encodeVideoId = function(videoId) {
-  const SHIFT = 3;
-  
-  function randomChar() {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
-    return chars[Math.floor(Math.random() * chars.length)];
-  }
-  
-  // Reverzné zobrazenie
-  const reversed = videoId.split('').reverse().join('');
-  
-  // Caesarova šifra
-  let shifted = '';
-  for (let i = 0; i < reversed.length; i++) {
-    let code = reversed.charCodeAt(i);
-    if (code >= 97 && code <= 122) code = (code - 97 + SHIFT) % 26 + 97;
-    else if (code >= 65 && code <= 90) code = (code - 65 + SHIFT) % 26 + 65;
-    else if (code >= 48 && code <= 57) code = (code - 48 + (SHIFT % 10)) % 10 + 48;
-    shifted += String.fromCharCode(code);
-  }
-  
-  // Maskovanie
-  let result = '';
-  for (let i = 0; i < shifted.length; i++) {
-    result += shifted[i] + randomChar();
-  }
-  
-  return result;
-};
-
-// Ešte kratšia verzia - priamo pre konzolu
-window.e = function(id) {
-  return window.encodeVideoId(id);
-};
-
-console.log('✅ Funkcie na kódovanie sú pripravené!');
-console.log('Použitie:');
-console.log('  zakodujVideoId("Gn-ACwC2phE")');
-console.log('  encodeVideoId("Gn-ACwC2phE")');
-console.log('  e("Gn-ACwC2phE")');
+  // Definovať getter pre znak ;
+  Object.defineProperty(window, ';', {
+    get: function() {
+      console.log('ℹ️ Zadajte ID videa, ktoré chcete zakódovať:');
+      console.log('Použitie: ;VaseVideoID');
+      console.log('Napríklad: ;Gn-ACwC2phE');
+      return ';';
+    },
+    set: function(value) {
+      if (value && value !== ';') {
+        // Zakódovať ID videa
+        const SHIFT = 3;
+        
+        function generateRandomChar() {
+          const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+          return chars[Math.floor(Math.random() * chars.length)];
+        }
+        
+        // Reverzné zobrazenie
+        const reversedId = value.split('').reverse().join('');
+        
+        // Caesarova šifra
+        let shiftedId = '';
+        for (let i = 0; i < reversedId.length; i++) {
+          let charCode = reversedId.charCodeAt(i);
+          if (charCode >= 97 && charCode <= 122) {
+            charCode = (charCode - 97 + SHIFT) % 26 + 97;
+          } else if (charCode >= 65 && charCode <= 90) {
+            charCode = (charCode - 65 + SHIFT) % 26 + 65;
+          } else if (charCode >= 48 && charCode <= 57) {
+            charCode = (charCode - 48 + (SHIFT % 10)) % 10 + 48;
+          }
+          shiftedId += String.fromCharCode(charCode);
+        }
+        
+        // Maskovanie
+        let finalResult = '';
+        for (let i = 0; i < shiftedId.length; i++) {
+          finalResult += shiftedId[i] + generateRandomChar();
+        }
+        
+        console.log('✅ Zakódované ID videa:');
+        console.log(finalResult);
+        console.log('📋 Skopírované do schránky!');
+        
+        // Kopírovať do schránky
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(finalResult).catch(() => {
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = finalResult;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+          });
+        }
+        
+        return finalResult;
+      }
+      return value;
+    },
+    configurable: true
+  });
+})();
