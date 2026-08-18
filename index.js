@@ -1822,6 +1822,9 @@ function zobrazPouzivatelov(pouzivatelia) {
     return;
   }
   
+  // Získať všetky tímy z videí
+  const vsetkyTimy = getVsetkyTimy();
+  
   let html = '<div style="overflow-x:auto;">';
   html += '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
   html += `
@@ -1857,7 +1860,7 @@ function zobrazPouzivatelov(pouzivatelia) {
             <select onchange="zmenTimPouzivatela('${user.id}', this.value)" 
                     style="padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;background-color:white;cursor:pointer;">
               <option value="">Žiadny tím</option>
-              ${getVsetkyTimy().map(t => `<option value="${t}" ${teamName === t ? 'selected' : ''}>${t}</option>`).join('')}
+              ${vsetkyTimy.map(t => `<option value="${t}" ${teamName === t ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
           ` : '<span style="font-size:12px;color:#999;">Všetky tímy</span>'}
         </td>
@@ -1900,11 +1903,18 @@ function zobrazPouzivatelov(pouzivatelia) {
 
 function getVsetkyTimy() {
   const videa = window.app.vsetkyVidea || [];
-  const timy = [...new Set([
-    ...videa.map(v => v.domaciTim).filter(Boolean),
-    ...videa.map(v => v.hostiaTim).filter(Boolean)
-  ])];
-  return timy.sort();
+  const timy = new Set();
+  
+  videa.forEach(v => {
+    if (v.domaciTim && v.domaciTim.trim()) {
+      timy.add(v.domaciTim.trim());
+    }
+    if (v.hostiaTim && v.hostiaTim.trim()) {
+      timy.add(v.hostiaTim.trim());
+    }
+  });
+  
+  return [...timy].sort();
 }
 
 window.zmenTimPouzivatela = async function(userId, teamName) {
