@@ -2241,7 +2241,7 @@ function zobrazVideaAdmin(videa) {
   container.innerHTML = html;
 }
 
-// Otvorenie modálneho okna pre video
+// Opravená funkcia otvorVideoModal
 window.otvorVideoModal = async function(videoId) {
   console.log('otvorVideoModal volaný s ID:', videoId);
   
@@ -2260,6 +2260,26 @@ window.otvorVideoModal = async function(videoId) {
     return;
   }
   
+  // Zavrieť existujúci prehrávač ak existuje
+  if (window.youtubePlayer) {
+    try {
+      if (typeof window.youtubePlayer.destroy === 'function') {
+        window.youtubePlayer.destroy();
+      } else if (typeof window.youtubePlayer.stopVideo === 'function') {
+        window.youtubePlayer.stopVideo();
+      }
+    } catch(e) {
+      console.warn('Chyba pri zatváraní starého prehrávača:', e);
+    }
+    window.youtubePlayer = null;
+  }
+  
+  // Vyčistiť kontajner prehrávača
+  const playerContainer = document.getElementById('youtubePlayer');
+  if (playerContainer) {
+    playerContainer.innerHTML = '';
+  }
+  
   // Skryť scroll tlačidlo
   const scrollBtn = document.getElementById('scroll');
   if (scrollBtn) {
@@ -2276,12 +2296,6 @@ window.otvorVideoModal = async function(videoId) {
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
   
-  // Vytvoriť alebo aktualizovať prehrávač
-  if (window.youtubePlayer) {
-    window.youtubePlayer.destroy();
-    window.youtubePlayer = null;
-  }
-  
   const modalErrorDiv = document.getElementById('modalError');
   if (modalErrorDiv) modalErrorDiv.style.display = 'none';
   
@@ -2289,25 +2303,38 @@ window.otvorVideoModal = async function(videoId) {
   if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
     // Počkáme na načítanie YT API
     console.log('YT API nie je dostupné, čakám...');
+    
+    // Načítanie YouTube API ak nie je dostupné
+    if (!document.getElementById('youtube-api-script')) {
+      const tag = document.createElement('script');
+      tag.id = 'youtube-api-script';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+    
     await new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 25; // 5 sekúnd (25 * 200ms)
       const checkYT = setInterval(() => {
+        attempts++;
         if (typeof YT !== 'undefined' && typeof YT.Player !== 'undefined') {
+          clearInterval(checkYT);
+          resolve();
+        } else if (attempts >= maxAttempts) {
           clearInterval(checkYT);
           resolve();
         }
       }, 200);
-      // Timeout po 5 sekundách
-      setTimeout(() => {
-        clearInterval(checkYT);
-        resolve();
-      }, 5000);
     });
   }
   
   // Skontrolovať znova po čakaní
   if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
-    modalErrorDiv.style.display = 'flex';
-    modalErrorDiv.innerHTML = '<p>Prehrávač YouTube sa nepodarilo načítať. Skontrolujte internetové pripojenie.</p>';
+    if (modalErrorDiv) {
+      modalErrorDiv.style.display = 'flex';
+      modalErrorDiv.innerHTML = '<p>Prehrávač YouTube sa nepodarilo načítať. Skontrolujte internetové pripojenie.</p>';
+    }
     return;
   }
   
@@ -2325,22 +2352,24 @@ window.otvorVideoModal = async function(videoId) {
       events: {
         onReady: (e) => {
           console.log('YT Player ready');
-          e.target.playVideo();
-          let dur = e.target.getDuration();
-          document.getElementById('duration').textContent = formatTime(dur);
-          setTimeout(() => {
-            let finalDur = e.target.getDuration();
-            addMarkers(finalDur);
-          }, 100);
-          updatePlayButtons(1);
-          showControlsAndRestartTimer();
-          // Nastaviť kvalitu
-          try {
-            if (e.target.setPlaybackQuality) {
-              e.target.setPlaybackQuality('hd1080');
+          if (e.target && typeof e.target.playVideo === 'function') {
+            e.target.playVideo();
+            let dur = e.target.getDuration();
+            document.getElementById('duration').textContent = formatTime(dur);
+            setTimeout(() => {
+              let finalDur = e.target.getDuration();
+              addMarkers(finalDur);
+            }, 100);
+            updatePlayButtons(1);
+            showControlsAndRestartTimer();
+            // Nastaviť kvalitu
+            try {
+              if (e.target.setPlaybackQuality) {
+                e.target.setPlaybackQuality('hd1080');
+              }
+            } catch (qError) {
+              console.warn('Nastavenie kvality zlyhalo:', qError);
             }
-          } catch (qError) {
-            console.warn('Nastavenie kvality zlyhalo:', qError);
           }
         },
         onStateChange: (e) => {
@@ -2364,7 +2393,9 @@ window.otvorVideoModal = async function(videoId) {
             modalErrorDiv.style.display = 'flex';
             modalErrorDiv.innerHTML = '<p>Video nie je dostupné. Skontrolujte ID videa.</p>';
           }
-          if (window.youtubePlayer) window.youtubePlayer.stopVideo();
+          if (window.youtubePlayer && typeof window.youtubePlayer.stopVideo === 'function') {
+            window.youtubePlayer.stopVideo();
+          }
         }
       }
     });
@@ -3064,6 +3095,25 @@ function updateProgressBarInstant() {
   updateSection(cur);
 }
 
+function togglePlayPause() {
+  if (!window.youtubePlayer || typeof window.youtubePlayer.getPlayerState !== 'function') {
+    return;
+  }
+  
+  if (window.youtubePlayer.getPlayerState() === 1) {
+    window.youtubePlayer.pauseVideo();
+  } else {
+    if (typeof window.youtubePlayer.getPlaybackRate === 'function' && window.youtubePlayer.getPlaybackRate() !== 1) {
+      window.youtubePlayer.setPlaybackRate(1);
+      showSpeedMessage('1.0');
+      const playbackSpeedDisplay = document.getElementById('playbackSpeedDisplay');
+      if (playbackSpeedDisplay) playbackSpeedDisplay.textContent = '1.0x';
+    }
+    window.youtubePlayer.playVideo();
+  }
+  showControlsAndRestartTimer();
+}
+
 function updateSection(t) {
   const sectionTitleSpan = document.getElementById('sectionTitle');
   if (!sectionTitleSpan) return;
@@ -3214,8 +3264,12 @@ function toggleFullscreen() {
 function closeVideoModal() {
   if (window.youtubePlayer) {
     try {
-      window.youtubePlayer.stopVideo();
-      window.youtubePlayer.destroy();
+      if (typeof window.youtubePlayer.stopVideo === 'function') {
+        window.youtubePlayer.stopVideo();
+      }
+      if (typeof window.youtubePlayer.destroy === 'function') {
+        window.youtubePlayer.destroy();
+      }
     } catch(e) {
       console.warn('Chyba pri zatváraní prehrávača:', e);
     }
@@ -3227,6 +3281,12 @@ function closeVideoModal() {
   clearInterval(window.progressInterval);
   clearTimeout(controlsTimer);
   isSeeking = false;
+  
+  // Vyčistiť kontajner prehrávača
+  const playerContainer = document.getElementById('youtubePlayer');
+  if (playerContainer) {
+    playerContainer.innerHTML = '';
+  }
   
   const scrollBtn = document.getElementById('scroll');
   if (scrollBtn) {
