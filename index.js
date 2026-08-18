@@ -2080,11 +2080,15 @@ function zobrazPouzivatelov(pouzivatelia) {
     const maNezhoduFlag = maNezhoduLocal(user);
     const cakaNaSchvalenie = !jeSchvaleny && !jeAdmin;
     
+    // --- ZVÝRAZNENIE RIADKU ---
     let rowStyle = '';
+    // Ak čaká na schválenie -> žlté pozadie
     if (cakaNaSchvalenie) {
       rowStyle = 'background-color:#fff8e1;border-left:4px solid #ffc107;';
-    } else if (maNezhoduFlag) {
-      rowStyle = 'background-color:#fff3e0;border-left:4px solid #ff9800;';
+    } 
+    // Ak má nezhodu (odstránené preferencie) -> svetlo červené/oranžové pozadie
+    else if (maNezhoduFlag) {
+      rowStyle = 'background-color:#ffebee;border-left:4px solid #f44336;'; // Červené podfarbenie
     }
     
     // Získanie zmien v preferenciách
@@ -2163,7 +2167,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     
     // Ak je používateľ admin, nezobrazujeme preferencie
     if (!jeAdmin) {
-      // Zobrazenie PRIADENÝCH hodnôt (zelené)
+      // --- ŠTÍTKY: PRIDANÉ (zelené) ---
       if (priradeneTimy.length > 0) {
         priradeneTimy.forEach(tim => {
           preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#d4edda;color:#28a745;border:1px solid #c3e6cb;display:inline-block;margin:2px;">✓ ${tim}</span>`;
@@ -2183,23 +2187,24 @@ function zobrazPouzivatelov(pouzivatelia) {
         });
       }
       
-      // Zobrazenie PREFEROVANÝCH hodnôt, ktoré NIE SÚ priradené (červené)
+      // --- ŠTÍTKY: ODSTRÁNENÉ (červené) - toto je kľúčová časť ---
+      // Pre každú preferovanú hodnotu, ktorá NIE JE priradená, vytvoríme ČERVENÝ ŠTÍTOK
       preferovaneTimy.forEach(tim => {
         if (!priradeneTimy.includes(tim)) {
-          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;">✗ ${tim}</span>`;
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;font-weight:bold;">✗ ${tim}</span>`;
         }
       });
       
       preferovaneSezony.forEach(sezona => {
         if (!priradeneSezony.includes(sezona)) {
-          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;">✗ ${sezona}</span>`;
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;font-weight:bold;">✗ ${sezona}</span>`;
         }
       });
       
       preferovaneKategorie.forEach(kategoria => {
         if (!priradeneKategorie.includes(kategoria)) {
           const displayName = categoryMap[kategoria] || kategoria;
-          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;">✗ ${displayName}</span>`;
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;font-weight:bold;">✗ ${displayName}</span>`;
         }
       });
       
@@ -2213,13 +2218,13 @@ function zobrazPouzivatelov(pouzivatelia) {
     
     let statusIcon = '';
     if (cakaNaSchvalenie) statusIcon = ' ⏳';
-    else if (maNezhoduFlag) statusIcon = ' ⚠️';
+    else if (maNezhoduFlag) statusIcon = ' ⚠️'; // Varovná ikona pri nezhode
     
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}${rowStyle}">
         <td style="padding:12px;font-weight:${jeAktualny ? 'bold' : 'normal'};">
           ${user.email}
-          <span style="color:${cakaNaSchvalenie ? '#ffc107' : (maNezhoduFlag ? '#ff9800' : '')};font-weight:bold;">${statusIcon}</span>
+          <span style="color:${cakaNaSchvalenie ? '#ffc107' : (maNezhoduFlag ? '#f44336' : '')};font-weight:bold;">${statusIcon}</span>
         </td>
         <td style="padding:12px;">
           <span style="padding:4px 12px;border-radius:12px;font-size:12px;${jeAdmin ? 'background-color:#fff3e0;color:#e65100;' : 'background-color:#e3f2fd;color:#1565c0;'}">
