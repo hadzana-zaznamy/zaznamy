@@ -2126,10 +2126,22 @@ function zobrazVideaPouzivatelom(videa) {
   
   // Získať tím aktuálneho používateľa
   const aktualnyUserTeam = window.app.aktualnyPouzivatelTeam || '';
+  const jeAdmin = window.app.aktualnyPouzivatelRole === 'admin';
+  
+  // Ak používateľ nie je admin a nemá priradený tím, nezobrazí sa mu žiadne video
+  if (!jeAdmin && !aktualnyUserTeam) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
+        <p style="font-size:18px;color:#666;margin-bottom:10px;">⚠️ Nemáte priradený žiadny tím</p>
+        <p style="font-size:14px;color:#999;">Kontaktujte administrátora, aby vám priradil tím.</p>
+      </div>
+    `;
+    return;
+  }
   
   // Filtrovať videá podľa tímu používateľa (ak nie je admin)
   let zobrazeneVidea = videa;
-  if (window.app.aktualnyPouzivatelRole !== 'admin' && aktualnyUserTeam) {
+  if (!jeAdmin && aktualnyUserTeam) {
     zobrazeneVidea = videa.filter(v => 
       v.domaciTim === aktualnyUserTeam || v.hostiaTim === aktualnyUserTeam
     );
