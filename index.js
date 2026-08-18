@@ -2229,6 +2229,27 @@ function zobrazVideaPouzivatelom(videa) {
     );
   }
   
+  // ZORAĎOVANIE: Od najnovšieho po najstaršie podľa dátumu a času
+  zobrazeneVidea = zobrazeneVidea.sort((a, b) => {
+    // Konverzia reťazcov na dátumy pre porovnanie
+    const dateA = parseDatumacas(a.datumacas);
+    const dateB = parseDatumacas(b.datumacas);
+    
+    // Ak oba majú platný dátum, zoraď podľa neho (najnovší prvý)
+    if (dateA && dateB) {
+      return dateB - dateA; // Zostupne (od najnovšieho)
+    }
+    
+    // Ak jeden nemá dátum, ten s dátumom ide prvý
+    if (dateA && !dateB) return -1;
+    if (!dateA && dateB) return 1;
+    
+    // Ak ani jeden nemá dátum, zoraď podľa createdAt
+    const createdA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const createdB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    return createdB - createdA;
+  });
+  
   if (!zobrazeneVidea || zobrazeneVidea.length === 0) {
     container.innerHTML = `
       <div class="filters-container">
@@ -2323,6 +2344,22 @@ window.aplikujFiltre = function() {
     return true;
   });
   
+  // ZORAĎOVANIE po aplikovaní filtrov
+  filtered.sort((a, b) => {
+    const dateA = parseDatumacas(a.datumacas);
+    const dateB = parseDatumacas(b.datumacas);
+    
+    if (dateA && dateB) {
+      return dateB - dateA;
+    }
+    if (dateA && !dateB) return -1;
+    if (!dateA && dateB) return 1;
+    
+    const createdA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const createdB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    return createdB - createdA;
+  });
+  
   const container = document.getElementById('videoContainer');
   const noResults = document.getElementById('noResultsMessage');
   
@@ -2356,7 +2393,23 @@ function nacitajVideaDoAdminPanelu() {
   const container = document.getElementById('videaList');
   if (!container) return;
   
-  zobrazVideaAdmin(window.app.vsetkyVidea);
+  // Zoraď videá pred zobrazením
+  const zoradeneVidea = [...window.app.vsetkyVidea].sort((a, b) => {
+    const dateA = parseDatumacas(a.datumacas);
+    const dateB = parseDatumacas(b.datumacas);
+    
+    if (dateA && dateB) {
+      return dateB - dateA;
+    }
+    if (dateA && !dateB) return -1;
+    if (!dateA && dateB) return 1;
+    
+    const createdA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const createdB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    return createdB - createdA;
+  });
+  
+  zobrazVideaAdmin(zoradeneVidea);
 }
 
 function zobrazVideaAdmin(videa) {
@@ -2368,9 +2421,25 @@ function zobrazVideaAdmin(videa) {
     return;
   }
   
+  // ZORAĎOVANIE: Od najnovšieho po najstaršie podľa dátumu a času
+  const zoradeneVidea = [...videa].sort((a, b) => {
+    const dateA = parseDatumacas(a.datumacas);
+    const dateB = parseDatumacas(b.datumacas);
+    
+    if (dateA && dateB) {
+      return dateB - dateA;
+    }
+    if (dateA && !dateB) return -1;
+    if (!dateA && dateB) return 1;
+    
+    const createdA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const createdB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    return createdB - createdA;
+  });
+  
   let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">';
   
-  videa.forEach((video) => {
+  zoradeneVidea.forEach((video) => {
     html += vytvorVideoKartu(video, true);
   });
   
@@ -3158,6 +3227,39 @@ function formatTime(sec) {
   let m = Math.floor((sec % 3600) / 60);
   let s = Math.floor(sec % 60);
   return h > 0 ? `${h}:${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}` : `${m}:${s < 10 ? '0' + s : s}`;
+}
+
+function parseDatumacas(datumacas) {
+  if (!datumacas || typeof datumacas !== 'string') return null;
+  
+  try {
+    // Skúsime rôzne formáty
+    
+    // Formát: "09. 05. 2026 12:00 hod."
+    let match = datumacas.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\s*(\d{1,2}):(\d{2})/);
+    if (match) {
+      const [_, den, mesiac, rok, hodina, minuta] = match;
+      // Mesiac v JavaScripte je 0-indexovaný
+      return new Date(parseInt(rok), parseInt(mesiac) - 1, parseInt(den), parseInt(hodina), parseInt(minuta));
+    }
+    
+    // Formát: "2024-05-09 12:00"
+    match = datumacas.match(/(\d{4})-(\d{2})-(\d{2})\s*(\d{2}):(\d{2})/);
+    if (match) {
+      const [_, rok, mesiac, den, hodina, minuta] = match;
+      return new Date(parseInt(rok), parseInt(mesiac) - 1, parseInt(den), parseInt(hodina), parseInt(minuta));
+    }
+    
+    // Formát: "2024-05-09T12:00:00"
+    const date = new Date(datumacas);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+    
+    return null;
+  } catch (error) {
+    return null;
+  }
 }
 
 function timeToSec(t) {
