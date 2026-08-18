@@ -5150,19 +5150,180 @@ function vytvorLoggedInContainer() {
   headerButtons.appendChild(logoutBtn);
   document.body.appendChild(headerButtons);
   
-  // ... zvyšok pôvodnej funkcie (adminButtons, approvalMessage, contentArea, adminPanel)
+  // --- ADMIN TLAČIDLÁ ---
   const adminButtons = document.createElement('div');
   adminButtons.id = 'adminButtons';
   adminButtons.style.display = 'none';
   
-  // ... (zvyšok kódu zostáva rovnaký až do konca)
+  const btnAplikacia = document.createElement('button');
+  btnAplikacia.id = 'btnAplikacia';
+  btnAplikacia.textContent = 'Aplikácia';
+  btnAplikacia.style.padding = '10px 20px';
+  btnAplikacia.style.border = 'none';
+  btnAplikacia.style.borderRadius = '4px';
+  btnAplikacia.style.fontSize = '14px';
+  btnAplikacia.style.cursor = 'pointer';
+  btnAplikacia.style.backgroundColor = '#1976D2';
+  btnAplikacia.style.color = 'white';
+  btnAplikacia.style.transition = 'background-color 0.3s';
+  btnAplikacia.onclick = window.zobrazAplikaciu;
   
-  // Na konci funkcie pridajte sledovanie stavu prihlásenia pre zobrazenie tlačidiel
+  const btnPouzivatelia = document.createElement('button');
+  btnPouzivatelia.id = 'btnPouzivatelia';
+  btnPouzivatelia.textContent = 'Používatelia';
+  btnPouzivatelia.style.padding = '10px 20px';
+  btnPouzivatelia.style.border = 'none';
+  btnPouzivatelia.style.borderRadius = '4px';
+  btnPouzivatelia.style.fontSize = '14px';
+  btnPouzivatelia.style.cursor = 'pointer';
+  btnPouzivatelia.style.backgroundColor = '#e0e0e0';
+  btnPouzivatelia.style.color = '#333';
+  btnPouzivatelia.style.transition = 'background-color 0.3s';
+  btnPouzivatelia.onclick = window.zobrazPouzivatelovAdmin;
+  
+  const btnVidea = document.createElement('button');
+  btnVidea.id = 'btnVidea';
+  btnVidea.textContent = '🎥 Spravovať videá';
+  btnVidea.style.padding = '10px 20px';
+  btnVidea.style.border = 'none';
+  btnVidea.style.borderRadius = '4px';
+  btnVidea.style.fontSize = '14px';
+  btnVidea.style.cursor = 'pointer';
+  btnVidea.style.backgroundColor = '#e0e0e0';
+  btnVidea.style.color = '#333';
+  btnVidea.style.transition = 'background-color 0.3s';
+  btnVidea.onclick = window.zobrazSpravuVidei;
+  
+  adminButtons.appendChild(btnAplikacia);
+  adminButtons.appendChild(btnPouzivatelia);
+  adminButtons.appendChild(btnVidea);
+  container.appendChild(adminButtons);
+  
+  // --- APPROVAL MESSAGE ---
+  const approvalMessage = document.createElement('div');
+  approvalMessage.id = 'approvalMessage';
+  approvalMessage.style.display = 'none';
+  
+  const approvalTitle = document.createElement('h3');
+  approvalTitle.textContent = 'Čakáte na schválenie';
+  approvalTitle.style.color = '#e65100';
+  approvalTitle.style.margin = '0 0 10px 0';
+  approvalMessage.appendChild(approvalTitle);
+  
+  const approvalText = document.createElement('p');
+  approvalText.textContent = 'Váš účet bol vytvorený, ale ešte nebol schválený administrátorom.';
+  approvalMessage.appendChild(approvalText);
+  
+  const approvalText2 = document.createElement('p');
+  approvalText2.textContent = 'Po schválení sa vám zobrazí plný obsah aplikácie.';
+  approvalText2.style.margin = '0';
+  approvalText2.style.fontSize = '14px';
+  approvalText2.style.color = '#666';
+  approvalMessage.appendChild(approvalText2);
+  
+  container.appendChild(approvalMessage);
+  
+  // --- CONTENT AREA ---
+  const contentArea = document.createElement('div');
+  contentArea.id = 'contentArea';
+  contentArea.style.display = 'none';
+  
+  const videaContainer = document.createElement('div');
+  videaContainer.id = 'videaPrePouzivatelov';
+  contentArea.appendChild(videaContainer);
+  
+  container.appendChild(contentArea);
+  
+  // --- ADMIN PANEL ---
+  const adminPanel = document.createElement('div');
+  adminPanel.id = 'adminPanel';
+  adminPanel.style.display = 'none';
+  
+  const adminTitle = document.createElement('h3');
+  adminTitle.id = 'adminPanelTitle';
+  adminTitle.textContent = 'Správa používateľov';
+  adminTitle.style.margin = '0 0 15px 0';
+  adminTitle.style.color = '#e65100';
+  adminPanel.appendChild(adminTitle);
+  
+  const addVideoBtn = document.createElement('button');
+  addVideoBtn.id = 'addVideoBtn';
+  addVideoBtn.textContent = '➕ Pridať nové video';
+  addVideoBtn.style.padding = '12px 24px';
+  addVideoBtn.style.backgroundColor = '#4CAF50';
+  addVideoBtn.style.color = 'white';
+  addVideoBtn.style.border = 'none';
+  addVideoBtn.style.borderRadius = '4px';
+  addVideoBtn.style.fontSize = '14px';
+  addVideoBtn.style.cursor = 'pointer';
+  addVideoBtn.style.marginBottom = '20px';
+  addVideoBtn.style.transition = 'background-color 0.3s';
+  addVideoBtn.onclick = window.otvorModalPridaniaVidea;
+  addVideoBtn.style.display = 'none';
+  adminPanel.appendChild(addVideoBtn);
+  
+  const videaList = document.createElement('div');
+  videaList.id = 'videaList';
+  videaList.style.display = 'none';
+  adminPanel.appendChild(videaList);
+  
+  const usersList = document.createElement('div');
+  usersList.id = 'usersList';
+  usersList.style.display = 'block';
+  adminPanel.appendChild(usersList);
+  
+  container.appendChild(adminPanel);
+  
+  document.body.appendChild(container);
+  
+  // Vytvorenie video prehrávača
+  vytvorVideoPlayer();
+  
+  // Event listener pre logoutBtn
+  logoutBtn.addEventListener('click', async () => {
+    const videoModal = document.getElementById('videoModal');
+    const jeVideoOtvorene = videoModal && videoModal.classList.contains('show');
+    
+    if (jeVideoOtvorene) {
+      closeVideoModal();
+      return;
+    }
+    
+    logoutBtn.disabled = true;
+    logoutBtn.textContent = 'Odhlasujem...';
+    logoutBtn.style.opacity = '0.7';
+    
+    try {
+      const result = await window.app.odhlas();
+      if (result.success) {
+        document.getElementById('loggedInContainer').style.display = 'none';
+        document.getElementById('authContainer').style.display = 'flex';
+        logoutBtn.style.display = 'none';
+        if (myPreferencesBtn) myPreferencesBtn.style.display = 'none';
+        closeVideoModal();
+      } else {
+        await showAlert('❌ ' + result.error, 'Chyba', '❌');
+      }
+    } catch (error) {
+      await showAlert('❌ Nastala chyba pri odhlásení: ' + error.message, 'Chyba', '❌');
+    } finally {
+      logoutBtn.disabled = false;
+      logoutBtn.textContent = 'Odhlásiť sa';
+      logoutBtn.style.backgroundColor = '#f44336';
+      logoutBtn.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
+      logoutBtn.style.opacity = '1';
+    }
+  });
+  
+  // Skrytie tlačidiel na začiatku
+  logoutBtn.style.display = 'none';
+  myPreferencesBtn.style.display = 'none';
+  
+  // Sledovanie stavu prihlásenia
   onAuthStateChanged(auth, (user) => {
     const isAdmin = window.app?.aktualnyPouzivatelRole === 'admin';
     if (user) {
       logoutBtn.style.display = 'block';
-      // Tlačidlo "Moje preferencie" zobraziť len pre userov (nie adminov)
       if (!isAdmin) {
         myPreferencesBtn.style.display = 'block';
       } else {
