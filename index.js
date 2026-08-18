@@ -1932,6 +1932,7 @@ function resetFormulare() {
   }
 }
 
+// Upravená funkcia zobrazPouzivatelov - časť zobrazujúca preferovaný tím
 function zobrazPouzivatelov(pouzivatelia) {
   const container = document.getElementById('usersList');
   if (!container) return;
@@ -1964,8 +1965,17 @@ function zobrazPouzivatelov(pouzivatelia) {
     const jeAktualny = user.uid === window.app.aktualnyPouzivatel?.uid;
     const jeSchvaleny = user.approved === true;
     
-    // --- PREFEROVANÉ HODNOTY (z registrácie) ---
-    const teamPreference = user.teamPreference || '';
+    // --- PREFEROVANÉ HODNOTY (z registrácie) - TERAZ KAŽDÝ TÍM V SAMOSTATNOM ŠTÍTKU ---
+    let teamPreferences = [];
+    if (user.teamPreference) {
+      if (Array.isArray(user.teamPreference)) {
+        teamPreferences = user.teamPreference;
+      } else if (typeof user.teamPreference === 'string' && user.teamPreference.includes(',')) {
+        teamPreferences = user.teamPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.teamPreference === 'string' && user.teamPreference) {
+        teamPreferences = [user.teamPreference];
+      }
+    }
     
     // Spracovanie preferovaných sezón (z registrácie)
     let sezonaPreferences = [];
@@ -1990,7 +2000,7 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // --- PRIRADENÉ HODNOTY (adminom) - načítané z assignedSezona a assignedKategoria ---
+    // --- PRIRADENÉ HODNOTY (adminom) ---
     let priradeneTimy = [];
     if (user.teamName) {
       if (Array.isArray(user.teamName)) {
@@ -2002,7 +2012,6 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // Priradené sezóny - z assignedSezona
     let priradeneSezony = [];
     if (user.assignedSezona) {
       if (Array.isArray(user.assignedSezona)) {
@@ -2014,7 +2023,6 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // Priradené kategórie - z assignedKategoria
     let priradeneKategorie = [];
     if (user.assignedKategoria) {
       if (Array.isArray(user.assignedKategoria)) {
@@ -2035,17 +2043,17 @@ function zobrazPouzivatelov(pouzivatelia) {
           </span>
         </td>
         
-        <!-- Preferovaný tím + priradené tímy -->
+        <!-- Preferovaný tím - KAŽDÝ V SAMOSTATNOM ŠTÍTKU -->
         <td style="padding:12px;">
-          <div>
-            ${teamPreference ? 
-              `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 0;">${teamPreference}</span>` : 
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            ${teamPreferences.length > 0 ? 
+              teamPreferences.map(t => `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;">${t}</span>`).join('') : 
               '<span style="font-size:12px;color:#999;">—</span>'
             }
           </div>
-          <div style="margin-top:4px;">
+          <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">
             ${!jeAdmin && priradeneTimy.length > 0 ? 
-              priradeneTimy.map(t => `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${t}</span>`).join('') : 
+              priradeneTimy.map(t => `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;">${t}</span>`).join('') : 
               (!jeAdmin ? '<span style="font-size:11px;color:#999;">Žiadne priradené</span>' : '')
             }
           </div>
@@ -2053,17 +2061,17 @@ function zobrazPouzivatelov(pouzivatelia) {
         
         <!-- Preferovaná sezóna + priradené sezóny -->
         <td style="padding:12px;">
-          <div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
             ${sezonaPreferences.length > 0 ? 
-              sezonaPreferences.map(s => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 2px;">${s}</span>`).join('') : 
+              sezonaPreferences.map(s => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;">${s}</span>`).join('') : 
               '<span style="font-size:12px;color:#999;">—</span>'
             }
           </div>
-          <div style="margin-top:4px;">
+          <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">
             ${!jeAdmin ? 
               (priradeneSezony.length > 0 ? 
                 priradeneSezony.map(s => 
-                  `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${s}</span>`
+                  `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;">${s}</span>`
                 ).join('') : 
                 '<span style="font-size:11px;color:#999;">Žiadne</span>'
               ) : ''
@@ -2073,17 +2081,17 @@ function zobrazPouzivatelov(pouzivatelia) {
         
         <!-- Preferovaná kategória + priradené kategórie -->
         <td style="padding:12px;">
-          <div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
             ${kategoriaPreferences.length > 0 ? 
-              kategoriaPreferences.map(k => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`).join('') : 
+              kategoriaPreferences.map(k => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;">${categoryMap[k] || k}</span>`).join('') : 
               '<span style="font-size:12px;color:#999;">—</span>'
             }
           </div>
-          <div style="margin-top:4px;">
+          <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">
             ${!jeAdmin ? 
               (priradeneKategorie.length > 0 ? 
                 priradeneKategorie.map(k => 
-                  `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`
+                  `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;">${categoryMap[k] || k}</span>`
                 ).join('') : 
                 '<span style="font-size:11px;color:#999;">Žiadne</span>'
               ) : ''
