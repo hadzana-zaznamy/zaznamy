@@ -2171,7 +2171,7 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     detailsHtml += `<p><strong>Súťaž:</strong> ${video.sutaz}</p>`;
   }
   if (video.domaciTim) {
-    detailsHtml += `<p><strong>Domáci:</strong> ${video.domaciTim || '?'}`;
+    detailsHtml += `<p><strong>Domáci:</strong> ${video.domaciTim || '?'}</p>`;
   }
   if (video.hostiaTim) {
     detailsHtml += `<p><strong>Hostia:</strong> ${video.hostiaTim || '?'}</p>`;
@@ -2222,6 +2222,11 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
   } else if (video.videoId && video.videoId.trim() !== '') {
     cursorStyle = 'cursor:pointer;';
   }
+  
+  // DEFINÍCIA PREMENNEJ bezIdIndikator - PRIDANÉ
+  const bezIdIndikator = (sOdstranenim && (!video.videoId || video.videoId.trim() === '')) 
+    ? `<p style="color:#f44336;font-weight:bold;font-size:12px;">⚠️ BEZ ID VIDEA - NEBUDE VIDITEĽNÉ PRE POUŽÍVATEĽOV</p>` 
+    : '';
   
   return `
     <div class="video-card" data-video-id="${video.id}" ${onClickAction} style="${cursorStyle}">
