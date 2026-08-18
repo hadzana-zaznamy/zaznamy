@@ -1869,10 +1869,9 @@ function zobrazPouzivatelov(pouzivatelia) {
       <tr style="background-color:#f5f5f5;">
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:180px;">Email</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:80px;">Rola</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:150px;">Preferovaný tím</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:130px;">Preferovaná sezóna</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:150px;">Preferovaná kategória</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:150px;">Priradené tímy</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:180px;">Preferovaný tím</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:160px;">Preferovaná sezóna</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:180px;">Preferovaná kategória</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:80px;">Stav</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:150px;">Registrovaný</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:200px;">Akcia</th>
@@ -1924,6 +1923,54 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
+    // Zostavenie bledozelených štítkov pre priradené hodnoty
+    let assignedLabels = '';
+    
+    // Priradené tímy (bledozelené)
+    if (priradeneTimy.length > 0) {
+      assignedLabels += priradeneTimy.map(t => 
+        `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${t}</span>`
+      ).join('');
+    }
+    
+    // Priradené sezóny (bledozelené) - zobrazenie všetkých dostupných sezón
+    // Ak má používateľ priradené sezóny, zobrazíme ich, inak "Všetky"
+    if (user.sezonaPreference && user.sezonaPreference.length > 0) {
+      // Ak sú sezóny priradené, zobrazíme ich
+      const assignedSezony = Array.isArray(user.sezonaPreference) ? user.sezonaPreference : [user.sezonaPreference];
+      assignedLabels += assignedSezony.map(s => 
+        `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${s}</span>`
+      ).join('');
+    } else if (!jeAdmin) {
+      // Ak nemá priradené žiadne sezóny, zobrazíme "Všetky" (len pre userov, nie adminov)
+      assignedLabels += `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">Všetky sezóny</span>`;
+    }
+    
+    // Priradené kategórie (bledozelené)
+    if (user.kategoriaPreference && user.kategoriaPreference.length > 0) {
+      const assignedKategorie = Array.isArray(user.kategoriaPreference) ? user.kategoriaPreference : [user.kategoriaPreference];
+      assignedLabels += assignedKategorie.map(k => 
+        `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`
+      ).join('');
+    } else if (!jeAdmin) {
+      assignedLabels += `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">Všetky kategórie</span>`;
+    }
+    
+    // Ak nie je admin a nemá žiadne priradené tímy
+    if (!jeAdmin && priradeneTimy.length === 0) {
+      assignedLabels += `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#ffcdd2;color:#c62828;border:1px solid #ef9a9a;display:inline-block;margin:2px 2px;">⚠️ Žiadne tímy</span>`;
+    }
+    
+    // Admin má všetky tímy
+    if (jeAdmin) {
+      assignedLabels = `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">Všetky tímy</span>`;
+    }
+    
+    // Ak nie sú žiadne priradené hodnoty, zobrazíme pomlčku
+    if (!assignedLabels) {
+      assignedLabels = '<span style="font-size:12px;color:#999;">—</span>';
+    }
+    
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}">
         <td style="padding:12px;font-weight:${jeAktualny ? 'bold' : 'normal'};">${user.email}</td>
@@ -1933,32 +1980,54 @@ function zobrazPouzivatelov(pouzivatelia) {
           </span>
         </td>
         <td style="padding:12px;">
-          ${teamPreference ? 
-            `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 0;">${teamPreference}</span>` : 
-            '<span style="font-size:12px;color:#999;">—</span>'
-          }
+          <div>
+            ${teamPreference ? 
+              `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 0;">${teamPreference}</span>` : 
+              '<span style="font-size:12px;color:#999;">—</span>'
+            }
+          </div>
+          <div style="margin-top:4px;">
+            ${!jeAdmin && priradeneTimy.length > 0 ? 
+              priradeneTimy.map(t => `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${t}</span>`).join('') : 
+              (!jeAdmin ? '<span style="font-size:11px;color:#999;">Žiadne priradené</span>' : '')
+            }
+          </div>
         </td>
         <td style="padding:12px;">
-          ${sezonaPreferences.length > 0 ? 
-            sezonaPreferences.map(s => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 2px;">${s}</span>`).join('') : 
-            '<span style="font-size:12px;color:#999;">—</span>'
-          }
+          <div>
+            ${sezonaPreferences.length > 0 ? 
+              sezonaPreferences.map(s => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 2px;">${s}</span>`).join('') : 
+              '<span style="font-size:12px;color:#999;">—</span>'
+            }
+          </div>
+          <div style="margin-top:4px;">
+            ${!jeAdmin ? 
+              (user.sezonaPreference && user.sezonaPreference.length > 0 ? 
+                (Array.isArray(user.sezonaPreference) ? user.sezonaPreference : [user.sezonaPreference]).map(s => 
+                  `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${s}</span>`
+                ).join('') : 
+                '<span style="font-size:11px;color:#999;">Všetky</span>'
+              ) : ''
+            }
+          </div>
         </td>
         <td style="padding:12px;">
-          ${kategoriaPreferences.length > 0 ? 
-            kategoriaPreferences.map(k => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`).join('') : 
-            '<span style="font-size:12px;color:#999;">—</span>'
-          }
-        </td>
-        <td style="padding:12px;">
-          ${!jeAdmin ? `
-            <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-              ${priradeneTimy.length > 0 ? 
-                priradeneTimy.map(t => `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 0;">${t}</span>`).join('') : 
-                '<span style="font-size:12px;color:#999;">—</span>'
-              }
-            </div>
-          ` : '<span style="font-size:12px;color:#999;">Všetky</span>'}
+          <div>
+            ${kategoriaPreferences.length > 0 ? 
+              kategoriaPreferences.map(k => `<span style="padding:4px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`).join('') : 
+              '<span style="font-size:12px;color:#999;">—</span>'
+            }
+          </div>
+          <div style="margin-top:4px;">
+            ${!jeAdmin ? 
+              (user.kategoriaPreference && user.kategoriaPreference.length > 0 ? 
+                (Array.isArray(user.kategoriaPreference) ? user.kategoriaPreference : [user.kategoriaPreference]).map(k => 
+                  `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`
+                ).join('') : 
+                '<span style="font-size:11px;color:#999;">Všetky</span>'
+              ) : ''
+            }
+          </div>
         </td>
         <td style="padding:12px;">
           <span style="padding:4px 12px;border-radius:12px;font-size:12px;${jeSchvaleny ? 'background-color:#c8e6c9;color:#2e7d32;' : 'background-color:#ffcdd2;color:#c62828;'}">
