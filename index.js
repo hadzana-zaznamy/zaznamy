@@ -3103,7 +3103,7 @@ function togglePlayPause() {
   if (window.youtubePlayer.getPlayerState() === 1) {
     window.youtubePlayer.pauseVideo();
   } else {
-    if (typeof window.youtubePlayer.getPlaybackRate === 'function' && window.youtubePlayer.getPlaybackRate() !== 1) {
+    if (window.youtubePlayer.getPlaybackRate() !== 1) {
       window.youtubePlayer.setPlaybackRate(1);
       showSpeedMessage('1.0');
       const playbackSpeedDisplay = document.getElementById('playbackSpeedDisplay');
@@ -3176,25 +3176,6 @@ function showControlsAndRestartTimer() {
       }
     }, 2000);
   }
-}
-
-function togglePlayPause() {
-  if (!window.youtubePlayer || typeof window.youtubePlayer.getPlayerState !== 'function') {
-    return;
-  }
-  
-  if (window.youtubePlayer.getPlayerState() === 1) {
-    window.youtubePlayer.pauseVideo();
-  } else {
-    if (window.youtubePlayer.getPlaybackRate() !== 1) {
-      window.youtubePlayer.setPlaybackRate(1);
-      showSpeedMessage('1.0');
-      const playbackSpeedDisplay = document.getElementById('playbackSpeedDisplay');
-      if (playbackSpeedDisplay) playbackSpeedDisplay.textContent = '1.0x';
-    }
-    window.youtubePlayer.playVideo();
-  }
-  showControlsAndRestartTimer();
 }
 
 function updatePlayButtons(state) {
