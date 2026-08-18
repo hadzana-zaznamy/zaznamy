@@ -1945,10 +1945,7 @@ function resetFormulare() {
   }
 }
 
-// Upravená funkcia zobrazPouzivatelov - zoraďuje podľa:
-// 1. Čakajúci na schválenie (approved === false)
-// 2. Nezhoda preferencií
-// 3. Ostatní používatelia (abecedne)
+// Upravená funkcia zobrazPouzivatelov
 function zobrazPouzivatelov(pouzivatelia) {
   const container = document.getElementById('usersList');
   if (!container) return;
@@ -1958,7 +1955,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     return;
   }
   
-  // ZORAĎOVANIE (zachované)
+  // Funkcia na zistenie nezhody (zachovaná)
   function maNezhoduLocal(user) {
     if (user.role === 'admin') return false;
     
@@ -2038,6 +2035,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     return !(timySedia && sezonySedia && kategorieSedia);
   }
   
+  // ZORAĎOVANIE
   const zoradeni = [...pouzivatelia].sort((a, b) => {
     const adminA = a.role === 'admin';
     const adminB = b.role === 'admin';
@@ -2066,7 +2064,7 @@ function zobrazPouzivatelov(pouzivatelia) {
       <tr style="background-color:#f5f5f5;">
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:180px;">Email</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:80px;">Rola</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:180px;">Zmeny v preferenciách</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:180px;">Preferencie</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:80px;">Stav</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:150px;">Registrovaný</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;min-width:200px;">Akcia</th>
@@ -2092,55 +2090,125 @@ function zobrazPouzivatelov(pouzivatelia) {
     // Získanie zmien v preferenciách
     const changes = getPreferenceChanges(user);
     
-    // Vytvorenie štítkov zmien
-    let changesHtml = '';
-    if (changes.length > 0) {
-      const changeGroups = {
-        team: [],
-        season: [],
-        category: []
-      };
+    // Vytvorenie štítkov - vždy zobrazujeme všetky preferencie
+    let preferencesHtml = '';
+    
+    // Spracovanie preferovaných hodnôt (červené - chýbajúce)
+    let preferovaneTimy = [];
+    if (user.teamPreference) {
+      if (Array.isArray(user.teamPreference)) {
+        preferovaneTimy = user.teamPreference;
+      } else if (typeof user.teamPreference === 'string' && user.teamPreference.includes(',')) {
+        preferovaneTimy = user.teamPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.teamPreference === 'string' && user.teamPreference) {
+        preferovaneTimy = [user.teamPreference];
+      }
+    }
+    
+    let preferovaneSezony = [];
+    if (user.sezonaPreference) {
+      if (Array.isArray(user.sezonaPreference)) {
+        preferovaneSezony = user.sezonaPreference;
+      } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference.includes(',')) {
+        preferovaneSezony = user.sezonaPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference) {
+        preferovaneSezony = [user.sezonaPreference];
+      }
+    }
+    
+    let preferovaneKategorie = [];
+    if (user.kategoriaPreference) {
+      if (Array.isArray(user.kategoriaPreference)) {
+        preferovaneKategorie = user.kategoriaPreference;
+      } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference.includes(',')) {
+        preferovaneKategorie = user.kategoriaPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference) {
+        preferovaneKategorie = [user.kategoriaPreference];
+      }
+    }
+    
+    // Spracovanie priradených hodnôt (zelené - pridané)
+    let priradeneTimy = [];
+    if (user.teamName) {
+      if (Array.isArray(user.teamName)) {
+        priradeneTimy = user.teamName;
+      } else if (typeof user.teamName === 'string' && user.teamName.includes(',')) {
+        priradeneTimy = user.teamName.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.teamName === 'string' && user.teamName) {
+        priradeneTimy = [user.teamName];
+      }
+    }
+    
+    let priradeneSezony = [];
+    if (user.assignedSezona) {
+      if (Array.isArray(user.assignedSezona)) {
+        priradeneSezony = user.assignedSezona;
+      } else if (typeof user.assignedSezona === 'string' && user.assignedSezona.includes(',')) {
+        priradeneSezony = user.assignedSezona.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.assignedSezona === 'string' && user.assignedSezona) {
+        priradeneSezony = [user.assignedSezona];
+      }
+    }
+    
+    let priradeneKategorie = [];
+    if (user.assignedKategoria) {
+      if (Array.isArray(user.assignedKategoria)) {
+        priradeneKategorie = user.assignedKategoria;
+      } else if (typeof user.assignedKategoria === 'string' && user.assignedKategoria.includes(',')) {
+        priradeneKategorie = user.assignedKategoria.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.assignedKategoria === 'string' && user.assignedKategoria) {
+        priradeneKategorie = [user.assignedKategoria];
+      }
+    }
+    
+    // Ak je používateľ admin, nezobrazujeme preferencie
+    if (!jeAdmin) {
+      // Zobrazenie PRIADENÝCH hodnôt (zelené)
+      if (priradeneTimy.length > 0) {
+        priradeneTimy.forEach(tim => {
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#d4edda;color:#28a745;border:1px solid #c3e6cb;display:inline-block;margin:2px;">✓ ${tim}</span>`;
+        });
+      }
       
-      changes.forEach(change => {
-        changeGroups[change.category].push(change);
+      if (priradeneSezony.length > 0) {
+        priradeneSezony.forEach(sezona => {
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#d4edda;color:#28a745;border:1px solid #c3e6cb;display:inline-block;margin:2px;">✓ ${sezona}</span>`;
+        });
+      }
+      
+      if (priradeneKategorie.length > 0) {
+        priradeneKategorie.forEach(kategoria => {
+          const displayName = categoryMap[kategoria] || kategoria;
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#d4edda;color:#28a745;border:1px solid #c3e6cb;display:inline-block;margin:2px;">✓ ${displayName}</span>`;
+        });
+      }
+      
+      // Zobrazenie PREFEROVANÝCH hodnôt, ktoré NIE SÚ priradené (červené)
+      preferovaneTimy.forEach(tim => {
+        if (!priradeneTimy.includes(tim)) {
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;">✗ ${tim}</span>`;
+        }
       });
       
-      // Tímy
-      if (changeGroups.team.length > 0) {
-        changeGroups.team.forEach(change => {
-          const color = change.type === 'pridane' ? '#28a745' : '#dc3545';
-          const bgColor = change.type === 'pridane' ? '#d4edda' : '#f8d7da';
-          const borderColor = change.type === 'pridane' ? '#c3e6cb' : '#f5c6cb';
-          const prefix = change.type === 'pridane' ? '+' : '−';
-          changesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:${bgColor};color:${color};border:1px solid ${borderColor};display:inline-block;margin:2px;">${prefix} ${change.value}</span>`;
-        });
-      }
+      preferovaneSezony.forEach(sezona => {
+        if (!priradeneSezony.includes(sezona)) {
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;">✗ ${sezona}</span>`;
+        }
+      });
       
-      // Sezóny
-      if (changeGroups.season.length > 0) {
-        changeGroups.season.forEach(change => {
-          const color = change.type === 'pridane' ? '#28a745' : '#dc3545';
-          const bgColor = change.type === 'pridane' ? '#d4edda' : '#f8d7da';
-          const borderColor = change.type === 'pridane' ? '#c3e6cb' : '#f5c6cb';
-          const prefix = change.type === 'pridane' ? '+' : '−';
-          changesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:${bgColor};color:${color};border:1px solid ${borderColor};display:inline-block;margin:2px;">${prefix} ${change.value}</span>`;
-        });
-      }
+      preferovaneKategorie.forEach(kategoria => {
+        if (!priradeneKategorie.includes(kategoria)) {
+          const displayName = categoryMap[kategoria] || kategoria;
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;">✗ ${displayName}</span>`;
+        }
+      });
       
-      // Kategórie
-      if (changeGroups.category.length > 0) {
-        changeGroups.category.forEach(change => {
-          const color = change.type === 'pridane' ? '#28a745' : '#dc3545';
-          const bgColor = change.type === 'pridane' ? '#d4edda' : '#f8d7da';
-          const borderColor = change.type === 'pridane' ? '#c3e6cb' : '#f5c6cb';
-          const prefix = change.type === 'pridane' ? '+' : '−';
-          const displayName = categoryMap[change.value] || change.value;
-          changesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:${bgColor};color:${color};border:1px solid ${borderColor};display:inline-block;margin:2px;">${prefix} ${displayName}</span>`;
-        });
+      // Ak nemá žiadne preferencie
+      if (preferencesHtml === '') {
+        preferencesHtml = '<span style="font-size:12px;color:#999;">Žiadne preferencie</span>';
       }
-    } else if (!jeAdmin && !cakaNaSchvalenie) {
-      // Ak nemá žiadne zmeny a nie je admin a nie je neschválený
-      changesHtml = '<span style="font-size:12px;color:#999;">Bez zmien</span>';
+    } else {
+      preferencesHtml = '<span style="font-size:12px;color:#999;">—</span>';
     }
     
     let statusIcon = '';
@@ -2160,7 +2228,7 @@ function zobrazPouzivatelov(pouzivatelia) {
         </td>
         <td style="padding:12px;">
           <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-            ${changesHtml}
+            ${preferencesHtml}
           </div>
         </td>
         <td style="padding:12px;">
