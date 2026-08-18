@@ -1903,10 +1903,6 @@ function zobrazPouzivatelov(pouzivatelia) {
           ${!jeAdmin ? `
             <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
               ${priradeneTimy.length > 0 ? priradeneTimy.map(t => `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;">${t}</span>`).join('') : '<span style="font-size:12px;color:#999;">Žiadny</span>'}
-              <button onclick="otvorModalPriradeniaTimov('${user.id}')" 
-                      style="padding:2px 8px;font-size:11px;border:none;border-radius:4px;background-color:#2196F3;color:white;cursor:pointer;margin-left:4px;">
-                ✏️
-              </button>
             </div>
           ` : '<span style="font-size:12px;color:#999;">Všetky tímy</span>'}
         </td>
@@ -1920,20 +1916,31 @@ function zobrazPouzivatelov(pouzivatelia) {
         </td>
         <td style="padding:12px;">
           ${!jeAdmin ? `
-            <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;">
+              <!-- Tlačidlo na priradenie tímov - CERUZKA -->
+              <button onclick="otvorModalPriradeniaTimov('${user.id}')" 
+                      style="padding:6px 10px;border:none;border-radius:4px;background-color:#FF9800;color:white;cursor:pointer;font-size:13px;transition:background-color 0.3s;"
+                      onmouseover="this.style.backgroundColor='#F57C00'"
+                      onmouseout="this.style.backgroundColor='#FF9800'"
+                      title="Priradiť tímy">
+                ✏️
+              </button>
               ${!jeSchvaleny ? `
                 <button onclick="schvalPouzivatela('${user.id}')" 
-                        class="btn-approve">
+                        class="btn-approve"
+                        style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#4CAF50;color:white;transition:background-color 0.3s;">
                   ✓ Schváliť
                 </button>
               ` : `
                 <button onclick="zamietniPouzivatela('${user.id}')" 
-                        class="btn-reject">
+                        class="btn-reject"
+                        style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#FF9800;color:white;transition:background-color 0.3s;">
                   ✗ Zamietnuť
                 </button>
               `}
               <button onclick="odstranPouzivatela('${user.id}', '${user.email}')" 
-                      class="btn-remove-user">
+                      class="btn-remove-user"
+                      style="padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;background-color:#f44336;color:white;transition:background-color 0.3s;">
                 🗑️ Odstrániť
               </button>
             </div>
