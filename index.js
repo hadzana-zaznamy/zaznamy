@@ -2443,6 +2443,29 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     const vsetkySezony = ['2026/2027', '2025/2026', '2024/2025', '2023/2024'];
     const vsetkyKategorie = ['MLDKY', 'STDKY', 'MLDCI', 'STDCI'];
     
+    // --- ZORAĎOVANIE TÍMOV: zvolené prvé ---
+    let zoradeneTimy = [];
+    if (vsetkyTimy.length > 0) {
+      // Rozdelíme tímy na zvolené a nezvolené
+      const zvoleneTimy = [];
+      const nezvoleneTimy = [];
+      
+      vsetkyTimy.forEach(tim => {
+        if (aktualneTimy.includes(tim)) {
+          zvoleneTimy.push(tim);
+        } else {
+          nezvoleneTimy.push(tim);
+        }
+      });
+      
+      // Zoradíme abecedne obe skupiny
+      zvoleneTimy.sort((a, b) => a.localeCompare(b, 'sk'));
+      nezvoleneTimy.sort((a, b) => a.localeCompare(b, 'sk'));
+      
+      // Spojíme - zvolené prvé
+      zoradeneTimy = [...zvoleneTimy, ...nezvoleneTimy];
+    }
+    
     // --- SEKCE: SEZÓNY (viacnásobný výber) ---
     const sezonaContainer = document.createElement('div');
     sezonaContainer.style.marginBottom = '15px';
@@ -2452,7 +2475,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     sezonaContainer.style.border = '1px solid #e0e0e0';
     
     const sezonaLabel = document.createElement('div');
-    sezonaLabel.textContent = 'Priradené sezóny:';
+    sezonaLabel.textContent = '📅 Priradené sezóny (viac možností):';
     sezonaLabel.style.fontWeight = 'bold';
     sezonaLabel.style.marginBottom = '8px';
     sezonaLabel.style.fontSize = '13px';
@@ -2519,7 +2542,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     kategoriaContainer.style.border = '1px solid #e0e0e0';
     
     const kategoriaLabel = document.createElement('div');
-    kategoriaLabel.textContent = 'Priradené kategórie:';
+    kategoriaLabel.textContent = '🏆 Priradené kategórie (viac možností):';
     kategoriaLabel.style.fontWeight = 'bold';
     kategoriaLabel.style.marginBottom = '8px';
     kategoriaLabel.style.fontSize = '13px';
@@ -2530,7 +2553,25 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     kategoriaCheckboxContainer.style.flexWrap = 'wrap';
     kategoriaCheckboxContainer.style.gap = '8px';
     
+    // Zoraď kategórie: zvolené prvé
+    const zoradeneKategorie = [];
+    const zvoleneKategorie = [];
+    const nezvoleneKategorie = [];
+    
     vsetkyKategorie.forEach(kategoria => {
+      if (aktualneKategorie.includes(kategoria)) {
+        zvoleneKategorie.push(kategoria);
+      } else {
+        nezvoleneKategorie.push(kategoria);
+      }
+    });
+    
+    // Zoraď podľa názvu (podľa categoryMap)
+    zvoleneKategorie.sort((a, b) => (categoryMap[a] || a).localeCompare(categoryMap[b] || b, 'sk'));
+    nezvoleneKategorie.sort((a, b) => (categoryMap[a] || a).localeCompare(categoryMap[b] || b, 'sk'));
+    const zoradeneKategorieAll = [...zvoleneKategorie, ...nezvoleneKategorie];
+    
+    zoradeneKategorieAll.forEach(kategoria => {
       const label = document.createElement('label');
       label.style.display = 'flex';
       label.style.alignItems = 'center';
@@ -2577,7 +2618,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     kategoriaContainer.appendChild(kategoriaCheckboxContainer);
     contentContainer.appendChild(kategoriaContainer);
     
-    // --- SEKCE: VÝBER TÍMOV ---
+    // --- SEKCE: VÝBER TÍMOV (ZVOLENÉ PRVÉ) ---
     const timyLabel = document.createElement('div');
     timyLabel.textContent = '🏐 Priradené tímy:';
     timyLabel.style.fontWeight = 'bold';
@@ -2598,7 +2639,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     timyContainer.style.borderRadius = '6px';
     timyContainer.style.backgroundColor = '#fafafa';
     
-    if (vsetkyTimy.length === 0) {
+    if (zoradeneTimy.length === 0) {
       const emptyMsg = document.createElement('p');
       emptyMsg.textContent = 'Žiadne tímy nie sú dostupné. Najprv pridajte videá s tímami.';
       emptyMsg.style.color = '#999';
@@ -2607,7 +2648,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       emptyMsg.style.fontSize = '14px';
       timyContainer.appendChild(emptyMsg);
     } else {
-      vsetkyTimy.forEach(tim => {
+      zoradeneTimy.forEach(tim => {
         const label = document.createElement('label');
         label.style.display = 'flex';
         label.style.alignItems = 'center';
@@ -2637,6 +2678,15 @@ window.otvorModalPriradeniaTimov = async function(userId) {
         if (jePreferovane) {
           span.style.color = '#dc3545';
           span.style.fontWeight = 'bold';
+        }
+        
+        // Ak je tím priradený, pridáme malý indikátor
+        if (jePriradene) {
+          const indicator = document.createElement('span');
+          indicator.textContent = ' ✓';
+          indicator.style.color = '#4CAF50';
+          indicator.style.fontWeight = 'bold';
+          span.appendChild(indicator);
         }
         
         label.appendChild(checkbox);
@@ -2802,7 +2852,6 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       }
       
       // Ak sa zmenili preferencie, PREKRESLÍME OBSAH MODÁLU
-      // Skombinujeme čerstvé dáta s existujúcim user objektom
       const updatedUserData = {
         ...user,
         teamPreference: freshUserData.teamPreference || '',
@@ -2813,7 +2862,6 @@ window.otvorModalPriradeniaTimov = async function(userId) {
         assignedKategoria: freshUserData.assignedKategoria || ''
       };
       
-      // Prekreslíme obsah modálu s novými dátami
       vytvorModalnyObsah(updatedUserData);
     }
   }, (error) => {
