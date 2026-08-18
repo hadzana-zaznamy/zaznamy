@@ -1321,10 +1321,10 @@ function inicializujAplikaciu() {
       if (this.unsubscribeUsers) {
         this.unsubscribeUsers();
       }
-      
+  
       const usersRef = collection(db, 'users');
       const q = query(usersRef, orderBy('createdAt', 'asc'));
-      
+  
       this.unsubscribeUsers = onSnapshot(q, (querySnapshot) => {
         const pouzivatelia = [];
         querySnapshot.forEach((doc) => {
@@ -1337,7 +1337,9 @@ function inicializujAplikaciu() {
             uid: data.uid,
             approved: data.approved || false,
             teamName: data.teamName || '',
-            teamPreference: data.teamPreference || ''
+            teamPreference: data.teamPreference || '',
+            sezonaPreference: data.sezonaPreference || '',    // NOVÉ
+            kategoriaPreference: data.kategoriaPreference || '' // NOVÉ
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
@@ -1411,7 +1413,9 @@ function inicializujAplikaciu() {
             uid: data.uid,
             approved: data.approved || false,
             teamName: data.teamName || '',
-            teamPreference: data.teamPreference || ''
+            teamPreference: data.teamPreference || '',
+            sezonaPreference: data.sezonaPreference || '',
+            kategoriaPreference: data.kategoriaPreference || ''
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
@@ -5073,13 +5077,13 @@ function vytvorRegistracnyFormular() {
     
     const password = passwordInput.value;
     const allRulesPassed = /[a-z]/.test(password) && /[A-Z]/.test(password) && /[0-9]/.test(password) && password.length >= 8;
-    
+  
     if (!allRulesPassed) {
       messageDiv.textContent = '❌ Heslo nespĺňa všetky požiadavky.';
       messageDiv.style.color = 'red';
       return;
     }
-    
+  
     if (!checkPasswordMatch()) {
       passwordMatchMessage.textContent = '❌ Heslá sa nezhodujú!';
       passwordMatchMessage.style.display = 'block';
@@ -5090,44 +5094,40 @@ function vytvorRegistracnyFormular() {
     const teamPreference = document.getElementById('regTeamPreference').value.trim();
     const sezonaPreference = document.getElementById('regSezona').value;
     const kategoriaPreference = document.getElementById('regKategoria').value;
-
-    if (teamPreference || sezonaPreference || kategoriaPreference) {
-      try {
-        await updateDoc(doc(db, 'users', result.user.uid), {
-          teamPreference: teamPreference,
-          sezonaPreference: sezonaPreference,
-          kategoriaPreference: kategoriaPreference
-        });
-      } catch (teamError) {
-        console.warn('Nepodarilo sa uložiť preferencie:', teamError);
-      }
-    }
-    
+  
     button.disabled = true;
     button.textContent = 'Registrujem...';
     button.style.opacity = '0.7';
     messageDiv.textContent = '';
     messageDiv.style.color = '';
-  
+
     try {
+      // NAJPRV vykonáme registráciu
       const result = await window.app.registruj(email, password);
+    
       if (result.success) {
-        // Uloženie preferencie tímu do používateľského dokumentu
-        if (teamPreference) {
+        // Po úspešnej registrácii uložíme preferencie do dokumentu používateľa
+        if (teamPreference || sezonaPreference || kategoriaPreference) {
           try {
             await updateDoc(doc(db, 'users', result.user.uid), {
-              teamPreference: teamPreference
+              teamPreference: teamPreference,
+              sezonaPreference: sezonaPreference,
+              kategoriaPreference: kategoriaPreference
             });
           } catch (teamError) {
-            console.warn('Nepodarilo sa uložiť preferenciu tímu:', teamError);
+            console.warn('Nepodarilo sa uložiť preferencie:', teamError);
           }
         }
-        
+      
         await sendRegistrationEmail(email);
-        
+      
         const roleText = result.role === 'admin' ? 'ADMINISTRÁTOR' : 'Používateľ';
         const statusText = result.approved ? 'OKAMŽITE SCHVÁLENÝ' : 'ČAKÁ NA SCHVÁLENIE ADMINOM';
-        const teamText = teamPreference ? `<br>Preferovaný tím: <strong>${teamPreference}</strong>` : '';
+        let teamText = '';
+        if (teamPreference) teamText += `<br>🏐 Preferovaný tím: <strong>${teamPreference}</strong>`;
+        if (sezonaPreference) teamText += `<br>📅 Preferovaná sezóna: <strong>${sezonaPreference}</strong>`;
+        if (kategoriaPreference) teamText += `<br>🏆 Preferovaná kategória: <strong>${categoryMap[kategoriaPreference] || kategoriaPreference}</strong>`;
+      
         messageDiv.innerHTML = `✅ Registrácia úspešná!<br>📧 Email bol odoslaný na vašu adresu.<br>Vaša rola: <strong>${roleText}</strong><br>Stav: <strong>${statusText}</strong>${teamText}`;
         messageDiv.style.color = result.approved ? 'green' : 'orange';
         form.reset();
@@ -5151,7 +5151,7 @@ function vytvorRegistracnyFormular() {
       button.style.opacity = '1';
     }
   });
-    
+      
   return container;
 }
 
