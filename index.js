@@ -2701,7 +2701,7 @@ function otvorModalVidea(video = null) {
   idGroup.style.marginBottom = '15px';
   
   const idLabel = document.createElement('label');
-  idLabel.textContent = 'ID videa (nepovinné)';
+  idLabel.textContent = 'ID videa';
   idLabel.style.display = 'block';
   idLabel.style.marginBottom = '5px';
   idLabel.style.fontWeight = 'bold';
@@ -2711,7 +2711,7 @@ function otvorModalVidea(video = null) {
   idInput.type = 'text';
   idInput.id = 'videoIdInput';
   idInput.required = false; // Zmenené na nepovinné
-  idInput.placeholder = 'YouTube ID videa (nepovinné)';
+  idInput.placeholder = 'YouTube ID videa';
   idInput.value = jeUprava ? video.videoId : '';
   idInput.style.width = '100%';
   idInput.style.padding = '12px';
