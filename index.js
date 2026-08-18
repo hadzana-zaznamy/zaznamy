@@ -2166,7 +2166,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     return;
   }
   
-  // Získanie aktuálnych priradených tímov
+  // Získanie aktuálnych priradených tímov (adminom)
   let aktualneTimy = [];
   if (user.teamName) {
     if (Array.isArray(user.teamName)) {
@@ -2178,7 +2178,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     }
   }
   
-  // Získanie aktuálnych priradených sezón
+  // Získanie aktuálnych priradených sezón (adminom)
   let aktualneSezony = [];
   if (user.assignedSezona) {
     if (Array.isArray(user.assignedSezona)) {
@@ -2190,7 +2190,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     }
   }
   
-  // Získanie aktuálnych priradených kategórií
+  // Získanie aktuálnych priradených kategórií (adminom)
   let aktualneKategorie = [];
   if (user.assignedKategoria) {
     if (Array.isArray(user.assignedKategoria)) {
@@ -2199,6 +2199,40 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       aktualneKategorie = user.assignedKategoria.split(',').map(t => t.trim()).filter(t => t);
     } else if (typeof user.assignedKategoria === 'string' && user.assignedKategoria) {
       aktualneKategorie = [user.assignedKategoria];
+    }
+  }
+  
+  // --- PREFEROVANÉ HODNOTY POUŽÍVATEĽA (z registrácie) ---
+  let preferovaneTimy = [];
+  if (user.teamPreference) {
+    if (Array.isArray(user.teamPreference)) {
+      preferovaneTimy = user.teamPreference;
+    } else if (typeof user.teamPreference === 'string' && user.teamPreference.includes(',')) {
+      preferovaneTimy = user.teamPreference.split(',').map(t => t.trim()).filter(t => t);
+    } else if (typeof user.teamPreference === 'string' && user.teamPreference) {
+      preferovaneTimy = [user.teamPreference];
+    }
+  }
+  
+  let preferovaneSezony = [];
+  if (user.sezonaPreference) {
+    if (Array.isArray(user.sezonaPreference)) {
+      preferovaneSezony = user.sezonaPreference;
+    } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference.includes(',')) {
+      preferovaneSezony = user.sezonaPreference.split(',').map(t => t.trim()).filter(t => t);
+    } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference) {
+      preferovaneSezony = [user.sezonaPreference];
+    }
+  }
+  
+  let preferovaneKategorie = [];
+  if (user.kategoriaPreference) {
+    if (Array.isArray(user.kategoriaPreference)) {
+      preferovaneKategorie = user.kategoriaPreference;
+    } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference.includes(',')) {
+      preferovaneKategorie = user.kategoriaPreference.split(',').map(t => t.trim()).filter(t => t);
+    } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference) {
+      preferovaneKategorie = [user.kategoriaPreference];
     }
   }
   
@@ -2277,8 +2311,9 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = sezona;
-    const jeAktualne = aktualneSezony.includes(sezona);
-    checkbox.checked = jeAktualne;
+    // ZAŠKRTNUTÉ budú tie, ktoré sú PRIADENÉ adminom (assignedSezona)
+    const jePriradene = aktualneSezony.includes(sezona);
+    checkbox.checked = jePriradene;
     checkbox.style.width = '16px';
     checkbox.style.height = '16px';
     checkbox.style.cursor = 'pointer';
@@ -2286,8 +2321,9 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     
     const span = document.createElement('span');
     span.textContent = sezona;
-    // Ak je položka už priradená, zobrazíme ju červenou farbou
-    if (jeAktualne) {
+    // ČERVENOU a BOLDOM budú tie, ktoré sú v PREFERENCIÁCH používateľa
+    const jePreferovane = preferovaneSezony.includes(sezona);
+    if (jePreferovane) {
       span.style.color = '#dc3545';
       span.style.fontWeight = 'bold';
     }
@@ -2344,8 +2380,9 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = kategoria;
-    const jeAktualne = aktualneKategorie.includes(kategoria);
-    checkbox.checked = jeAktualne;
+    // ZAŠKRTNUTÉ budú tie, ktoré sú PRIADENÉ adminom (assignedKategoria)
+    const jePriradene = aktualneKategorie.includes(kategoria);
+    checkbox.checked = jePriradene;
     checkbox.style.width = '16px';
     checkbox.style.height = '16px';
     checkbox.style.cursor = 'pointer';
@@ -2353,8 +2390,9 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     
     const span = document.createElement('span');
     span.textContent = categoryMap[kategoria] || kategoria;
-    // Ak je položka už priradená, zobrazíme ju červenou farbou
-    if (jeAktualne) {
+    // ČERVENOU a BOLDOM budú tie, ktoré sú v PREFERENCIÁCH používateľa
+    const jePreferovane = preferovaneKategorie.includes(kategoria);
+    if (jePreferovane) {
       span.style.color = '#dc3545';
       span.style.fontWeight = 'bold';
     }
@@ -2421,8 +2459,9 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = tim;
-      const jeAktualne = aktualneTimy.includes(tim);
-      checkbox.checked = jeAktualne;
+      // ZAŠKRTNUTÉ budú tie, ktoré sú PRIADENÉ adminom (teamName)
+      const jePriradene = aktualneTimy.includes(tim);
+      checkbox.checked = jePriradene;
       checkbox.style.width = '18px';
       checkbox.style.height = '18px';
       checkbox.style.cursor = 'pointer';
@@ -2432,8 +2471,9 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       span.textContent = tim;
       span.style.fontSize = '14px';
       span.style.fontWeight = '500';
-      // Ak je tím už priradený, zobrazíme ho červenou farbou
-      if (jeAktualne) {
+      // ČERVENOU a BOLDOM budú tie, ktoré sú v PREFERENCIÁCH používateľa
+      const jePreferovane = preferovaneTimy.includes(tim);
+      if (jePreferovane) {
         span.style.color = '#dc3545';
         span.style.fontWeight = 'bold';
       }
