@@ -4479,22 +4479,25 @@ function validujCislo(hodnota) {
 
 
 
-// Funkcia, ktorá sa spustí pri zadaní ; v konzole
+// Automatické spustenie pri zadaní ; v konzole
 (function() {
-  // Uložiť pôvodnú hodnotu pre prípad, že by sa používala
-  const originalValue = window[';'];
+  // Uložiť referenciu na pôvodný console.log
+  const originalLog = console.log;
   
-  // Definovať getter pre znak ;
-  Object.defineProperty(window, ';', {
-    get: function() {
-      console.log('ℹ️ Zadajte ID videa, ktoré chcete zakódovať:');
-      console.log('Použitie: ;VaseVideoID');
-      console.log('Napríklad: ;Gn-ACwC2phE');
-      return ';';
-    },
-    set: function(value) {
-      if (value && value !== ';') {
-        // Zakódovať ID videa
+  // Premenná na sledovanie, či bol zadaný ;
+  let semicolonPressed = false;
+  
+  // Override console.log pre detekciu
+  console.log = function(...args) {
+    // Zavolať pôvodný console.log
+    originalLog.apply(console, args);
+    
+    // Skontrolovať, či prvý argument začína s ;
+    if (typeof args[0] === 'string' && args[0].startsWith(';')) {
+      const videoId = args[0].substring(1); // Odstrániť ;
+      
+      if (videoId) {
+        // Zakódovať ID
         const SHIFT = 3;
         
         function generateRandomChar() {
@@ -4503,7 +4506,7 @@ function validujCislo(hodnota) {
         }
         
         // Reverzné zobrazenie
-        const reversedId = value.split('').reverse().join('');
+        const reversedId = videoId.split('').reverse().join('');
         
         // Caesarova šifra
         let shiftedId = '';
@@ -4525,9 +4528,10 @@ function validujCislo(hodnota) {
           finalResult += shiftedId[i] + generateRandomChar();
         }
         
-        console.log('✅ Zakódované ID videa:');
-        console.log(finalResult);
-        console.log('📋 Skopírované do schránky!');
+        // Zobraziť výsledok
+        originalLog('✅ Zakódované ID videa:');
+        originalLog(finalResult);
+        originalLog('📋 Skopírované do schránky!');
         
         // Kopírovať do schránky
         if (navigator.clipboard) {
@@ -4540,11 +4544,11 @@ function validujCislo(hodnota) {
             document.body.removeChild(tempTextArea);
           });
         }
-        
-        return finalResult;
       }
-      return value;
-    },
-    configurable: true
-  });
+    }
+  };
+  
+  console.log('✅ Kódovanie pripravené!');
+  console.log('Použitie: Stačí zadať ;VaseVideoID');
+  console.log('Napríklad: ;Gn-ACwC2phE');
 })();
