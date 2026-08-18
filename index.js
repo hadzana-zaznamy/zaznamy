@@ -5118,7 +5118,6 @@ function vytvorLoggedInContainer() {
     gap: 10px;
     z-index: 9999;
     align-items: center;
-    flex-direction: row-reverse;  /* PRIDANÉ: Tlačidlá sa zobrazia v opačnom poradí */
   `;
   
   // Tlačidlo "Moje preferencie" (zobrazené pre userov, nie adminov)
@@ -5181,10 +5180,9 @@ function vytvorLoggedInContainer() {
     logoutBtn.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
   };
   
-  // Pridávame v poradí: najprv logoutBtn, potom myPreferencesBtn
-  // Ale vďaka flex-direction: row-reverse sa zobrazia v správnom poradí
-  headerButtons.appendChild(logoutBtn);
+  // Pridávame v poradí: najprv myPreferencesBtn (vľavo), potom logoutBtn (vpravo)
   headerButtons.appendChild(myPreferencesBtn);
+  headerButtons.appendChild(logoutBtn);
   document.body.appendChild(headerButtons);
   
   // --- ADMIN TLAČIDLÁ ---
