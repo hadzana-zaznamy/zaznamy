@@ -3954,7 +3954,7 @@ window.otvorModalUpravyVidea = function(videoId) {
   otvorModalVidea(video);
 };
 
-async function otvorModalUpravyMoichPreferencii() {
+async function otvorModalUpravyMojichPreferencii() {
   const user = window.app.aktualnyPouzivatel;
   if (!user) {
     showAlert('Nie ste prihlásený', 'Chyba', '❌');
@@ -5792,7 +5792,7 @@ function vytvorLoggedInContainer() {
     myPreferencesBtn.style.boxShadow = '0 4px 12px rgba(76, 175, 80, 0.3)';
   };
   myPreferencesBtn.onclick = () => {
-    otvorModalUpravyMoichPreferencii();
+    otvorModalUpravyMojichPreferencii();
   };
   
   // Tlačidlo Odhlásiť sa - používa CSS triedu z pôvodného štýlu
