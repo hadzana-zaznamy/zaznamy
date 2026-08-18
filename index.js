@@ -1897,7 +1897,7 @@ function zobrazPouzivatelov(pouzivatelia) {
           </span>
         </td>
         <td style="padding:12px;">
-          ${teamPreference ? `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e8f5e9;color:#2e7d32;">${teamPreference}</span>` : '<span style="font-size:12px;color:#999;">Nezadané</span>'}
+          ${teamPreference ? `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e8f5e9;color:#2e7d32;">${teamPreference}</span>` : '<span style="font-size:12px;color:#999;"></span>'}
         </td>
         <td style="padding:12px;">
           ${!jeAdmin ? `
