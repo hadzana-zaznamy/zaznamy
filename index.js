@@ -3440,7 +3440,7 @@ window.otvorModalUpravyVidea = function(videoId) {
   otvorModalVidea(video);
 };
 
-function otvorModalUpravyMoichPreferencii() {
+async function otvorModalUpravyMoichPreferencii() {
   const user = window.app.aktualnyPouzivatel;
   if (!user) {
     showAlert('Nie ste prihlásený', 'Chyba', '❌');
@@ -3448,15 +3448,32 @@ function otvorModalUpravyMoichPreferencii() {
   }
   
   const userId = user.uid;
-  const userData = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+  
+  // Načítame dáta priamo z databázy
+  let userData = null;
+  try {
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      userData = {
+        id: userId,
+        email: data.email || '',
+        teamPreference: data.teamPreference || '',
+        sezonaPreference: data.sezonaPreference || '',
+        kategoriaPreference: data.kategoriaPreference || ''
+      };
+    }
+  } catch (error) {
+    showAlert('Nepodarilo sa načítať dáta používateľa', 'Chyba', '❌');
+    return;
+  }
+  
   if (!userData) {
     showAlert('Používateľské dáta sa nenašli', 'Chyba', '❌');
     return;
   }
   
-  // Získanie aktuálnych priradených hodnôt (ktoré si používateľ môže upraviť)
-  // Používateľ si môže upraviť len svoje preferované hodnoty (teamPreference, sezonaPreference, kategoriaPreference)
-  // alebo aj priradené hodnoty? Podľa zadania - "svoje preferencie" - upravuje preferované hodnoty
+  // Získanie aktuálnych preferovaných hodnôt
   let aktualneTimy = [];
   if (userData.teamPreference) {
     if (Array.isArray(userData.teamPreference)) {
@@ -3775,32 +3792,15 @@ function otvorModalUpravyMoichPreferencii() {
         preferencesUpdatedAt: new Date().toISOString()
       });
       
-      // Aktualizácia lokálnych dát
-      const updatedUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
-      if (updatedUser) {
-        updatedUser.teamPreference = vybraneTimy;
-        updatedUser.sezonaPreference = vybraneSezony;
-        updatedUser.kategoriaPreference = vybraneKategorie;
-      }
-      
-      // Aktualizácia aktuálneho používateľa v appObj
-      window.app.aktualnyPouzivatelTeam = vybraneTimy;
-      window.app.aktualnyPouzivatelSezona = vybraneSezony;
-      window.app.aktualnyPouzivatelKategoria = vybraneKategorie;
-      
       // Zostavenie správy o uložení
       let sprava = `✅ Vaše preferencie boli úspešne uložené!<br><br>`;
       sprava += `🏐 <strong>Preferované tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
-      sprava += `📅 <strong>Preferované sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Žiadne'}<br>`;
-      sprava += `🏆 <strong>Preferované kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Žiadne'}`;
+      sprava += `📅 <strong>Preferované sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Všetky'}<br>`;
+      sprava += `🏆 <strong>Preferované kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Všetky'}`;
       
       await showAlert(sprava, 'Úspech', '✅');
       
       modal.remove();
-      // Obnovenie zobrazenia používateľov (ak je admin v tejto sekcii)
-      if (window.app.vsetciPouzivatelia.length > 0) {
-        zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-      }
     } catch (error) {
       await showAlert(
         `❌ Chyba pri ukladaní preferencií: ${error.message}`,
@@ -5110,6 +5110,7 @@ function vytvorLoggedInContainer() {
     gap: 10px;
     z-index: 9999;
     align-items: center;
+    flex-direction: row-reverse;  /* PRIDANÉ: Tlačidlá sa zobrazia v opačnom poradí */
   `;
   
   // Tlačidlo "Moje preferencie" (zobrazené pre userov, nie adminov)
@@ -5128,6 +5129,7 @@ function vytvorLoggedInContainer() {
     transition: background-color 0.3s, transform 0.2s;
     box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
     display: none;
+    white-space: nowrap;
   `;
   myPreferencesBtn.onmouseover = () => {
     myPreferencesBtn.style.backgroundColor = '#388E3C';
@@ -5158,6 +5160,7 @@ function vytvorLoggedInContainer() {
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s;
     box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+    white-space: nowrap;
   `;
   logoutBtn.onmouseover = () => {
     logoutBtn.style.backgroundColor = '#d32f2f';
@@ -5170,8 +5173,10 @@ function vytvorLoggedInContainer() {
     logoutBtn.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
   };
   
-  headerButtons.appendChild(myPreferencesBtn);
+  // Pridávame v poradí: najprv logoutBtn, potom myPreferencesBtn
+  // Ale vďaka flex-direction: row-reverse sa zobrazia v správnom poradí
   headerButtons.appendChild(logoutBtn);
+  headerButtons.appendChild(myPreferencesBtn);
   document.body.appendChild(headerButtons);
   
   // --- ADMIN TLAČIDLÁ ---
