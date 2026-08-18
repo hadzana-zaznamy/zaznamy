@@ -4479,7 +4479,7 @@ function validujCislo(hodnota) {
 
 
 
-// Riešenie so znakom @
+// Riešenie so znakom @ - plná podpora
 window.k = function(id) {
   const SHIFT = 3;
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
@@ -4526,22 +4526,28 @@ window.k = function(id) {
   return result;
 };
 
-// Vytvoriť alias pre znak @
-Object.defineProperty(window, '@', {
-  get: function() {
-    return function(id) {
-      return window.k(id);
-    };
-  },
-  configurable: true
-});
+// Univerzálna funkcia pre @ - podporuje @("...") aj @`...`
+window['@'] = function(arg) {
+  // Ak je to string (z @("...") volania)
+  if (typeof arg === 'string') {
+    return window.k(arg);
+  }
+  
+  // Ak je to pole (z template literal @`...`)
+  if (Array.isArray(arg) && arg.length > 0) {
+    return window.k(arg[0]);
+  }
+  
+  // Ak je to niečo iné
+  return window.k(String(arg));
+};
+
+// Skrátená verzia - alias
+window.e = window.k;
 
 console.log('✅ Kódovanie pripravené!');
 console.log('Použitie:');
-console.log('  @("L7zxsjN5HiI")');
-console.log('  k("L7zxsjN5HiI")');
-
-window['@'] = function(strings, ...values) {
-  const id = strings[0];
-  return window.k(id);
-};
+console.log('  k("L7zxsjN5HiI")  - štandardné volanie');
+console.log('  @("L7zxsjN5HiI")  - so znakom @');
+console.log('  @`L7zxsjN5HiI`    - template literal');
+console.log('  e("L7zxsjN5HiI")  - skrátená verzia');
