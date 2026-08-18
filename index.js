@@ -3859,6 +3859,20 @@ async function otvorModalUpravyMoichPreferencii() {
         preferencesUpdatedAt: new Date().toISOString()
       });
       
+      // --- AKTUALIZÁCIA LOKÁLNYCH DÁT PRE ADMINA ---
+      // Aktualizujeme dáta v zozname všetkých používateľov
+      const updatedUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+      if (updatedUser) {
+        updatedUser.teamPreference = vybraneTimy;
+        updatedUser.sezonaPreference = vybraneSezony;
+        updatedUser.kategoriaPreference = vybraneKategorie;
+      }
+      
+      // Aktualizujeme aj v app objekte
+      window.app.aktualnyPouzivatelTeam = vybraneTimy;
+      window.app.aktualnyPouzivatelSezona = vybraneSezony;
+      window.app.aktualnyPouzivatelKategoria = vybraneKategorie;
+      
       // Zostavenie správy o uložení
       let sprava = `✅ Vaše preferencie boli úspešne uložené!<br><br>`;
       sprava += `🏐 <strong>Preferované tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
@@ -3867,7 +3881,9 @@ async function otvorModalUpravyMoichPreferencii() {
       
       await showAlert(sprava, 'Úspech', '✅');
       
+      // Zatvoríme modál
       modal.remove();
+      
     } catch (error) {
       await showAlert(
         `❌ Chyba pri ukladaní preferencií: ${error.message}`,
