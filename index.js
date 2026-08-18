@@ -6,8 +6,7 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut, 
-  onAuthStateChanged,
-  sendPasswordResetEmail
+  onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { 
   getFirestore, 
@@ -6368,7 +6367,7 @@ function vytvorPrihlasovaciFormular() {
   form.appendChild(emailGroup);
   
   const passwordGroup = document.createElement('div');
-  passwordGroup.style.marginBottom = '5px';
+  passwordGroup.style.marginBottom = '15px';
   passwordGroup.style.position = 'relative';
   const passwordLabel = document.createElement('label');
   passwordLabel.textContent = 'Heslo';
@@ -6437,92 +6436,6 @@ function vytvorPrihlasovaciFormular() {
   passwordWrapper.appendChild(toggleBtn);
   passwordGroup.appendChild(passwordWrapper);
   form.appendChild(passwordGroup);
-  
-  // --- ODKAZ NA OBNOVENIE HESLA ---
-  const forgotPasswordLink = document.createElement('div');
-  forgotPasswordLink.style.textAlign = 'right';
-  forgotPasswordLink.style.marginBottom = '15px';
-  forgotPasswordLink.style.marginTop = '5px';
-  
-  const forgotLink = document.createElement('a');
-  forgotLink.href = '#';
-  forgotLink.textContent = 'Zabudli ste heslo?';
-  forgotLink.style.color = '#2196F3';
-  forgotLink.style.textDecoration = 'none';
-  forgotLink.style.fontSize = '13px';
-  forgotLink.style.cursor = 'pointer';
-  forgotLink.style.transition = 'text-decoration 0.2s';
-  
-  forgotLink.addEventListener('mouseenter', () => {
-    forgotLink.style.textDecoration = 'underline';
-  });
-  forgotLink.addEventListener('mouseleave', () => {
-    forgotLink.style.textDecoration = 'none';
-  });
-  
-  forgotLink.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const email = emailInput.value.trim();
-    
-    if (!email) {
-      await showAlert(
-        'Prosím, zadajte svoju e-mailovú adresu do poľa "Email" pred odoslaním žiadosti o obnovenie hesla.',
-        'Chýba email',
-        '✉️'
-      );
-      emailInput.focus();
-      return;
-    }
-    
-    // Kontrola či je email platný
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      await showAlert(
-        'Zadaná e-mailová adresa nie je platná. Prosím, skontrolujte správnosť zadania.',
-        'Neplatný email',
-        '✉️'
-      );
-      emailInput.focus();
-      return;
-    }
-    
-    try {
-      const actionCodeSettings = {
-        url: window.location.href,
-        handleCodeInApp: false
-      };
-      
-      await sendPasswordResetEmail(auth, email, actionCodeSettings);
-      
-      await showAlert(
-        `✅ Odkaz na obnovenie hesla bol odoslaný na adresu <strong>${email}</strong>.<br><br>📧 Skontrolujte svoju e-mailovú schránku (aj priečinok SPAM).<br>🔗 Odkaz je platný 1 hodinu.`,
-        'Heslo obnovené',
-        '📧'
-      );
-      
-    } catch (error) {
-      let errorMessage = 'Nastala chyba pri odosielaní odkazu na obnovenie hesla.';
-      
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'Používateľ s touto e-mailovou adresou neexistuje. Prosím, zaregistrujte sa.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Zadaná e-mailová adresa je neplatná.';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Príliš veľa pokusov. Skúste to prosím neskôr.';
-      } else {
-        errorMessage = error.message;
-      }
-      
-      await showAlert(
-        `❌ ${errorMessage}`,
-        'Chyba',
-        '❌'
-      );
-    }
-  });
-  
-  forgotPasswordLink.appendChild(forgotLink);
-  form.appendChild(forgotPasswordLink);
   
   const button = document.createElement('button');
   button.type = 'submit';
