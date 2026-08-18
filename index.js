@@ -25,31 +25,20 @@ import {
 
 const EMAIL_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzEQNzSXbtn0Ecle_5e2F4nHYx8P5IHVyuaz3QrcvEyj8PH13SxGMg0xbUdcFNbDyoPtQ/exec';
 
-// Funkcia na odoslanie registračného emailu
+// Funkcia na odoslanie registračného emailu - bez CORS
 async function sendRegistrationEmail(email) {
   try {
     console.log('📧 Odosielam registračný email na:', email);
     
-    const response = await fetch(EMAIL_WEB_APP_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: email,
-        registrationDate: new Date().toISOString()
-      })
+    const url = `${EMAIL_WEB_APP_URL}?email=${encodeURIComponent(email)}`;
+    
+    await fetch(url, {
+      method: 'GET',
+      mode: 'no-cors'
     });
     
-    const result = await response.json();
+    return { success: true };
     
-    if (result.success) {
-      console.log('✅ Email úspešne odoslaný!');
-    } else {
-      console.warn('⚠️ Email nebol odoslaný:', result.error);
-    }
-    
-    return result;
   } catch (error) {
     console.error('❌ Chyba pri odoslaní emailu:', error);
     return { success: false, error: error.message };
