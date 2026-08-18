@@ -16,7 +16,6 @@ import {
   query, where, orderBy, limit,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-// App Check import
 import { 
   initializeAppCheck, 
   ReCaptchaV3Provider 
@@ -35,17 +34,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Inicializácia App Check s vaším novým site key
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider('6Lc2tVMtAAAAAAJeVHKtQP5vBRl9Qg22XBNmF5WP'),
   isTokenAutoRefreshEnabled: true
 });
 
-// YouTube embed URL
 const YOUTUBE_EMBED_URL = 'https://www.youtube.com/embed/';
 const YOUTUBE_THUMBNAIL_URL = 'https://img.youtube.com/vi/';
 
-// Mapovanie kategórií
 const categoryMap = {
   "MLDKY": "Mladšie dorastenky",
   "STDKY": "Staršie dorastenky",
@@ -53,7 +49,6 @@ const categoryMap = {
   "STDCI": "Starší dorastenci"
 };
 
-// Pridať globálny štýl pre full-width layout
 const style = document.createElement('style');
 style.textContent = `
   * {
@@ -765,24 +760,6 @@ style.textContent = `
     display: none !important;
   }
   
-//  #centerPlayButtonContainer {
-//    display: flex;
-//    justify-content: center;
-//    align-items: center;
-//    transition: opacity 0.2s ease;
-//  }
-  
-//  #customPlayerOverlay.playing #centerPlayButtonContainer {
-//    opacity: 0;
-//    pointer-events: none;
-//    transition: opacity 0.2s ease;
-//  }
-  
-//  #customPlayerOverlay.paused #centerPlayButtonContainer {
-//    opacity: 1;
-//    pointer-events: all;
-//  }
-  
   #customPlayerOverlay.playing:hover #centerPlayButtonContainer {
     opacity: 0;
   }
@@ -967,7 +944,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Funkcie pre modálne okná
 function showModal(options) {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
@@ -976,7 +952,6 @@ function showModal(options) {
     const modal = document.createElement('div');
     modal.className = 'modal-box';
     
-    // Close button
     const closeBtn = document.createElement('button');
     closeBtn.className = 'modal-close';
     closeBtn.innerHTML = '×';
@@ -986,7 +961,6 @@ function showModal(options) {
     };
     modal.appendChild(closeBtn);
     
-    // Icon
     if (options.icon) {
       const icon = document.createElement('div');
       icon.className = 'modal-icon';
@@ -994,21 +968,18 @@ function showModal(options) {
       modal.appendChild(icon);
     }
     
-    // Title
     if (options.title) {
       const title = document.createElement('h3');
       title.textContent = options.title;
       modal.appendChild(title);
     }
     
-    // Message
     if (options.message) {
       const message = document.createElement('p');
       message.innerHTML = options.message;
       modal.appendChild(message);
     }
     
-    // Buttons
     const buttonsDiv = document.createElement('div');
     buttonsDiv.className = 'modal-buttons';
     
@@ -1047,7 +1018,6 @@ function showModal(options) {
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     
-    // Click outside to close (only for alert type)
     if (options.type === 'alert') {
       overlay.onclick = (e) => {
         if (e.target === overlay) {
@@ -1059,7 +1029,6 @@ function showModal(options) {
   });
 }
 
-// Vytvorenie modálnych funkcií
 async function showAlert(message, title = 'Informácia', icon = 'ℹ️') {
   return showModal({ type: 'alert', title, message, icon, okText: 'OK' });
 }
@@ -1105,10 +1074,6 @@ function inicializujAplikaciu() {
       }
     },
     
-    aktualizujZoznam: function() {
-      // Tu neskôr pridáme vykreslenie zoznamu
-    },
-    
     spustiRealTimeListenerPrePouzivatela: function(userId) {
       if (this.unsubscribeUser) {
         this.unsubscribeUser();
@@ -1126,28 +1091,18 @@ function inicializujAplikaciu() {
           this.aktualnyPouzivatelRole = userData.role || 'user';
           this.aktualnyPouzivatelTeam = userData.teamName || '';
       
-          // Kontrola zmeny tímu
-          if (predoslyTeam !== this.aktualnyPouzivatelTeam) {
-            console.log('Tím sa zmenil z:', predoslyTeam, 'na:', this.aktualnyPouzivatelTeam);
-            
-            // Aktualizovať zoznam videí pri zmene tímu
+          if (predoslyTeam !== this.aktualnyPouzivatelTeam) {            
             if (this.vsetkyVidea && this.vsetkyVidea.length > 0) {
               zobrazVideaPouzivatelom(this.vsetkyVidea);
             }
-        
-            // Prekresliť UI
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
           }
       
-          // Kontrola zmeny schválenia alebo roly
           if (predoslyApproved !== this.aktualnyPouzivatelApproved || 
               predoslaRole !== this.aktualnyPouzivatelRole) {
-            console.log('Stav sa zmenil - Approved:', this.aktualnyPouzivatelApproved, 'Rola:', this.aktualnyPouzivatelRole);
             prerenderujPodlaStavu(this.aktualnyPouzivatel);
           }
-        } else {
-          console.log('Používateľský dokument bol odstránený, odhlasujem používateľa');
-          
+        } else {          
           showAlert(
             'Váš účet bol odstránený administrátorom. Budete odhlásený.',
             'Účet odstránený',
@@ -1164,12 +1119,10 @@ function inicializujAplikaciu() {
               this.aktualnyPouzivatelTeam = '';
               prerenderujPodlaStavu(null);
             }).catch((error) => {
-              console.error('Chyba pri odhlásení:', error);
             });
           });
         }
       }, (error) => {
-        console.error('Chyba v real-time listeneri používateľa:', error);
       });
     },
     
@@ -1320,7 +1273,6 @@ function inicializujAplikaciu() {
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
-        // Only update users list if admin panel is visible
         if (document.getElementById('adminPanel').style.display !== 'none' && 
             document.getElementById('usersList')) {
           zobrazPouzivatelov(pouzivatelia);
@@ -1360,7 +1312,6 @@ function inicializujAplikaciu() {
         });
         this.vsetkyVidea = videa;
     
-        // Aktualizovať zobrazenie videí
         if (document.getElementById('contentArea').style.display !== 'none') {
           zobrazVideaPouzivatelom(videa);
         }
@@ -1563,7 +1514,6 @@ function inicializujAplikaciu() {
       }
     },
 
-    // Video management methods
     pridajVideo: async function(videoData) {
       if (!this.jeAdmin()) {
         return { success: false, error: 'Nemáte oprávnenie na pridávanie videí' };
@@ -1743,7 +1693,6 @@ function prerenderujPodlaStavu(user) {
     if (contentDiv) {
       contentDiv.style.display = jeSchvaleny || jeAdmin ? 'block' : 'none';
       if (jeSchvaleny || jeAdmin) {
-        // Only show videos if not in admin panel
         if (document.getElementById('adminPanel').style.display === 'none') {
           zobrazVideaPouzivatelom(window.app.vsetkyVidea);
         }
@@ -1762,7 +1711,6 @@ function prerenderujPodlaStavu(user) {
         window.app.spustiRealTimeListener();
       }
       
-      // Only load users if admin panel is visible
       if (adminPanel.style.display !== 'none') {
         window.app.nacitajVsetkychPouzivatelov().then(() => {
           zobrazPouzivatelov(window.app.vsetciPouzivatelia);
@@ -1843,7 +1791,6 @@ function zobrazPouzivatelov(pouzivatelia) {
     return;
   }
   
-  // Získať všetky tímy z videí
   const vsetkyTimy = getVsetkyTimy();
   
   let html = '<div style="overflow-x:auto;">';
@@ -1947,17 +1894,14 @@ window.zmenTimPouzivatela = async function(userId, teamName) {
       teamUpdatedBy: window.app.aktualnyPouzivatel?.uid || ''
     });
     
-    // Aktualizovať lokálne dáta
     const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
     if (user) {
       user.teamName = teamName || '';
     }
     
-    // Ak sa zmenil tím aktuálne prihláseného používateľa, aktualizovať aj jeho dáta
     if (userId === window.app.aktualnyPouzivatel?.uid) {
       window.app.aktualnyPouzivatelTeam = teamName || '';
       
-      // Aktualizovať zoznam videí pre aktuálneho používateľa
       if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
         zobrazVideaPouzivatelom(window.app.vsetkyVidea);
       }
@@ -2083,7 +2027,6 @@ window.odstranPouzivatela = async function(userId, userEmail) {
   }
 };
 
-// Funkcia na získanie ID videa z YouTube URL
 function extrahujVideoId(url) {
   const patterns = [
     /(?:youtube\.com\/watch\?v=)([\w-]+)/,
@@ -2097,7 +2040,6 @@ function extrahujVideoId(url) {
     if (match) return match[1];
   }
   
-  // Ak je to priamo ID (len písmená a čísla)
   if (/^[\w-]{11}$/.test(url)) {
     return url;
   }
@@ -2168,11 +2110,9 @@ function zobrazVideaPouzivatelom(videa) {
   const container = document.getElementById('videaPrePouzivatelov');
   if (!container) return;
   
-  // Získať tím aktuálneho používateľa
   const aktualnyUserTeam = window.app.aktualnyPouzivatelTeam || '';
   const jeAdmin = window.app.aktualnyPouzivatelRole === 'admin';
   
-  // Ak používateľ nie je admin a nemá priradený tím, nezobrazí sa mu žiadne video
   if (!jeAdmin && !aktualnyUserTeam) {
     container.innerHTML = `
       <div style="text-align:center;padding:40px;background:white;border-radius:12px;">
@@ -2183,7 +2123,6 @@ function zobrazVideaPouzivatelom(videa) {
     return;
   }
   
-  // Filtrovať videá podľa tímu používateľa (ak nie je admin)
   let zobrazeneVidea = videa;
   if (!jeAdmin && aktualnyUserTeam) {
     zobrazeneVidea = videa.filter(v => 
@@ -2210,7 +2149,6 @@ function zobrazVideaPouzivatelom(videa) {
     return;
   }
   
-  // Získanie unikátnych hodnôt pre filtre
   const kategorie = [...new Set(zobrazeneVidea.map(v => v.kategoria).filter(Boolean))];
   const sezony = [...new Set(zobrazeneVidea.map(v => v.sezona).filter(Boolean))];
   const sutaze = [...new Set(zobrazeneVidea.map(v => v.sutaz).filter(Boolean))];
@@ -2315,7 +2253,6 @@ window.resetFiltre = function() {
   aplikujFiltre();
 };
 
-// Načítanie videí do admin panelu
 function nacitajVideaDoAdminPanelu() {
   const container = document.getElementById('videaList');
   if (!container) return;
@@ -2323,7 +2260,6 @@ function nacitajVideaDoAdminPanelu() {
   zobrazVideaAdmin(window.app.vsetkyVidea);
 }
 
-// Zobrazenie videí pre admina
 function zobrazVideaAdmin(videa) {
   const container = document.getElementById('videaList');
   if (!container) return;
@@ -2343,7 +2279,6 @@ function zobrazVideaAdmin(videa) {
   container.innerHTML = html;
 }
 
-// Upravená funkcia otvorVideoModal - pridáme zmenu textu tlačidla
 window.otvorVideoModal = async function(videoId) {
   
   const video = window.app.vsetkyVidea.find(v => v.id === videoId);
@@ -2357,7 +2292,6 @@ window.otvorVideoModal = async function(videoId) {
     return;
   }
   
-  // Zmeniť text tlačidla na "Zatvoriť video"
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.textContent = 'Zatvoriť video';
@@ -2365,7 +2299,6 @@ window.otvorVideoModal = async function(videoId) {
     logoutBtn.style.boxShadow = '0 4px 12px rgba(255, 152, 0, 0.3)';
   }
   
-  // Zavrieť existujúci prehrávač ak existuje
   if (window.youtubePlayer) {
     try {
       if (typeof window.youtubePlayer.destroy === 'function') {
@@ -2378,36 +2311,30 @@ window.otvorVideoModal = async function(videoId) {
     window.youtubePlayer = null;
   }
   
-  // Vyčistiť kontajner prehrávača
   const playerContainer = document.getElementById('youtubePlayer');
   if (playerContainer) {
     playerContainer.innerHTML = '';
   }
   
-  // Skryť scroll tlačidlo
   const scrollBtn = document.getElementById('scroll');
   if (scrollBtn) {
     scrollBtn.classList.add('hide');
   }
   
-  // Nastaviť aktuálne timestampy
   currentTimestamps = video.timestamps || {};
   timestampKeys = Object.keys(currentTimestamps).sort((a, b) => {
     return timeToSec(currentTimestamps[a]) - timeToSec(currentTimestamps[b]);
   });
   
-  // Zobraziť modal
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
   
   const modalErrorDiv = document.getElementById('modalError');
   if (modalErrorDiv) modalErrorDiv.style.display = 'none';
   
-  // DEKÓDOVANIE VIDEO ID pomocou workera
   let decodedVideoId = video.videoId;
   
   try {    
-    // Zavolať worker na dekódovanie
     const workerUrl = `https://smfhkzilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`;
     const response = await fetch(workerUrl);
     
@@ -2420,10 +2347,7 @@ window.otvorVideoModal = async function(videoId) {
   } catch (error) {
   }
   
-  // Skontrolovať či je YT API dostupné
   if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
-    // Počkáme na načítanie YT API    
-    // Načítanie YouTube API ak nie je dostupné
     if (!document.getElementById('youtube-api-script')) {
       const tag = document.createElement('script');
       tag.id = 'youtube-api-script';
@@ -2434,7 +2358,7 @@ window.otvorVideoModal = async function(videoId) {
     
     await new Promise((resolve) => {
       let attempts = 0;
-      const maxAttempts = 50; // 10 sekúnd (50 * 200ms)
+      const maxAttempts = 50; 
       const checkYT = setInterval(() => {
         attempts++;
         if (typeof YT !== 'undefined' && typeof YT.Player !== 'undefined') {
@@ -2448,7 +2372,6 @@ window.otvorVideoModal = async function(videoId) {
     });
   }
   
-  // Skontrolovať znova po čakaní
   if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
     if (modalErrorDiv) {
       modalErrorDiv.style.display = 'flex';
@@ -2457,7 +2380,6 @@ window.otvorVideoModal = async function(videoId) {
     return;
   }
   
-  // Vytvoriť prehrávač s dekódovaným ID
   try {   
     window.youtubePlayer = new YT.Player('youtubePlayer', {
       videoId: decodedVideoId,
@@ -2480,7 +2402,6 @@ window.otvorVideoModal = async function(videoId) {
             }, 100);
             updatePlayButtons(1);
             showControlsAndRestartTimer();
-            // Nastaviť kvalitu
             try {
               if (e.target.setPlaybackQuality) {
                 e.target.setPlaybackQuality('hd1080');
@@ -2522,7 +2443,6 @@ window.otvorVideoModal = async function(videoId) {
   }
 };
 
-// Odstránenie videa (admin)
 window.odstranVideo = async function(videoId) {
   const confirmed = await showDangerConfirm(
     'Naozaj chcete odstrániť toto video?',
@@ -2535,18 +2455,15 @@ window.odstranVideo = async function(videoId) {
   const result = await window.app.odstranVideo(videoId);
   if (result.success) {
     await showAlert('✅ Video bolo úspešne odstránené!', 'Úspech', '✅');
-    // Data sa aktualizujú cez real-time listener
   } else {
     await showAlert('❌ ' + result.error, 'Chyba', '❌');
   }
 };
 
-// Funkcia na otvorenie modálneho okna pre pridanie videa
 window.otvorModalPridaniaVidea = function() {
   otvorModalVidea(null);
 };
 
-// Funkcia na otvorenie modálneho okna pre úpravu videa
 window.otvorModalUpravyVidea = function(videoId) {
   const video = window.app.vsetkyVidea.find(v => v.id === videoId);
   if (!video) {
@@ -2556,7 +2473,6 @@ window.otvorModalUpravyVidea = function(videoId) {
   otvorModalVidea(video);
 };
 
-// Univerzálna funkcia pre otvorenie modálneho okna (pridanie alebo úprava)
 function otvorModalVidea(video = null) {
   const jeUprava = video !== null;
   
@@ -2570,7 +2486,6 @@ function otvorModalVidea(video = null) {
   modalBox.style.maxHeight = '90vh';
   modalBox.style.overflow = 'auto';
   
-  // Close button
   const closeBtn = document.createElement('button');
   closeBtn.className = 'modal-close';
   closeBtn.innerHTML = '×';
@@ -2579,23 +2494,19 @@ function otvorModalVidea(video = null) {
   };
   modalBox.appendChild(closeBtn);
   
-  // Icon
   const icon = document.createElement('div');
   icon.className = 'modal-icon';
   icon.textContent = jeUprava ? '✏️' : '🎥';
   modalBox.appendChild(icon);
   
-  // Title
   const title = document.createElement('h3');
   title.textContent = jeUprava ? 'Upraviť video' : 'Pridať nové video';
   title.style.marginBottom = '20px';
   modalBox.appendChild(title);
   
-  // Form
   const form = document.createElement('form');
   form.id = 'videoForm';
   
-  // Video ID input
   const idGroup = document.createElement('div');
   idGroup.style.marginBottom = '15px';
   
@@ -2621,7 +2532,6 @@ function otvorModalVidea(video = null) {
   idGroup.appendChild(idInput);
   form.appendChild(idGroup);
   
-  // Kategória
   const catGroup = document.createElement('div');
   catGroup.style.marginBottom = '15px';
   
@@ -2664,7 +2574,6 @@ function otvorModalVidea(video = null) {
   catGroup.appendChild(catSelect);
   form.appendChild(catGroup);
   
-  // Sezóna
   const sezGroup = document.createElement('div');
   sezGroup.style.marginBottom = '15px';
   
@@ -2706,7 +2615,6 @@ function otvorModalVidea(video = null) {
   sezGroup.appendChild(sezSelect);
   form.appendChild(sezGroup);
   
-  // Súťaž
   const sutGroup = document.createElement('div');
   sutGroup.style.marginBottom = '15px';
   
@@ -2746,7 +2654,6 @@ function otvorModalVidea(video = null) {
   sutGroup.appendChild(sutSelect);
   form.appendChild(sutGroup);
   
-    // Domáci tím
   const domaciTimGroup = document.createElement('div');
   domaciTimGroup.style.marginBottom = '15px';
   
@@ -2772,7 +2679,6 @@ function otvorModalVidea(video = null) {
   domaciTimGroup.appendChild(domaciTimInput);
   form.appendChild(domaciTimGroup);
 
-  // Hostia tím
   const hostiaTimGroup = document.createElement('div');
   hostiaTimGroup.style.marginBottom = '15px';
   
@@ -2798,7 +2704,6 @@ function otvorModalVidea(video = null) {
   hostiaTimGroup.appendChild(hostiaTimInput);
   form.appendChild(hostiaTimGroup);
   
-  // Mesiac
   const mesGroup = document.createElement('div');
   mesGroup.style.marginBottom = '15px';
   
@@ -2849,7 +2754,6 @@ function otvorModalVidea(video = null) {
   mesGroup.appendChild(mesSelect);
   form.appendChild(mesGroup);
   
-  // Kolo
   const koloGroup = document.createElement('div');
   koloGroup.style.marginBottom = '15px';
   
@@ -2874,7 +2778,6 @@ function otvorModalVidea(video = null) {
   koloGroup.appendChild(koloInput);
   form.appendChild(koloGroup);
   
-  // Dátum a čas
   const datumGroup = document.createElement('div');
   datumGroup.style.marginBottom = '15px';
   
@@ -2899,7 +2802,6 @@ function otvorModalVidea(video = null) {
   datumGroup.appendChild(datumInput);
   form.appendChild(datumGroup);
   
-  // Timestamps
   const tsGroup = document.createElement('div');
   tsGroup.style.marginBottom = '15px';
   
@@ -2926,7 +2828,6 @@ function otvorModalVidea(video = null) {
   tsGroup.appendChild(tsTextarea);
   form.appendChild(tsGroup);
   
-  // Submit button
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
   submitBtn.textContent = jeUprava ? '💾 Uložiť zmeny' : '✅ Pridať video';
@@ -2941,7 +2842,6 @@ function otvorModalVidea(video = null) {
   submitBtn.style.transition = 'background-color 0.3s';
   form.appendChild(submitBtn);
   
-  // Message div
   const messageDiv = document.createElement('div');
   messageDiv.id = 'videoMessage';
   messageDiv.style.marginTop = '15px';
@@ -2953,7 +2853,6 @@ function otvorModalVidea(video = null) {
   modal.appendChild(modalBox);
   document.body.appendChild(modal);
   
-  // Form submission
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -2974,21 +2873,15 @@ function otvorModalVidea(video = null) {
       return;
     }
     
-    // Parse timestamps
     const tsText = document.getElementById('timestampsInput').value.trim();
     if (tsText) {
       try {
-        // Najprv skúsime parsovať ako JSON
         timestamps = JSON.parse(tsText);
       } catch (e) {
         try {
-          // Ak JSON zlyhal, skúsime to ako JavaScript objekt
-          // Odstránime "timestamps:" ak existuje
           let cleanText = tsText;
-          // Odstránime "timestamps:" alebo "timestamps ="
           cleanText = cleanText.replace(/^\s*timestamps\s*[:=]\s*/, '');
           
-          // Použijeme Function constructor na bezpečné vyhodnotenie
           const evalFn = new Function(`return (${cleanText})`);
           const result = evalFn();
           if (typeof result === 'object' && !Array.isArray(result) && result !== null) {
@@ -3002,7 +2895,6 @@ function otvorModalVidea(video = null) {
           return;
         }
       }
-      // Validate that it's an object
       if (typeof timestamps !== 'object' || Array.isArray(timestamps) || timestamps === null) {
         messageDiv.textContent = '❌ Časové značky musia byť objekt';
         messageDiv.style.color = 'red';
@@ -3010,7 +2902,6 @@ function otvorModalVidea(video = null) {
       }
     }
     
-    // Validate required fields
     if (!videoId || !kategoria || !sezona || !sutaz || !domaciTim || !hostiaTim || !mesiac) {
       messageDiv.textContent = '❌ Prosím, vyplňte všetky povinné polia (označené *)';
       messageDiv.style.color = 'red';
@@ -3046,7 +2937,6 @@ function otvorModalVidea(video = null) {
       messageDiv.innerHTML = jeUprava ? '✅ Video bolo úspešne upravené!' : '✅ Video bolo úspešne pridané!';
       messageDiv.style.color = 'green';
       
-      // Close modal after delay
       setTimeout(() => {
         modal.remove();
       }, 1500);
@@ -3060,7 +2950,6 @@ function otvorModalVidea(video = null) {
     submitBtn.style.opacity = '1';
   });
   
-  // Click outside to close
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       modal.remove();
@@ -3068,7 +2957,6 @@ function otvorModalVidea(video = null) {
   });
 }
 
-// Zobrazenie správy videí (admin)
 window.zobrazSpravuVidei = function() {
   const contentArea = document.getElementById('contentArea');
   const adminPanel = document.getElementById('adminPanel');
@@ -3080,17 +2968,14 @@ window.zobrazSpravuVidei = function() {
   contentArea.style.display = 'none';
   adminPanel.style.display = 'block';
   
-  // Zmeniť názov panelu
   if (adminPanelTitle) {
     adminPanelTitle.textContent = 'Správa videí';
   }
   
-  // Skryť zoznam používateľov, zobraziť zoznam videí
   if (usersList) usersList.style.display = 'none';
   if (videaList) videaList.style.display = 'block';
   if (addVideoBtn) addVideoBtn.style.display = 'block';
   
-  // Aktualizovať tlačidlá
   document.getElementById('btnVidea').style.backgroundColor = '#1976D2';
   document.getElementById('btnVidea').style.color = 'white';
   document.getElementById('btnAplikacia').style.backgroundColor = '#e0e0e0';
@@ -3098,7 +2983,6 @@ window.zobrazSpravuVidei = function() {
   document.getElementById('btnPouzivatelia').style.backgroundColor = '#e0e0e0';
   document.getElementById('btnPouzivatelia').style.color = '#333';
   
-  // Načítanie videí pre admin panel
   nacitajVideaDoAdminPanelu();
 };
 
@@ -3109,7 +2993,6 @@ window.zobrazAplikaciu = function() {
   contentArea.style.display = 'block';
   adminPanel.style.display = 'none';
   
-  // Aktualizovať tlačidlá
   document.getElementById('btnAplikacia').style.backgroundColor = '#1976D2';
   document.getElementById('btnAplikacia').style.color = 'white';
   document.getElementById('btnPouzivatelia').style.backgroundColor = '#e0e0e0';
@@ -3117,7 +3000,6 @@ window.zobrazAplikaciu = function() {
   document.getElementById('btnVidea').style.backgroundColor = '#e0e0e0';
   document.getElementById('btnVidea').style.color = '#333';
   
-  // Načítať videá pre používateľov
   zobrazVideaPouzivatelom(window.app.vsetkyVidea);
 };
 
@@ -3132,17 +3014,14 @@ window.zobrazPouzivatelovAdmin = async function() {
   contentArea.style.display = 'none';
   adminPanel.style.display = 'block';
   
-  // Zmeniť názov panelu
   if (adminPanelTitle) {
     adminPanelTitle.textContent = 'Správa používateľov';
   }
   
-  // Skryť zoznam videí, zobraziť zoznam používateľov
   if (usersList) usersList.style.display = 'block';
   if (videaList) videaList.style.display = 'none';
   if (addVideoBtn) addVideoBtn.style.display = 'none';
   
-  // Aktualizovať tlačidlá
   document.getElementById('btnPouzivatelia').style.backgroundColor = '#1976D2';
   document.getElementById('btnPouzivatelia').style.color = 'white';
   document.getElementById('btnAplikacia').style.backgroundColor = '#e0e0e0';
@@ -3150,12 +3029,10 @@ window.zobrazPouzivatelovAdmin = async function() {
   document.getElementById('btnVidea').style.backgroundColor = '#e0e0e0';
   document.getElementById('btnVidea').style.color = '#333';
   
-  // Najprv načítať videá, ak ešte nie sú načítané
   if (!window.app.vsetkyVidea || window.app.vsetkyVidea.length === 0) {
     await window.app.nacitajVidea();
   }
   
-  // Potom načítať používateľov
   if (window.app.vsetciPouzivatelia.length > 0) {
     zobrazPouzivatelov(window.app.vsetciPouzivatelia);
   } else {
@@ -3163,7 +3040,6 @@ window.zobrazPouzivatelovAdmin = async function() {
     if (result.success) {
       zobrazPouzivatelov(result.pouzivatelia);
     } else {
-      // V prípade chyby zobraziť správu
       if (usersList) {
         usersList.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">Chyba pri načítaní používateľov: ' + result.error + '</p>';
       }
@@ -3171,7 +3047,6 @@ window.zobrazPouzivatelovAdmin = async function() {
   }
 };
 
-// Premenné pre prehrávač
 let currentTimestamps = {};
 let timestampKeys = [];
 let controlsTimer = null;
@@ -3294,7 +3169,6 @@ function showSpeedMessage(rate) {
 }
 
 function showControlsAndRestartTimer() {
-  // Bezpečnostná kontrola - ak prehrávač neexistuje alebo nemá metódu getPlayerState
   if (!window.youtubePlayer || typeof window.youtubePlayer.getPlayerState !== 'function') {
     return;
   }
@@ -3310,11 +3184,9 @@ function showControlsAndRestartTimer() {
     ctrl.style.pointerEvents = 'all';
   }
   
-  // Iba ak je prehrávač v stave prehrávania (1)
   if (window.youtubePlayer.getPlayerState() === 1) {
     clearTimeout(controlsTimer);
     controlsTimer = setTimeout(() => {
-      // Znova skontrolujeme pred skrytím
       if (window.youtubePlayer && typeof window.youtubePlayer.getPlayerState === 'function' && 
           window.youtubePlayer.getPlayerState() === 1 && !isSeeking) {
         if (ctrl) {
@@ -3393,7 +3265,6 @@ function toggleFullscreen() {
 }
 
 function closeVideoModal() {
-  // Ak je video v fullscreen režime, najprv ukonči fullscreen
   if (document.fullscreenElement || document.webkitFullscreenElement) {
     if (document.exitFullscreen) {
       document.exitFullscreen();
@@ -3421,7 +3292,6 @@ function closeVideoModal() {
   clearTimeout(controlsTimer);
   isSeeking = false;
   
-  // Vyčistiť kontajner prehrávača
   const playerContainer = document.getElementById('youtubePlayer');
   if (playerContainer) {
     playerContainer.innerHTML = '';
@@ -3432,7 +3302,6 @@ function closeVideoModal() {
     scrollBtn.classList.remove('hide');
   }
   
-  // Obnoviť text tlačidla po zatvorení videa
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.textContent = 'Odhlásiť sa';
@@ -3441,7 +3310,6 @@ function closeVideoModal() {
   }
 }
 
-// Funkcia na zobrazenie seek feedbacku
 function showSeekFeedback(text, isForward) {
   let feedback = document.getElementById('seekFeedback');
   const container = document.querySelector('.video-player-container');
@@ -3471,9 +3339,7 @@ function showSeekFeedback(text, isForward) {
   }, 800);
 }
 
-// Vytvorenie štruktúry pre video prehrávač v loggedInContainer
 function vytvorVideoPlayer() {
-  // Vytvorenie modálneho okna pre video
   const modal = document.createElement('div');
   modal.id = 'videoModal';
   modal.innerHTML = `
@@ -3520,7 +3386,6 @@ function vytvorVideoPlayer() {
   `;
   document.body.appendChild(modal);
   
-  // Event listeners pre prehrávač
   document.getElementById('closeModal').addEventListener('click', closeVideoModal);
   
   document.getElementById('customPlayPauseButton').addEventListener('click', (e) => {
@@ -3533,7 +3398,6 @@ function vytvorVideoPlayer() {
     togglePlayPause();
   });
   
-  // Progress bar input
   const progressBar = document.getElementById('progressBar');
   progressBar.addEventListener('input', (e) => {
     if (!window.youtubePlayer || typeof window.youtubePlayer.getDuration !== 'function') return;
@@ -3545,7 +3409,6 @@ function vytvorVideoPlayer() {
     updateSection(newTime);
   });
 
-  // Progress bar change
   progressBar.addEventListener('change', (e) => {
     if (!window.youtubePlayer || typeof window.youtubePlayer.seekTo !== 'function') return;
     let val = parseFloat(e.target.value);
@@ -3556,7 +3419,6 @@ function vytvorVideoPlayer() {
     showControlsAndRestartTimer();
   });
 
-  // Progress bar container click
   document.getElementById('progressBarContainer').addEventListener('click', (e) => {
     if (e.target.classList.contains('timestamp-marker')) return;
     if (!window.youtubePlayer || typeof window.youtubePlayer.getDuration !== 'function') return;
@@ -3594,14 +3456,12 @@ function vytvorVideoPlayer() {
     if (window.youtubePlayer && window.youtubePlayer.getPlayerState() === 1) showControlsAndRestartTimer();
   });
   
-  // Dvojklik na prehrávač
   let lastTapTime = 0;
   const DOUBLE_TAP_DELAY = 300;
   let clickTimeout = null;
   
   const videoPlayerContainer = document.querySelector('.video-player-container');
   
-  // PC - click
   if (videoPlayerContainer) {
     videoPlayerContainer.addEventListener('click', (e) => {
       if (!window.youtubePlayer || document.getElementById('modalError').style.display === 'flex') return;
@@ -3618,7 +3478,6 @@ function vytvorVideoPlayer() {
       }, 200);
     });
     
-    // PC - dblclick
     videoPlayerContainer.addEventListener('dblclick', (e) => {
       if (!window.youtubePlayer || document.getElementById('modalError').style.display === 'flex') return;
       
@@ -3654,7 +3513,6 @@ function vytvorVideoPlayer() {
     });
   }
   
-  // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
     const modal = document.getElementById('videoModal');
     if (!modal.classList.contains('show') || !window.youtubePlayer) return;
@@ -3819,7 +3677,6 @@ function vytvorLoggedInContainer() {
   contentArea.id = 'contentArea';
   contentArea.style.display = 'none';
   
-  // Kontajner pre videá v contentArea
   const videaContainer = document.createElement('div');
   videaContainer.id = 'videaPrePouzivatelov';
   contentArea.appendChild(videaContainer);
@@ -3830,7 +3687,6 @@ function vytvorLoggedInContainer() {
   adminPanel.id = 'adminPanel';
   adminPanel.style.display = 'none';
   
-  // Admin title
   const adminTitle = document.createElement('h3');
   adminTitle.id = 'adminPanelTitle';
   adminTitle.textContent = 'Správa používateľov';
@@ -3838,7 +3694,6 @@ function vytvorLoggedInContainer() {
   adminTitle.style.color = '#e65100';
   adminPanel.appendChild(adminTitle);
   
-  // Tlačidlo na pridanie videa v admin paneli
   const addVideoBtn = document.createElement('button');
   addVideoBtn.id = 'addVideoBtn';
   addVideoBtn.textContent = '➕ Pridať nové video';
@@ -3855,13 +3710,11 @@ function vytvorLoggedInContainer() {
   addVideoBtn.style.display = 'none';
   adminPanel.appendChild(addVideoBtn);
   
-  // Kontajner pre zoznam videí v admin paneli
   const videaList = document.createElement('div');
   videaList.id = 'videaList';
   videaList.style.display = 'none';
   adminPanel.appendChild(videaList);
   
-  // Kontajner pre zoznam používateľov
   const usersList = document.createElement('div');
   usersList.id = 'usersList';
   usersList.style.display = 'block';
@@ -3871,7 +3724,6 @@ function vytvorLoggedInContainer() {
   
   document.body.appendChild(container);
   
-  // Vytvoriť video prehrávač
   vytvorVideoPlayer();
   
   const logoutBtn = document.createElement('button');
@@ -3882,17 +3734,14 @@ function vytvorLoggedInContainer() {
   document.body.appendChild(logoutBtn);
   
   logoutBtn.addEventListener('click', async () => {
-    // Skontrolovať či je video modal otvorený
     const videoModal = document.getElementById('videoModal');
     const jeVideoOtvorene = videoModal && videoModal.classList.contains('show');
     
     if (jeVideoOtvorene) {
-      // Ak je video otvorené, zatvoriť ho namiesto odhlásenia
       closeVideoModal();
       return;
     }
     
-    // Ak video nie je otvorené, pokračovať s odhlásením
     logoutBtn.disabled = true;
     logoutBtn.textContent = 'Odhlasujem...';
     logoutBtn.style.opacity = '0.7';
@@ -3903,7 +3752,6 @@ function vytvorLoggedInContainer() {
         document.getElementById('loggedInContainer').style.display = 'none';
         document.getElementById('authContainer').style.display = 'flex';
         logoutBtn.style.display = 'none';
-        // Zavrieť video modal ak je otvorený
         closeVideoModal();
       } else {
         await showAlert('❌ ' + result.error, 'Chyba', '❌');
@@ -4479,15 +4327,12 @@ function validujCislo(hodnota) {
 
 
 
-// Riešenie so znakom @ - plná podpora
 window.k = function(id) {
   const SHIFT = 3;
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
   
-  // Reverzné zobrazenie
   const reversed = id.split('').reverse().join('');
   
-  // Caesarova šifra
   let shifted = '';
   for (let i = 0; i < reversed.length; i++) {
     let code = reversed.charCodeAt(i);
@@ -4497,21 +4342,13 @@ window.k = function(id) {
     shifted += String.fromCharCode(code);
   }
   
-  // Maskovanie
   let result = '';
   for (let i = 0; i < shifted.length; i++) {
     result += shifted[i] + chars[Math.floor(Math.random() * chars.length)];
   }
-  
-  // Zobraziť výsledok
-  console.log('✅ Pôvodné ID:', id);
-  console.log('🔐 Zakódované ID:', result);
-  console.log('📋 Skopírované do schránky!');
-  
-  // Kopírovať do schránky
+    
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(result).then(() => {
-      console.log('✅ Úspešne skopírované!');
     }).catch(() => {
       const tempTextArea = document.createElement('textarea');
       tempTextArea.value = result;
@@ -4519,30 +4356,25 @@ window.k = function(id) {
       tempTextArea.select();
       document.execCommand('copy');
       document.body.removeChild(tempTextArea);
-      console.log('✅ Skopírované (fallback)!');
+      console.log('✅ Skopírované');
     });
   }
   
   return result;
 };
 
-// Univerzálna funkcia pre @ - podporuje @("...") aj @`...`
 window['@'] = function(arg) {
-  // Ak je to string (z @("...") volania)
   if (typeof arg === 'string') {
     return window.k(arg);
   }
   
-  // Ak je to pole (z template literal @`...`)
   if (Array.isArray(arg) && arg.length > 0) {
     return window.k(arg[0]);
   }
   
-  // Ak je to niečo iné
   return window.k(String(arg));
 };
 
-// Skrátená verzia - alias
 window.e = window.k;
 
 console.log('k("ID")');
