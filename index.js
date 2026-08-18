@@ -432,37 +432,83 @@ style.textContent = `
   }
   
   /* Video card styles */
-  .video-card {
-    background: white;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s;
-    cursor: pointer;
-    width: 100%;
-    max-width: 360px;
-    margin: 0 auto;
-  }
-  
-  .video-card:active {
-    transform: scale(0.99);
-  }
-  
-  .video-thumbnail {
-    position: relative;
-    padding-bottom: 56.25%;
-    height: 0;
-    background: #000;
-  }
-  
-  .video-thumbnail img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+// Pridajte tieto štýly do existujúceho style.textContent v index.js
+// Hľadajte časť s .video-card a pridajte/upravte nasledovné:
+
+.video-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s;
+  cursor: pointer;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.video-card:active {
+  transform: scale(0.99);
+}
+
+/* Nové štýly pre overlay efekt pri hovore */
+.video-thumbnail {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+.video-thumbnail img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Prekryvný prvok - zobrazený pri hovore */
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.video-card:hover .video-overlay,
+.video-card:active .video-overlay {
+  opacity: 1;
+}
+
+.video-overlay .play-button {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 0, 0, 0.85);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, background 0.3s;
+}
+
+.video-card:hover .video-overlay .play-button {
+  transform: scale(1.05);
+  background: rgba(255, 0, 0, 1);
+}
+
+.video-overlay .play-button svg {
+  width: 30px;
+  height: 30px;
+  fill: white;
+  margin-left: 4px;
+}
   
   .video-thumbnail .play-button {
     position: absolute;
@@ -2390,7 +2436,6 @@ function extrahujVideoId(url) {
 }
 
 function vytvorVideoKartu(video, sOdstranenim = false) {
-  // Ak video nemá ID, použijeme placeholder obrázok
   const thumbnailUrl = video.videoId && video.videoId.trim() !== '' 
     ? `https://smf-hk-zilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`
     : 'https://placehold.co/640x360/1f2937/white?text=Bez+ID+videa';
@@ -2433,55 +2478,47 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     `;
   }
   
-  // Určenie správnej akcie pri kliknutí na kartu
+  // Overlay s tlačidlom prehratia (rovnaké ako v druhom súbore)
+  const overlayHtml = video.videoId && video.videoId.trim() !== '' ? `
+    <div class="video-overlay">
+      <div class="play-button">
+        <svg viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </div>
+    </div>
+  ` : `
+    <div class="video-overlay">
+      <div class="play-button" style="background:rgba(255,152,0,0.85);">
+        <span style="color:white;font-size:28px;font-weight:bold;">✏️</span>
+      </div>
+    </div>
+  `;
+  
   let onClickAction = '';
+  let cursorStyle = 'cursor:pointer;';
+  
   if (sOdstranenim) {
-    // V ADMIN PANELI: Ak video nemá ID -> otvorí sa modal na úpravu
-    // Ak video má ID -> otvorí sa prehrávač
     if (!video.videoId || video.videoId.trim() === '') {
       onClickAction = `onclick="otvorModalUpravyVidea('${video.id}')"`;
     } else {
       onClickAction = `onclick="otvorVideoModal('${video.id}')"`;
     }
   } else {
-    // PRE POUŽÍVATEĽOV: iba ak má ID, inak žiadna akcia
     if (video.videoId && video.videoId.trim() !== '') {
       onClickAction = `onclick="otvorVideoModal('${video.id}')"`;
+    } else {
+      cursorStyle = 'cursor:default;';
     }
   }
-  
-  // Štýl kurzora podľa akcie
-  let cursorStyle = 'cursor:default;';
-  if (sOdstranenim) {
-    // V admin paneli je vždy klikateľné (buď na prehrávanie alebo na úpravu)
-    cursorStyle = 'cursor:pointer;';
-  } else if (video.videoId && video.videoId.trim() !== '') {
-    cursorStyle = 'cursor:pointer;';
-  }
-  
-  // DEFINÍCIA PREMENNEJ bezIdIndikator - PRIDANÉ
-  const bezIdIndikator = (sOdstranenim && (!video.videoId || video.videoId.trim() === '')) 
-    ? '' 
-    : '';
   
   return `
     <div class="video-card" data-video-id="${video.id}" ${onClickAction} style="${cursorStyle}">
       <div class="video-thumbnail">
         <img src="${thumbnailUrl}" alt="${video.nazov || 'Video'}" loading="lazy" onerror="this.src='https://placehold.co/640x360/1f2937/white?text=Video'">
-        ${video.videoId && video.videoId.trim() !== '' ? `
-          <div class="play-button">
-            <svg viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          </div>
-        ` : `
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,152,0,0.8);border-radius:50%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;color:white;font-size:28px;font-weight:bold;">
-            ✏️
-          </div>
-        `}
+        ${overlayHtml}
       </div>
       <div class="video-details">
-        ${bezIdIndikator}
         ${detailsHtml}
         ${adminButtonsHtml}
       </div>
