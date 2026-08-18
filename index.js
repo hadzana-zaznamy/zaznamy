@@ -4545,9 +4545,4 @@ window['@'] = function(arg) {
 // Skrátená verzia - alias
 window.e = window.k;
 
-console.log('✅ Kódovanie pripravené!');
-console.log('Použitie:');
-console.log('  k("L7zxsjN5HiI")  - štandardné volanie');
-console.log('  @("L7zxsjN5HiI")  - so znakom @');
-console.log('  @`L7zxsjN5HiI`    - template literal');
-console.log('  e("L7zxsjN5HiI")  - skrátená verzia');
+console.log('k("ID")');
