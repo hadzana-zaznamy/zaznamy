@@ -2225,7 +2225,7 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
   
   // DEFINÍCIA PREMENNEJ bezIdIndikator - PRIDANÉ
   const bezIdIndikator = (sOdstranenim && (!video.videoId || video.videoId.trim() === '')) 
-    ? `<p style="color:#f44336;font-weight:bold;font-size:12px;">⚠️ BEZ ID VIDEA - NEBUDE VIDITEĽNÉ PRE POUŽÍVATEĽOV</p>` 
+    ? '' 
     : '';
   
   return `
