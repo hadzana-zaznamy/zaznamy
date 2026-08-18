@@ -27,9 +27,7 @@ const EMAIL_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxACaJxgkgSZh
 
 // Funkcia na odoslanie registračného emailu - bez CORS
 async function sendRegistrationEmail(email) {
-  try {
-    console.log('📧 Odosielam registračný email na:', email);
-    
+  try {    
     const url = `${EMAIL_WEB_APP_URL}?email=${encodeURIComponent(email)}`;
     
     await fetch(url, {
@@ -40,7 +38,6 @@ async function sendRegistrationEmail(email) {
     return { success: true };
     
   } catch (error) {
-    console.error('❌ Chyba pri odoslaní emailu:', error);
     return { success: false, error: error.message };
   }
 }
@@ -63,11 +60,9 @@ async function sendApprovalEmail(email, firstName = '', lastName = '', adminName
       mode: 'no-cors'
     });
     
-    console.log('✅ E-mail o schválení odoslaný');
     return { success: true };
     
   } catch (error) {
-    console.error('❌ Chyba pri odoslaní e-mailu o schválení:', error);
     return { success: false, error: error.message };
   }
 }
@@ -1966,8 +1961,15 @@ window.zmenTimPouzivatela = async function(userId, teamName) {
 };
 
 window.schvalPouzivatela = async function(userId) {
+  // Nájdenie používateľa pre zobrazenie emailu
+  const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+  if (!user) {
+    await showAlert('Používateľ sa nenašiel', 'Chyba', '❌');
+    return;
+  }
+  
   const confirmed = await showWarningConfirm(
-    'Naozaj chcete schváliť tohto používateľa?',
+    `Naozaj chcete schváliť používateľa <strong>${user.email}</strong>?`,
     'Schválenie používateľa',
     '✅'
   );
@@ -1977,21 +1979,16 @@ window.schvalPouzivatela = async function(userId) {
   try {
     const result = await window.app.schvalPouzivatela(userId);
     if (result.success) {
-      // Nájdenie schváleného používateľa
-      const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
-      
       // Odoslanie e-mailu o schválení
-      if (user) {
-        const adminName = window.app.aktualnyPouzivatel?.email || 'Administrátor';
-        await sendApprovalEmail(
-          user.email,
-          user.firstName || '',
-          user.lastName || '',
-        );
-      }
+      const adminName = window.app.aktualnyPouzivatel?.email || 'Administrátor';
+      await sendApprovalEmail(
+        user.email,
+        user.firstName || '',
+        user.lastName || '',
+      );
       
       await showAlert(
-        'Používateľ bol úspešne schválený!<br><br>Ak bol schválený práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.<br><br>📧 E-mail o schválení bol odoslaný.',
+        `Používateľ <strong>${user.email}</strong> bol úspešne schválený!<br><br>Ak bol schválený práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.<br><br>📧 E-mail o schválení bol odoslaný.`,
         'Úspech',
         '✅'
       );
@@ -2014,8 +2011,15 @@ window.schvalPouzivatela = async function(userId) {
 };
 
 window.zamietniPouzivatela = async function(userId) {
+  // Nájdenie používateľa pre zobrazenie emailu
+  const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+  if (!user) {
+    await showAlert('Používateľ sa nenašiel', 'Chyba', '❌');
+    return;
+  }
+  
   const confirmed = await showWarningConfirm(
-    'Naozaj chcete ZAMIETNUŤ tohto používateľa? Jeho stav sa zmení na "Čaká".',
+    `Naozaj chcete ZAMIETNUŤ používateľa <strong>${user.email}</strong>?<br>Jeho stav sa zmení na "Čaká".`,
     'Zamietnutie používateľa',
     '⚠️'
   );
@@ -2026,7 +2030,7 @@ window.zamietniPouzivatela = async function(userId) {
     const result = await window.app.zamietniPouzivatela(userId);
     if (result.success) {
       await showAlert(
-        'Používateľ bol zamietnutý!<br><br>Jeho stav je teraz "Čaká".<br>Ak bol zamietnutý práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.',
+        `Používateľ <strong>${user.email}</strong> bol zamietnutý!<br><br>Jeho stav je teraz "Čaká".<br>Ak bol zamietnutý práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.`,
         'Úspech',
         '✅'
       );
