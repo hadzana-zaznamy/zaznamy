@@ -23,7 +23,7 @@ import {
 
 
 
-const EMAIL_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzEQNzSXbtn0Ecle_5e2F4nHYx8P5IHVyuaz3QrcvEyj8PH13SxGMg0xbUdcFNbDyoPtQ/exec';
+const EMAIL_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxACaJxgkgSZhsDUhcZuSh3VP-OZS2jEihOnP5wSRQGYhAQq6kS_OsTZApXkFSEtBdo_g/exec';
 
 // Funkcia na odoslanie registračného emailu - bez CORS
 async function sendRegistrationEmail(email) {
