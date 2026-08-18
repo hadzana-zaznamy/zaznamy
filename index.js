@@ -2050,7 +2050,7 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
   if (sOdstranenim) {
     adminButtonsHtml = `
       <div class="video-meta">
-        <span>Pridané: ${formatujDatum(video.createdAt)}</span>
+//        <span>Pridané: ${formatujDatum(video.createdAt)}</span>
         <div style="display:flex;gap:5px;" onclick="event.stopPropagation();">
           <button onclick="otvorModalUpravyVidea('${video.id}')" 
                   class="btn-edit-video"
@@ -2066,7 +2066,7 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
       </div>
     `;
   } else {
-    adminButtonsHtml = video.createdAt ? `<div class="video-meta"><span>Pridané: ${formatujDatum(video.createdAt)}</span></div>` : '';
+//    adminButtonsHtml = video.createdAt ? `<div class="video-meta"><span>Pridané: ${formatujDatum(video.createdAt)}</span></div>` : '';
   }
   
   return `
