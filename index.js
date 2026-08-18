@@ -1338,8 +1338,8 @@ function inicializujAplikaciu() {
             approved: data.approved || false,
             teamName: data.teamName || '',
             teamPreference: data.teamPreference || '',
-            sezonaPreference: data.sezonaPreference || '',    // NOVÉ
-            kategoriaPreference: data.kategoriaPreference || '' // NOVÉ
+            sezonaPreference: data.sezonaPreference || '',
+            kategoriaPreference: data.kategoriaPreference || ''
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
@@ -1884,34 +1884,34 @@ function zobrazPouzivatelov(pouzivatelia) {
     const jeAdmin = user.role === 'admin';
     const jeAktualny = user.uid === window.app.aktualnyPouzivatel?.uid;
     const jeSchvaleny = user.approved === true;
-    const teamPreference = user.teamPreference || '';
-    const sezonaPreference = user.sezonaPreference || '';
-    const kategoriaPreference = user.kategoriaPreference || '';
     
-    // Spracovanie preferencií ako polí
+    // --- PREFEROVANÉ HODNOTY (z registrácie) ---
+    const teamPreference = user.teamPreference || '';
+    
+    // Spracovanie preferovaných sezón (z registrácie) - uložené ako pole
     let sezonaPreferences = [];
-    if (sezonaPreference) {
-      if (Array.isArray(sezonaPreference)) {
-        sezonaPreferences = sezonaPreference;
-      } else if (typeof sezonaPreference === 'string' && sezonaPreference.includes(',')) {
-        sezonaPreferences = sezonaPreference.split(',').map(t => t.trim()).filter(t => t);
-      } else if (typeof sezonaPreference === 'string' && sezonaPreference) {
-        sezonaPreferences = [sezonaPreference];
+    if (user.sezonaPreference) {
+      if (Array.isArray(user.sezonaPreference)) {
+        sezonaPreferences = user.sezonaPreference;
+      } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference.includes(',')) {
+        sezonaPreferences = user.sezonaPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference) {
+        sezonaPreferences = [user.sezonaPreference];
       }
     }
     
     let kategoriaPreferences = [];
-    if (kategoriaPreference) {
-      if (Array.isArray(kategoriaPreference)) {
-        kategoriaPreferences = kategoriaPreference;
-      } else if (typeof kategoriaPreference === 'string' && kategoriaPreference.includes(',')) {
-        kategoriaPreferences = kategoriaPreference.split(',').map(t => t.trim()).filter(t => t);
-      } else if (typeof kategoriaPreference === 'string' && kategoriaPreference) {
-        kategoriaPreferences = [kategoriaPreference];
+    if (user.kategoriaPreference) {
+      if (Array.isArray(user.kategoriaPreference)) {
+        kategoriaPreferences = user.kategoriaPreference;
+      } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference.includes(',')) {
+        kategoriaPreferences = user.kategoriaPreference.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference) {
+        kategoriaPreferences = [user.kategoriaPreference];
       }
     }
     
-    // Podpora pre viacero priradených tímov
+    // --- PRIRADENÉ HODNOTY (adminom) ---
     let priradeneTimy = [];
     if (user.teamName) {
       if (Array.isArray(user.teamName)) {
@@ -1923,52 +1923,30 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // Zostavenie bledozelených štítkov pre priradené hodnoty
-    let assignedLabels = '';
-    
-    // Priradené tímy (bledozelené)
-    if (priradeneTimy.length > 0) {
-      assignedLabels += priradeneTimy.map(t => 
-        `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${t}</span>`
-      ).join('');
+    // Priradené sezóny - samostatné pole v databáze (alebo sa dajú získať z iného zdroja)
+    let priradeneSezony = [];
+    // Ak má user priradené sezóny v samostatnom poli
+    if (user.assignedSezona) {
+      if (Array.isArray(user.assignedSezona)) {
+        priradeneSezony = user.assignedSezona;
+      } else if (typeof user.assignedSezona === 'string' && user.assignedSezona.includes(',')) {
+        priradeneSezony = user.assignedSezona.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.assignedSezona === 'string' && user.assignedSezona) {
+        priradeneSezony = [user.assignedSezona];
+      }
     }
+    // Ak nemá priradené sezóny, zobrazíme "Všetky" (alebo prázdne)
     
-    // Priradené sezóny (bledozelené) - zobrazenie všetkých dostupných sezón
-    // Ak má používateľ priradené sezóny, zobrazíme ich, inak "Všetky"
-    if (user.sezonaPreference && user.sezonaPreference.length > 0) {
-      // Ak sú sezóny priradené, zobrazíme ich
-      const assignedSezony = Array.isArray(user.sezonaPreference) ? user.sezonaPreference : [user.sezonaPreference];
-      assignedLabels += assignedSezony.map(s => 
-        `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${s}</span>`
-      ).join('');
-    } else if (!jeAdmin) {
-      // Ak nemá priradené žiadne sezóny, zobrazíme "Všetky" (len pre userov, nie adminov)
-      assignedLabels += `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">Všetky sezóny</span>`;
-    }
-    
-    // Priradené kategórie (bledozelené)
-    if (user.kategoriaPreference && user.kategoriaPreference.length > 0) {
-      const assignedKategorie = Array.isArray(user.kategoriaPreference) ? user.kategoriaPreference : [user.kategoriaPreference];
-      assignedLabels += assignedKategorie.map(k => 
-        `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`
-      ).join('');
-    } else if (!jeAdmin) {
-      assignedLabels += `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">Všetky kategórie</span>`;
-    }
-    
-    // Ak nie je admin a nemá žiadne priradené tímy
-    if (!jeAdmin && priradeneTimy.length === 0) {
-      assignedLabels += `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#ffcdd2;color:#c62828;border:1px solid #ef9a9a;display:inline-block;margin:2px 2px;">⚠️ Žiadne tímy</span>`;
-    }
-    
-    // Admin má všetky tímy
-    if (jeAdmin) {
-      assignedLabels = `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">Všetky tímy</span>`;
-    }
-    
-    // Ak nie sú žiadne priradené hodnoty, zobrazíme pomlčku
-    if (!assignedLabels) {
-      assignedLabels = '<span style="font-size:12px;color:#999;">—</span>';
+    // Priradené kategórie - samostatné pole v databáze
+    let priradeneKategorie = [];
+    if (user.assignedKategoria) {
+      if (Array.isArray(user.assignedKategoria)) {
+        priradeneKategorie = user.assignedKategoria;
+      } else if (typeof user.assignedKategoria === 'string' && user.assignedKategoria.includes(',')) {
+        priradeneKategorie = user.assignedKategoria.split(',').map(t => t.trim()).filter(t => t);
+      } else if (typeof user.assignedKategoria === 'string' && user.assignedKategoria) {
+        priradeneKategorie = [user.assignedKategoria];
+      }
     }
     
     html += `
@@ -1979,6 +1957,8 @@ function zobrazPouzivatelov(pouzivatelia) {
             ${jeAdmin ? 'Admin' : 'User'}
           </span>
         </td>
+        
+        <!-- Preferovaný tím + priradené tímy -->
         <td style="padding:12px;">
           <div>
             ${teamPreference ? 
@@ -1993,6 +1973,8 @@ function zobrazPouzivatelov(pouzivatelia) {
             }
           </div>
         </td>
+        
+        <!-- Preferovaná sezóna + priradené sezóny -->
         <td style="padding:12px;">
           <div>
             ${sezonaPreferences.length > 0 ? 
@@ -2002,8 +1984,8 @@ function zobrazPouzivatelov(pouzivatelia) {
           </div>
           <div style="margin-top:4px;">
             ${!jeAdmin ? 
-              (user.sezonaPreference && user.sezonaPreference.length > 0 ? 
-                (Array.isArray(user.sezonaPreference) ? user.sezonaPreference : [user.sezonaPreference]).map(s => 
+              (priradeneSezony.length > 0 ? 
+                priradeneSezony.map(s => 
                   `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${s}</span>`
                 ).join('') : 
                 '<span style="font-size:11px;color:#999;">Všetky</span>'
@@ -2011,6 +1993,8 @@ function zobrazPouzivatelov(pouzivatelia) {
             }
           </div>
         </td>
+        
+        <!-- Preferovaná kategória + priradené kategórie -->
         <td style="padding:12px;">
           <div>
             ${kategoriaPreferences.length > 0 ? 
@@ -2020,8 +2004,8 @@ function zobrazPouzivatelov(pouzivatelia) {
           </div>
           <div style="margin-top:4px;">
             ${!jeAdmin ? 
-              (user.kategoriaPreference && user.kategoriaPreference.length > 0 ? 
-                (Array.isArray(user.kategoriaPreference) ? user.kategoriaPreference : [user.kategoriaPreference]).map(k => 
+              (priradeneKategorie.length > 0 ? 
+                priradeneKategorie.map(k => 
                   `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`
                 ).join('') : 
                 '<span style="font-size:11px;color:#999;">Všetky</span>'
@@ -2029,6 +2013,7 @@ function zobrazPouzivatelov(pouzivatelia) {
             }
           </div>
         </td>
+        
         <td style="padding:12px;">
           <span style="padding:4px 12px;border-radius:12px;font-size:12px;${jeSchvaleny ? 'background-color:#c8e6c9;color:#2e7d32;' : 'background-color:#ffcdd2;color:#c62828;'}">
             ${jeSchvaleny ? 'Schválený' : 'Čaká'}
@@ -2111,27 +2096,27 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     }
   }
   
-  // Získanie aktuálnych sezón (ako pole)
+  // Získanie aktuálnych priradených sezón
   let aktualneSezony = [];
-  if (user.sezonaPreference) {
-    if (Array.isArray(user.sezonaPreference)) {
-      aktualneSezony = user.sezonaPreference;
-    } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference.includes(',')) {
-      aktualneSezony = user.sezonaPreference.split(',').map(t => t.trim()).filter(t => t);
-    } else if (typeof user.sezonaPreference === 'string' && user.sezonaPreference) {
-      aktualneSezony = [user.sezonaPreference];
+  if (user.assignedSezona) {
+    if (Array.isArray(user.assignedSezona)) {
+      aktualneSezony = user.assignedSezona;
+    } else if (typeof user.assignedSezona === 'string' && user.assignedSezona.includes(',')) {
+      aktualneSezony = user.assignedSezona.split(',').map(t => t.trim()).filter(t => t);
+    } else if (typeof user.assignedSezona === 'string' && user.assignedSezona) {
+      aktualneSezony = [user.assignedSezona];
     }
   }
   
-  // Získanie aktuálnych kategórií (ako pole)
+  // Získanie aktuálnych priradených kategórií
   let aktualneKategorie = [];
-  if (user.kategoriaPreference) {
-    if (Array.isArray(user.kategoriaPreference)) {
-      aktualneKategorie = user.kategoriaPreference;
-    } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference.includes(',')) {
-      aktualneKategorie = user.kategoriaPreference.split(',').map(t => t.trim()).filter(t => t);
-    } else if (typeof user.kategoriaPreference === 'string' && user.kategoriaPreference) {
-      aktualneKategorie = [user.kategoriaPreference];
+  if (user.assignedKategoria) {
+    if (Array.isArray(user.assignedKategoria)) {
+      aktualneKategorie = user.assignedKategoria;
+    } else if (typeof user.assignedKategoria === 'string' && user.assignedKategoria.includes(',')) {
+      aktualneKategorie = user.assignedKategoria.split(',').map(t => t.trim()).filter(t => t);
+    } else if (typeof user.assignedKategoria === 'string' && user.assignedKategoria) {
+      aktualneKategorie = [user.assignedKategoria];
     }
   }
   
@@ -2139,7 +2124,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
   const vsetkySezony = ['2026/2027', '2025/2026', '2024/2025', '2023/2024'];
   const vsetkyKategorie = ['MLDKY', 'STDKY', 'MLDCI', 'STDCI'];
   
-  // Vytvorenie modálneho okna
+  // Vytvorenie modálneho okna...
   const modal = document.createElement('div');
   modal.className = 'modal-overlay active';
   modal.id = 'modalPriradenieTimov';
@@ -2169,7 +2154,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
   modalBox.appendChild(title);
   
   const infoText = document.createElement('p');
-  infoText.textContent = 'Vyberte tímy, sezóny a kategórie, ktoré chcete priradiť používateľovi. Videá budú filtrované podľa týchto preferencií.';
+  infoText.textContent = 'Vyberte tímy, sezóny a kategórie, ktoré chcete priradiť používateľovi. Videá budú filtrované podľa týchto priradených hodnôt. Pôvodné preferované hodnoty z registrácie zostávajú zachované.';
   infoText.style.fontSize = '14px';
   infoText.style.color = '#666';
   infoText.style.marginBottom = '20px';
@@ -2184,7 +2169,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
   sezonaContainer.style.border = '1px solid #e0e0e0';
   
   const sezonaLabel = document.createElement('div');
-  sezonaLabel.textContent = '📅 Vyberte sezóny (viac možností):';
+  sezonaLabel.textContent = '📅 Priradené sezóny (viac možností):';
   sezonaLabel.style.fontWeight = 'bold';
   sezonaLabel.style.marginBottom = '8px';
   sezonaLabel.style.fontSize = '13px';
@@ -2245,7 +2230,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
   kategoriaContainer.style.border = '1px solid #e0e0e0';
   
   const kategoriaLabel = document.createElement('div');
-  kategoriaLabel.textContent = '🏆 Vyberte kategórie (viac možností):';
+  kategoriaLabel.textContent = '🏆 Priradené kategórie (viac možností):';
   kategoriaLabel.style.fontWeight = 'bold';
   kategoriaLabel.style.marginBottom = '8px';
   kategoriaLabel.style.fontSize = '13px';
@@ -2414,9 +2399,10 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     try {
       const userRef = doc(db, 'users', userId);
       await updateDoc(userRef, {
+        // Priradené hodnoty sa ukladajú do samostatných polí
         teamName: vybraneTimy,
-        sezonaPreference: vybraneSezony,
-        kategoriaPreference: vybraneKategorie,
+        assignedSezona: vybraneSezony,
+        assignedKategoria: vybraneKategorie,
         teamUpdatedAt: new Date().toISOString(),
         teamUpdatedBy: window.app.aktualnyPouzivatel?.uid || ''
       });
@@ -2425,8 +2411,8 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       const updatedUser = window.app.vsetciPouzivatelia.find(u => u.id === userId);
       if (updatedUser) {
         updatedUser.teamName = vybraneTimy;
-        updatedUser.sezonaPreference = vybraneSezony;
-        updatedUser.kategoriaPreference = vybraneKategorie;
+        updatedUser.assignedSezona = vybraneSezony;
+        updatedUser.assignedKategoria = vybraneKategorie;
       }
       
       // Ak sa mení prihlásený používateľ - OKAMŽITE AKTUALIZUJEME
@@ -2435,7 +2421,6 @@ window.otvorModalPriradeniaTimov = async function(userId) {
         window.app.aktualnyPouzivatelSezona = vybraneSezony;
         window.app.aktualnyPouzivatelKategoria = vybraneKategorie;
         
-        // OKAMŽITÉ PREKRESLENIE VIDEÍ - BEZ OBNOVENIA STRÁNKY
         if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
           zobrazVideaPouzivatelom(window.app.vsetkyVidea);
         } else {
@@ -2445,10 +2430,10 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       }
       
       // Zostavenie správy o uložení
-      let sprava = `✅ Používateľovi <strong>${user.email}</strong> boli aktualizované preferencie.<br><br>`;
-      sprava += `🏐 <strong>Tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
-      sprava += `📅 <strong>Sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Všetky'}<br>`;
-      sprava += `🏆 <strong>Kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Všetky'}`;
+      let sprava = `✅ Používateľovi <strong>${user.email}</strong> boli aktualizované priradené preferencie.<br><br>`;
+      sprava += `🏐 <strong>Priradené tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
+      sprava += `📅 <strong>Priradené sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Všetky'}<br>`;
+      sprava += `🏆 <strong>Priradené kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Všetky'}`;
       
       await showAlert(sprava, 'Úspech', '✅');
       
@@ -2849,7 +2834,7 @@ function zobrazVideaPouzivatelom(videa) {
     }
   }
   
-  // Spracovanie sezón na pole - ak je reťazec, skúsime ho rozdeliť
+  // Spracovanie sezón na pole
   let userSezony = [];
   if (userSezona) {
     if (Array.isArray(userSezona)) {
@@ -2891,23 +2876,23 @@ function zobrazVideaPouzivatelom(videa) {
     return;
   }
   
-  // FILTROVANIE
+  // FILTROVANIE - používame priradené hodnoty
   let zobrazeneVidea = videa.filter(v => {
     // Videá bez ID sa nezobrazujú (okrem admina)
     if (!jeAdmin && (!v.videoId || v.videoId.trim() === '')) return false;
     
-    // Filter podľa tímu
+    // Filter podľa priradených tímov
     if (!jeAdmin && userTeams.length > 0) {
       const maTim = userTeams.some(team => v.domaciTim === team || v.hostiaTim === team);
       if (!maTim) return false;
     }
     
-    // Filter podľa sezóny
+    // Filter podľa priradených sezón
     if (!jeAdmin && userSezony.length > 0) {
       if (!userSezony.includes(v.sezona)) return false;
     }
     
-    // Filter podľa kategórie
+    // Filter podľa priradených kategórií
     if (!jeAdmin && userKategorie.length > 0) {
       if (!userKategorie.includes(v.kategoria)) return false;
     }
