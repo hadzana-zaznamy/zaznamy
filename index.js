@@ -3904,7 +3904,7 @@ async function otvorModalUpravyMoichPreferencii() {
   modalBox.appendChild(title);
   
   const infoText = document.createElement('p');
-  infoText.textContent = 'Tu si môžete nastaviť svoje preferované tímy, sezóny a kategórie. Tieto preferencie sa zobrazia administrátorovi a pomôžu mu pri nastavovaní vašich prístupových práv.';
+  infoText.textContent = 'Tu si môžete nastaviť svoje preferované tímy, sezóny a kategórie. Tieto preferencie sa zobrazia administrátorovi a pomôžu mu pri nastavovaní vašich prístupových práv. Schválenie nastavených preferencií môže trvať aj viac ako 24 hod.';
   infoText.style.fontSize = '14px';
   infoText.style.color = '#666';
   infoText.style.marginBottom = '20px';
