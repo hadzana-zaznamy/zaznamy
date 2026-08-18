@@ -14,7 +14,7 @@ import {
   collection, addDoc, 
   getDocs, updateDoc, deleteDoc, 
   query, where, orderBy, limit,
-  onSnapshotwindow.otvorVideoModal = async function(videoId) {
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 // App Check import
 import { 
