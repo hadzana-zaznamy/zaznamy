@@ -1120,6 +1120,7 @@ function inicializujAplikaciu() {
           const userData = docSnapshot.data();
           const predoslyApproved = this.aktualnyPouzivatelApproved;
           const predoslaRole = this.aktualnyPouzivatelRole;
+          const predoslyTeam = this.aktualnyPouzivatelTeam;
       
           this.aktualnyPouzivatelApproved = userData.approved || false;
           this.aktualnyPouzivatelRole = userData.role || 'user';
@@ -1930,6 +1931,16 @@ window.zmenTimPouzivatela = async function(userId, teamName) {
     const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
     if (user) {
       user.teamName = teamName || '';
+    }
+    
+    // Ak sa zmenil tím aktuálne prihláseného používateľa, aktualizovať aj jeho dáta
+    if (userId === window.app.aktualnyPouzivatel?.uid) {
+      window.app.aktualnyPouzivatelTeam = teamName || '';
+      
+      // Aktualizovať zoznam videí pre aktuálneho používateľa
+      if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
+        zobrazVideaPouzivatelom(window.app.vsetkyVidea);
+      }
     }
     
     await showAlert('✅ Tím bol úspešne priradený!', 'Úspech', '✅');
