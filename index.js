@@ -2351,12 +2351,18 @@ window.otvorModalPriradeniaTimov = async function(userId) {
         updatedUser.kategoriaPreference = vybraneKategorie;
       }
       
-      // Ak sa mení prihlásený používateľ
+      // Ak sa mení prihlásený používateľ - OKAMŽITE AKTUALIZUJEME
       if (userId === window.app.aktualnyPouzivatel?.uid) {
         window.app.aktualnyPouzivatelTeam = vybraneTimy;
         window.app.aktualnyPouzivatelSezona = vybraneSezony;
         window.app.aktualnyPouzivatelKategoria = vybraneKategorie;
+        
+        // OKAMŽITÉ PREKRESLENIE VIDEÍ - BEZ OBNOVENIA STRÁNKY
         if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
+          zobrazVideaPouzivatelom(window.app.vsetkyVidea);
+        } else {
+          // Ak ešte nie sú načítané videá, načítame ich
+          await window.app.nacitajVidea();
           zobrazVideaPouzivatelom(window.app.vsetkyVidea);
         }
       }
@@ -2766,7 +2772,7 @@ function zobrazVideaPouzivatelom(videa) {
     }
   }
   
-  // Spracovanie sezón na pole
+  // Spracovanie sezón na pole - ak je reťazec, skúsime ho rozdeliť
   let userSezony = [];
   if (userSezona) {
     if (Array.isArray(userSezona)) {
