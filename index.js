@@ -2060,7 +2060,7 @@ window.zamietniPouzivatela = async function(userId) {
     const result = await window.app.zamietniPouzivatela(userId);
     if (result.success) {
       await showAlert(
-        `Používateľ <strong>${user.email}</strong> bol zamietnutý!<br><br>Jeho stav je teraz "Čaká".<br>Ak bol zamietnutý práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.`,
+        `Používateľ <strong>${user.email}</strong> bol zamietnutý!`,
         'Úspech',
         '✅'
       );
