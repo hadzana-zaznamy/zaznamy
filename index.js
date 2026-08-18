@@ -1919,9 +1919,9 @@ function zobrazPouzivatelov(pouzivatelia) {
             <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;">
               <!-- Tlačidlo na priradenie tímov - CERUZKA -->
               <button onclick="otvorModalPriradeniaTimov('${user.id}')" 
-                      style="padding:6px 10px;border:none;border-radius:4px;background-color:#FF9800;color:white;cursor:pointer;font-size:13px;transition:background-color 0.3s;"
-                      onmouseover="this.style.backgroundColor='#F57C00'"
-                      onmouseout="this.style.backgroundColor='#FF9800'"
+                      style="padding:6px 10px;border:none;border-radius:4px;background-color:#90CAF9;color:white;cursor:pointer;font-size:13px;transition:background-color 0.3s;"
+                      onmouseover="this.style.backgroundColor='#64B5F6'"
+                      onmouseout="this.style.backgroundColor='#90CAF9'"
                       title="Priradiť tímy">
                 ✏️
               </button>
