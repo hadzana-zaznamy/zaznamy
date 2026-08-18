@@ -2065,7 +2065,7 @@ function zobrazPouzivatelov(pouzivatelia) {
                 priradeneSezony.map(s => 
                   `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${s}</span>`
                 ).join('') : 
-                '<span style="font-size:11px;color:#999;">Všetky</span>'
+                '<span style="font-size:11px;color:#999;">Žiadne</span>'
               ) : ''
             }
           </div>
@@ -2085,7 +2085,7 @@ function zobrazPouzivatelov(pouzivatelia) {
                 priradeneKategorie.map(k => 
                   `<span style="padding:2px 10px;border-radius:12px;font-size:11px;background-color:#c8e6c9;color:#2e7d32;border:1px solid #a5d6a7;display:inline-block;margin:2px 2px;">${categoryMap[k] || k}</span>`
                 ).join('') : 
-                '<span style="font-size:11px;color:#999;">Všetky</span>'
+                '<span style="font-size:11px;color:#999;">Žiadne</span>'
               ) : ''
             }
           </div>
@@ -2509,8 +2509,8 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       // Zostavenie správy o uložení
       let sprava = `✅ Používateľovi <strong>${user.email}</strong> boli aktualizované priradené preferencie.<br><br>`;
       sprava += `🏐 <strong>Priradené tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
-      sprava += `📅 <strong>Priradené sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Všetky'}<br>`;
-      sprava += `🏆 <strong>Priradené kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Všetky'}`;
+      sprava += `📅 <strong>Priradené sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Žiadne'}<br>`;
+      sprava += `🏆 <strong>Priradené kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Žiadne'}`;
       
       await showAlert(sprava, 'Úspech', '✅');
       
@@ -3791,8 +3791,8 @@ function otvorModalUpravyMoichPreferencii() {
       // Zostavenie správy o uložení
       let sprava = `✅ Vaše preferencie boli úspešne uložené!<br><br>`;
       sprava += `🏐 <strong>Preferované tímy:</strong> ${vybraneTimy.length > 0 ? vybraneTimy.join(', ') : 'Žiadne'}<br>`;
-      sprava += `📅 <strong>Preferované sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Všetky'}<br>`;
-      sprava += `🏆 <strong>Preferované kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Všetky'}`;
+      sprava += `📅 <strong>Preferované sezóny:</strong> ${vybraneSezony.length > 0 ? vybraneSezony.join(', ') : 'Žiadne'}<br>`;
+      sprava += `🏆 <strong>Preferované kategórie:</strong> ${vybraneKategorie.length > 0 ? vybraneKategorie.map(k => categoryMap[k] || k).join(', ') : 'Žiadne'}`;
       
       await showAlert(sprava, 'Úspech', '✅');
       
