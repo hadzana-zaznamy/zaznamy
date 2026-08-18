@@ -3939,7 +3939,7 @@ function vytvorRegistracnyFormular() {
   form.appendChild(emailGroup);
   
   const passwordGroup = document.createElement('div');
-  passwordGroup.style.marginBottom = '15px';
+  passwordGroup.style.marginBottom = '5px';
   passwordGroup.style.position = 'relative';
   const passwordLabel = document.createElement('label');
   passwordLabel.textContent = 'Heslo';
@@ -3955,8 +3955,8 @@ function vytvorRegistracnyFormular() {
   passwordInput.type = 'password';
   passwordInput.id = 'regPassword';
   passwordInput.required = true;
-  passwordInput.placeholder = 'Minimálne 6 znakov';
-  passwordInput.minLength = 6;
+  passwordInput.placeholder = 'Minimálne 8 znakov';
+  passwordInput.minLength = 8;
   passwordInput.style.width = '100%';
   passwordInput.style.padding = '12px';
   passwordInput.style.paddingRight = '40px';
@@ -4009,6 +4009,49 @@ function vytvorRegistracnyFormular() {
   passwordWrapper.appendChild(toggleBtn);
   passwordGroup.appendChild(passwordWrapper);
   form.appendChild(passwordGroup);
+  
+  // --- PRAVIDLÁ PRE HESLO ---
+  const passwordRules = document.createElement('div');
+  passwordRules.id = 'passwordRules';
+  passwordRules.style.marginBottom = '15px';
+  passwordRules.style.padding = '10px 15px';
+  passwordRules.style.backgroundColor = '#f8f9fa';
+  passwordRules.style.borderRadius = '6px';
+  passwordRules.style.fontSize = '13px';
+  
+  const rules = [
+    { id: 'ruleLowercase', text: 'aspoň jedno malé písmeno', check: (pwd) => /[a-z]/.test(pwd) },
+    { id: 'ruleUppercase', text: 'aspoň jedno veľké písmeno', check: (pwd) => /[A-Z]/.test(pwd) },
+    { id: 'ruleDigit', text: 'aspoň jedna číslica', check: (pwd) => /[0-9]/.test(pwd) },
+    { id: 'ruleLength', text: 'aspoň 8 znakov', check: (pwd) => pwd.length >= 8 }
+  ];
+  
+  rules.forEach(rule => {
+    const ruleDiv = document.createElement('div');
+    ruleDiv.id = rule.id;
+    ruleDiv.style.display = 'flex';
+    ruleDiv.style.alignItems = 'center';
+    ruleDiv.style.gap = '8px';
+    ruleDiv.style.padding = '2px 0';
+    ruleDiv.style.color = '#dc3545'; // červená - nesplnené
+    ruleDiv.style.transition = 'color 0.3s';
+    
+    const iconSpan = document.createElement('span');
+    iconSpan.textContent = '✗';
+    iconSpan.style.fontWeight = 'bold';
+    iconSpan.style.width = '20px';
+    iconSpan.style.display = 'inline-block';
+    
+    const textSpan = document.createElement('span');
+    textSpan.textContent = rule.text;
+    
+    ruleDiv.appendChild(iconSpan);
+    ruleDiv.appendChild(textSpan);
+    passwordRules.appendChild(ruleDiv);
+  });
+  
+  form.appendChild(passwordRules);
+  // --- KONIEC PRAVIDIEL ---
   
   const confirmPasswordGroup = document.createElement('div');
   confirmPasswordGroup.style.marginBottom = '15px';
@@ -4090,9 +4133,38 @@ function vytvorRegistracnyFormular() {
   passwordMatchMessage.style.display = 'none';
   form.appendChild(passwordMatchMessage);
   
+  // Funkcia na kontrolu pravidiel hesla
+  function updatePasswordRules(password) {
+    const ruleIds = ['ruleLowercase', 'ruleUppercase', 'ruleDigit', 'ruleLength'];
+    const checks = [
+      /[a-z]/.test(password),
+      /[A-Z]/.test(password),
+      /[0-9]/.test(password),
+      password.length >= 8
+    ];
+    
+    ruleIds.forEach((id, index) => {
+      const ruleDiv = document.getElementById(id);
+      if (ruleDiv) {
+        const iconSpan = ruleDiv.querySelector('span:first-child');
+        if (checks[index]) {
+          ruleDiv.style.color = '#28a745'; // zelená - splnené
+          if (iconSpan) iconSpan.textContent = '✓';
+        } else {
+          ruleDiv.style.color = '#dc3545'; // červená - nesplnené
+          if (iconSpan) iconSpan.textContent = '✗';
+        }
+      }
+    });
+  }
+  
   function checkPasswordMatch() {
     const password = passwordInput.value;
     const confirmPassword = confirmPasswordInput.value;
+    
+    // Aktualizácia pravidiel hesla
+    updatePasswordRules(password);
+    
     if (confirmPassword.length === 0) {
       passwordMatchMessage.style.display = 'none';
       return true;
@@ -4150,52 +4222,63 @@ function vytvorRegistracnyFormular() {
   });
   
   form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      if (!checkPasswordMatch()) {
-        passwordMatchMessage.textContent = '❌ Heslá sa nezhodujú!';
-        passwordMatchMessage.style.display = 'block';
-        return;
-      }
-      
-      const email = emailInput.value.trim();
-      const password = passwordInput.value;
-      
-      button.disabled = true;
-      button.textContent = 'Registrujem...';
-      button.style.opacity = '0.7';
-      messageDiv.textContent = '';
-      messageDiv.style.color = '';
+    e.preventDefault();
     
-      try {
-        const result = await window.app.registruj(email, password);
-        if (result.success) {
-          await sendRegistrationEmail(email);
-          
-          const roleText = result.role === 'admin' ? 'ADMINISTRÁTOR' : 'Používateľ';
-          const statusText = result.approved ? 'OKAMŽITE SCHVÁLENÝ' : 'ČAKÁ NA SCHVÁLENIE ADMINOM';
-          messageDiv.innerHTML = `✅ Registrácia úspešná!<br>📧 Email bol odoslaný na vašu adresu.<br>Vaša rola: <strong>${roleText}</strong><br>Stav: <strong>${statusText}</strong>`;
-          messageDiv.style.color = result.approved ? 'green' : 'orange';
-          form.reset();
-          passwordMatchMessage.style.display = 'none';
-          setTimeout(() => {
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
-            vymazStatusSpravy();
-          }, 3000);
-        } else {
-          messageDiv.textContent = '❌ ' + result.error;
-          messageDiv.style.color = 'red';
-        }
-      } catch (error) {
-        messageDiv.textContent = '❌ Nastala neočakávaná chyba: ' + error.message;
+    // Kontrola všetkých pravidiel hesla
+    const password = passwordInput.value;
+    const allRulesPassed = /[a-z]/.test(password) && /[A-Z]/.test(password) && /[0-9]/.test(password) && password.length >= 8;
+    
+    if (!allRulesPassed) {
+      messageDiv.textContent = '❌ Heslo nespĺňa všetky požiadavky.';
+      messageDiv.style.color = 'red';
+      return;
+    }
+    
+    if (!checkPasswordMatch()) {
+      passwordMatchMessage.textContent = '❌ Heslá sa nezhodujú!';
+      passwordMatchMessage.style.display = 'block';
+      return;
+    }
+    
+    const email = emailInput.value.trim();
+    
+    button.disabled = true;
+    button.textContent = 'Registrujem...';
+    button.style.opacity = '0.7';
+    messageDiv.textContent = '';
+    messageDiv.style.color = '';
+  
+    try {
+      const result = await window.app.registruj(email, password);
+      if (result.success) {
+        await sendRegistrationEmail(email);
+        
+        const roleText = result.role === 'admin' ? 'ADMINISTRÁTOR' : 'Používateľ';
+        const statusText = result.approved ? 'OKAMŽITE SCHVÁLENÝ' : 'ČAKÁ NA SCHVÁLENIE ADMINOM';
+        messageDiv.innerHTML = `✅ Registrácia úspešná!<br>📧 Email bol odoslaný na vašu adresu.<br>Vaša rola: <strong>${roleText}</strong><br>Stav: <strong>${statusText}</strong>`;
+        messageDiv.style.color = result.approved ? 'green' : 'orange';
+        form.reset();
+        // Reset pravidiel na pôvodný stav
+        updatePasswordRules('');
+        passwordMatchMessage.style.display = 'none';
+        setTimeout(() => {
+          document.getElementById('registerForm').style.display = 'none';
+          document.getElementById('loginForm').style.display = 'block';
+          vymazStatusSpravy();
+        }, 3000);
+      } else {
+        messageDiv.textContent = '❌ ' + result.error;
         messageDiv.style.color = 'red';
-      } finally {
-        button.disabled = false;
-        button.textContent = 'Registrovať sa';
-        button.style.opacity = '1';
       }
-    });
+    } catch (error) {
+      messageDiv.textContent = '❌ Nastala neočakávaná chyba: ' + error.message;
+      messageDiv.style.color = 'red';
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Registrovať sa';
+      button.style.opacity = '1';
+    }
+  });
     
   return container;
 }
