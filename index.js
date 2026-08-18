@@ -2472,7 +2472,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
   contentContainer.id = 'modalContentContainer';
   modalBox.appendChild(contentContainer);
   
-  // --- FUNKCIA NA VYTVORENIE OBSAHU MODÁLU ---
+  // --- FUNKCIA NA VYTVORENIE OBSAHU MODÁLU (upravená) ---
   function vytvorModalnyObsah(userData) {
     // Vyčistíme kontajner
     contentContainer.innerHTML = '';
@@ -2662,7 +2662,6 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     kategoriaCheckboxContainer.style.gap = '8px';
     
     // Zoraď kategórie: zvolené prvé
-    const zoradeneKategorie = [];
     const zvoleneKategorie = [];
     const nezvoleneKategorie = [];
     
@@ -2726,7 +2725,7 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     kategoriaContainer.appendChild(kategoriaCheckboxContainer);
     contentContainer.appendChild(kategoriaContainer);
     
-    // --- SEKCE: VÝBER TÍMOV (ZVOLENÉ PRVÉ) ---
+    // --- SEKCE: VÝBER TÍMOV (ZVOLENÉ PRVÉ) S FILTROM ---
     const timyLabel = document.createElement('div');
     timyLabel.textContent = '🏐 Priradené tímy:';
     timyLabel.style.fontWeight = 'bold';
@@ -2735,28 +2734,89 @@ window.otvorModalPriradeniaTimov = async function(userId) {
     timyLabel.style.color = '#333';
     contentContainer.appendChild(timyLabel);
     
+    // --- VYHLEDÁVACÍ INPUT PRE TÍMY ---
+    const searchContainer = document.createElement('div');
+    searchContainer.style.marginBottom = '10px';
+    searchContainer.style.position = 'relative';
+    
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.id = 'teamSearchInput';
+    searchInput.placeholder = '🔍 Hľadať tímy... (zadajte časť názvu)';
+    searchInput.style.width = '100%';
+    searchInput.style.padding = '10px 14px';
+    searchInput.style.border = '1px solid #ddd';
+    searchInput.style.borderRadius = '6px';
+    searchInput.style.fontSize = '14px';
+    searchInput.style.boxSizing = 'border-box';
+    searchInput.style.backgroundColor = '#f9fafb';
+    searchInput.style.transition = 'border-color 0.2s, box-shadow 0.2s';
+    
+    searchInput.addEventListener('focus', () => {
+      searchInput.style.borderColor = '#90CAF9';
+      searchInput.style.boxShadow = '0 0 0 3px rgba(144, 202, 249, 0.3)';
+    });
+    searchInput.addEventListener('blur', () => {
+      searchInput.style.borderColor = '#ddd';
+      searchInput.style.boxShadow = 'none';
+    });
+    
+    // Počet zobrazených tímov
+    const countDisplay = document.createElement('div');
+    countDisplay.id = 'teamCountDisplay';
+    countDisplay.style.fontSize = '12px';
+    countDisplay.style.color = '#999';
+    countDisplay.style.marginTop = '4px';
+    countDisplay.style.textAlign = 'right';
+    
+    searchContainer.appendChild(searchInput);
+    searchContainer.appendChild(countDisplay);
+    contentContainer.appendChild(searchContainer);
+    
+    // --- KONTAJNER PRE TÍMY S FILTROM ---
     const timyContainer = document.createElement('div');
+    timyContainer.id = 'teamsContainer';
     timyContainer.style.display = 'flex';
     timyContainer.style.flexDirection = 'column';
     timyContainer.style.gap = '6px';
     timyContainer.style.marginBottom = '20px';
-    timyContainer.style.maxHeight = '200px';
+    timyContainer.style.maxHeight = '250px';
     timyContainer.style.overflow = 'auto';
     timyContainer.style.padding = '5px';
     timyContainer.style.border = '1px solid #eee';
     timyContainer.style.borderRadius = '6px';
     timyContainer.style.backgroundColor = '#fafafa';
+    contentContainer.appendChild(timyContainer);
     
-    if (zoradeneTimy.length === 0) {
-      const emptyMsg = document.createElement('p');
-      emptyMsg.textContent = 'Žiadne tímy nie sú dostupné. Najprv pridajte videá s tímami.';
-      emptyMsg.style.color = '#999';
-      emptyMsg.style.textAlign = 'center';
-      emptyMsg.style.padding = '20px';
-      emptyMsg.style.fontSize = '14px';
-      timyContainer.appendChild(emptyMsg);
-    } else {
-      zoradeneTimy.forEach(tim => {
+    // --- FUNKCIA NA VYKRESLENIE TÍMOV S FILTROM ---
+    function renderTeams(filterText = '') {
+      // Vyčistíme kontajner
+      timyContainer.innerHTML = '';
+      
+      // Filtrovanie tímov
+      let filteredTimy = zoradeneTimy;
+      if (filterText && filterText.trim() !== '') {
+        const lowerFilter = filterText.trim().toLowerCase();
+        filteredTimy = zoradeneTimy.filter(tim => 
+          tim.toLowerCase().includes(lowerFilter)
+        );
+      }
+      
+      // Aktualizácia počtu zobrazených tímov
+      countDisplay.textContent = `Zobrazených ${filteredTimy.length} z ${zoradeneTimy.length} tímov`;
+      
+      if (filteredTimy.length === 0) {
+        const emptyMsg = document.createElement('p');
+        emptyMsg.textContent = 'Žiadne tímy nevyhovujú zadanému filtru.';
+        emptyMsg.style.color = '#999';
+        emptyMsg.style.textAlign = 'center';
+        emptyMsg.style.padding = '20px';
+        emptyMsg.style.fontSize = '14px';
+        timyContainer.appendChild(emptyMsg);
+        return;
+      }
+      
+      filteredTimy.forEach(tim => {
         const label = document.createElement('label');
         label.style.display = 'flex';
         label.style.alignItems = 'center';
@@ -2812,7 +2872,18 @@ window.otvorModalPriradeniaTimov = async function(userId) {
         timyContainer.appendChild(label);
       });
     }
-    contentContainer.appendChild(timyContainer);
+    
+    // --- EVENTY PRE FILTROVANIE ---
+    let searchTimeout = null;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        renderTeams(searchInput.value);
+      }, 200); // oneskorenie pre plynulejšie filtrovanie
+    });
+    
+    // --- PRVOTNÉ VYKRESLENIE VŠETKÝCH TÍMOV ---
+    renderTeams('');
     
     // --- TLAČIDLÁ (pridávame ich len raz, nie pri každom refresh) ---
     // Ak už existujú, nepridávame ich znova
@@ -2930,9 +3001,9 @@ window.otvorModalPriradeniaTimov = async function(userId) {
       };
       buttonsDiv.appendChild(cancelBtn);
       
-      contentContainer.appendChild(buttonsDiv);
-    }
+    contentContainer.appendChild(buttonsDiv);
   }
+}
   
   // --- PRVOTNÉ VYTVORENIE OBSAHU ---
   vytvorModalnyObsah(user);
