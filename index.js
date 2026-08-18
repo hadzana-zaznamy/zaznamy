@@ -2719,7 +2719,7 @@ function otvorModalVidea(video = null) {
   const idInput = document.createElement('input');
   idInput.type = 'text';
   idInput.id = 'videoIdInput';
-  idInput.required = false; // Zmenené na nepovinné
+  idInput.required = false;
   idInput.placeholder = 'YouTube ID videa';
   idInput.value = jeUprava ? video.videoId : '';
   idInput.style.width = '100%';
@@ -2854,8 +2854,10 @@ function otvorModalVidea(video = null) {
   sutGroup.appendChild(sutSelect);
   form.appendChild(sutGroup);
   
+  // --- DOMÁCI TÍM S AUTOMATICKÝM DOPĹŇANÍM ---
   const domaciTimGroup = document.createElement('div');
   domaciTimGroup.style.marginBottom = '15px';
+  domaciTimGroup.style.position = 'relative';
   
   const domaciTimLabel = document.createElement('label');
   domaciTimLabel.textContent = 'Názov domáci tím *';
@@ -2876,11 +2878,22 @@ function otvorModalVidea(video = null) {
   domaciTimInput.style.borderRadius = '4px';
   domaciTimInput.style.fontSize = '14px';
   domaciTimInput.style.boxSizing = 'border-box';
+  domaciTimInput.setAttribute('autocomplete', 'off');
   domaciTimGroup.appendChild(domaciTimInput);
+  
+  // Datalist pre návrhy domáceho tímu
+  const domaciDatalist = document.createElement('datalist');
+  domaciDatalist.id = 'domaciTimSuggestions';
+  domaciTimInput.setAttribute('list', 'domaciTimSuggestions');
+  domaciTimGroup.appendChild(domaciDatalist);
+  
   form.appendChild(domaciTimGroup);
+  // --- KONIEC DOMÁCI TÍM ---
 
+  // --- HOSTIA TÍM S AUTOMATICKÝM DOPĹŇANÍM ---
   const hostiaTimGroup = document.createElement('div');
   hostiaTimGroup.style.marginBottom = '15px';
+  hostiaTimGroup.style.position = 'relative';
   
   const hostiaTimLabel = document.createElement('label');
   hostiaTimLabel.textContent = 'Názov hostia tím *';
@@ -2901,8 +2914,17 @@ function otvorModalVidea(video = null) {
   hostiaTimInput.style.borderRadius = '4px';
   hostiaTimInput.style.fontSize = '14px';
   hostiaTimInput.style.boxSizing = 'border-box';
+  hostiaTimInput.setAttribute('autocomplete', 'off');
   hostiaTimGroup.appendChild(hostiaTimInput);
+  
+  // Datalist pre návrhy hosťujúceho tímu
+  const hostiaDatalist = document.createElement('datalist');
+  hostiaDatalist.id = 'hostiaTimSuggestions';
+  hostiaTimInput.setAttribute('list', 'hostiaTimSuggestions');
+  hostiaTimGroup.appendChild(hostiaDatalist);
+  
   form.appendChild(hostiaTimGroup);
+  // --- KONIEC HOSTIA TÍM ---
   
   const koloGroup = document.createElement('div');
   koloGroup.style.marginBottom = '15px';
@@ -2943,7 +2965,6 @@ function otvorModalVidea(video = null) {
   datumCasWrapper.style.display = 'flex';
   datumCasWrapper.style.gap = '10px';
   
-  // Dátum - input type date
   const datumInput = document.createElement('input');
   datumInput.type = 'date';
   datumInput.id = 'datumInput';
@@ -2954,7 +2975,6 @@ function otvorModalVidea(video = null) {
   datumInput.style.fontSize = '14px';
   datumInput.style.boxSizing = 'border-box';
   
-  // Čas - input type time
   const casInput = document.createElement('input');
   casInput.type = 'time';
   casInput.id = 'casInput';
@@ -2965,7 +2985,6 @@ function otvorModalVidea(video = null) {
   casInput.style.fontSize = '14px';
   casInput.style.boxSizing = 'border-box';
   
-  // Ak upravujeme video, naplníme polia
   if (jeUprava && video.datumacas) {
     const parsed = parseDatumacas(video.datumacas);
     if (parsed) {
@@ -2978,7 +2997,6 @@ function otvorModalVidea(video = null) {
       const minutes = String(parsed.getMinutes()).padStart(2, '0');
       casInput.value = `${hours}:${minutes}`;
     } else {
-      // Ak sa nepodarilo parsovať, skúsime extrahovať z reťazca
       const dateMatch = video.datumacas.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);
       const timeMatch = video.datumacas.match(/(\d{1,2}):(\d{2})/);
       if (dateMatch) {
@@ -3049,6 +3067,56 @@ function otvorModalVidea(video = null) {
   modal.appendChild(modalBox);
   document.body.appendChild(modal);
   
+  // --- FUNKCIA NA AKTUALIZÁCIU NÁVRHOV TÍMOV ---
+  function updateTeamSuggestions() {
+    const videa = window.app.vsetkyVidea || [];
+    const timy = new Set();
+    
+    videa.forEach(v => {
+      if (v.domaciTim && v.domaciTim.trim()) {
+        timy.add(v.domaciTim.trim());
+      }
+      if (v.hostiaTim && v.hostiaTim.trim()) {
+        timy.add(v.hostiaTim.trim());
+      }
+    });
+    
+    const sortedTimy = [...timy].sort();
+    
+    // Aktualizácia datalist pre domáci tím
+    const domaciDatalist = document.getElementById('domaciTimSuggestions');
+    if (domaciDatalist) {
+      domaciDatalist.innerHTML = '';
+      sortedTimy.forEach(tim => {
+        const option = document.createElement('option');
+        option.value = tim;
+        domaciDatalist.appendChild(option);
+      });
+    }
+    
+    // Aktualizácia datalist pre hosťujúci tím
+    const hostiaDatalist = document.getElementById('hostiaTimSuggestions');
+    if (hostiaDatalist) {
+      hostiaDatalist.innerHTML = '';
+      sortedTimy.forEach(tim => {
+        const option = document.createElement('option');
+        option.value = tim;
+        hostiaDatalist.appendChild(option);
+      });
+    }
+  }
+  
+  // --- EVENTY PRE AUTOMATICKÉ DOPĹŇANIE ---
+  // Pri focus na input načítame návrhy
+  domaciTimInput.addEventListener('focus', updateTeamSuggestions);
+  hostiaTimInput.addEventListener('focus', updateTeamSuggestions);
+  
+  // Pri každom kliknutí na input aktualizujeme návrhy (ak sa zmenili videá)
+  domaciTimInput.addEventListener('click', updateTeamSuggestions);
+  hostiaTimInput.addEventListener('click', updateTeamSuggestions);
+  
+  // --- KONIEC EVENTY PRE AUTOMATICKÉ DOPĹŇANIE ---
+  
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -3060,7 +3128,6 @@ function otvorModalVidea(video = null) {
     const hostiaTim = document.getElementById('hostiaTimInput').value.trim();
     const kolo = document.getElementById('koloInput').value.trim();
     
-    // Získanie dátumu a času z dvoch polí
     const datumValue = document.getElementById('datumInput').value;
     const casValue = document.getElementById('casInput').value;
     let datumacas = '';
@@ -3068,7 +3135,6 @@ function otvorModalVidea(video = null) {
     
     if (datumValue) {
       const [year, month, day] = datumValue.split('-');
-      // Získanie názvu mesiaca z čísla
       const monthNames = [
         'január', 'február', 'marec', 'apríl', 'máj', 'jún',
         'júl', 'august', 'september', 'október', 'november', 'december'
@@ -3084,8 +3150,6 @@ function otvorModalVidea(video = null) {
     }
     
     let timestamps = {};
-
-    // ID videa už nie je povinné - odstránili sme kontrolu
     
     const tsText = document.getElementById('timestampsInput').value.trim();
     if (tsText) {
@@ -3122,7 +3186,6 @@ function otvorModalVidea(video = null) {
       return;
     }
     
-    // Ak nie je vyplnený dátum, použijeme aktuálny mesiac
     if (!mesiac) {
       const now = new Date();
       const monthNames = [
@@ -3138,7 +3201,7 @@ function otvorModalVidea(video = null) {
     messageDiv.textContent = '';
     
     const videoData = {
-      videoId: videoId || '', // Ak je prázdne, uloží sa prázdny reťazec
+      videoId: videoId || '',
       kategoria,
       sezona,
       sutaz,
