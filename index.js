@@ -2584,7 +2584,7 @@ function zobrazVideaPouzivatelom(videa) {
   const vsetkyTimy = [...new Set([
     ...zobrazeneVidea.map(v => v.domaciTim).filter(Boolean),
     ...zobrazeneVidea.map(v => v.hostiaTim).filter(Boolean)
-  ])];
+  ])].sort((a, b) => a.localeCompare(b, 'sk'));
   const mesiace = [...new Set(zobrazeneVidea.map(v => v.mesiac).filter(Boolean))];
   
   let html = `
