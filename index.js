@@ -2208,7 +2208,6 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
         ` : ''}
       </div>
       <div class="video-details">
-        ${bezIdIndikator}
         ${detailsHtml}
         ${adminButtonsHtml}
       </div>
