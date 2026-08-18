@@ -1316,7 +1316,8 @@ function inicializujAplikaciu() {
             createdAt: data.createdAt || 'Neznámy',
             uid: data.uid,
             approved: data.approved || false,
-            teamName: data.teamName || ''
+            teamName: data.teamName || '',
+            teamPreference: data.teamPreference || ''
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
@@ -1391,7 +1392,8 @@ function inicializujAplikaciu() {
             createdAt: data.createdAt || 'Neznámy',
             uid: data.uid,
             approved: data.approved || false,
-            teamName: data.teamName || ''
+            teamName: data.teamName || '',
+            teamPreference: data.teamPreference || ''
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
@@ -1847,7 +1849,8 @@ function zobrazPouzivatelov(pouzivatelia) {
       <tr style="background-color:#f5f5f5;">
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Email</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Rola</th>
-        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Tím</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Priradený tím</th>
+        <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Preferovaný tím</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Stav</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Registrovaný</th>
         <th style="padding:12px;text-align:left;border-bottom:2px solid #ddd;">Akcia</th>
@@ -1861,6 +1864,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     const jeAktualny = user.uid === window.app.aktualnyPouzivatel?.uid;
     const jeSchvaleny = user.approved === true;
     const teamName = user.teamName || '';
+    const teamPreference = user.teamPreference || '';
     
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}">
@@ -1878,6 +1882,9 @@ function zobrazPouzivatelov(pouzivatelia) {
               ${vsetkyTimy.map(t => `<option value="${t}" ${teamName === t ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
           ` : '<span style="font-size:12px;color:#999;">Všetky tímy</span>'}
+        </td>
+        <td style="padding:12px;">
+          ${teamPreference ? `<span style="padding:4px 12px;border-radius:12px;font-size:12px;background-color:#e8f5e9;color:#2e7d32;">${teamPreference}</span>` : '<span style="font-size:12px;color:#999;">Nezadané</span>'}
         </td>
         <td style="padding:12px;">
           <span style="padding:4px 12px;border-radius:12px;font-size:12px;${jeSchvaleny ? 'background-color:#c8e6c9;color:#2e7d32;' : 'background-color:#ffcdd2;color:#c62828;'}">
@@ -4264,7 +4271,6 @@ function vytvorRegistracnyFormular() {
   passwordRules.style.padding = '8px 0 8px 0';
   passwordRules.style.fontSize = '13px';
   
-  // Nadpis pre pravidlá
   const rulesHeading = document.createElement('div');
   rulesHeading.style.fontWeight = 'bold';
   rulesHeading.style.marginBottom = '6px';
@@ -4286,7 +4292,7 @@ function vytvorRegistracnyFormular() {
     ruleDiv.style.alignItems = 'center';
     ruleDiv.style.gap = '8px';
     ruleDiv.style.padding = '2px 0';
-    ruleDiv.style.color = '#dc3545'; // červená - nesplnené
+    ruleDiv.style.color = '#dc3545';
     ruleDiv.style.transition = 'color 0.3s';
     
     const iconSpan = document.createElement('span');
@@ -4386,54 +4392,38 @@ function vytvorRegistracnyFormular() {
   passwordMatchMessage.style.display = 'none';
   form.appendChild(passwordMatchMessage);
   
-  // Funkcia na kontrolu pravidiel hesla
-  function updatePasswordRules(password) {
-    const ruleIds = ['ruleLowercase', 'ruleUppercase', 'ruleDigit', 'ruleLength'];
-    const checks = [
-      /[a-z]/.test(password),
-      /[A-Z]/.test(password),
-      /[0-9]/.test(password),
-      password.length >= 8
-    ];
-    
-    ruleIds.forEach((id, index) => {
-      const ruleDiv = document.getElementById(id);
-      if (ruleDiv) {
-        const iconSpan = ruleDiv.querySelector('span:first-child');
-        if (checks[index]) {
-          ruleDiv.style.color = '#28a745'; // zelená - splnené
-          if (iconSpan) iconSpan.textContent = '✓';
-        } else {
-          ruleDiv.style.color = '#dc3545'; // červená - nesplnené
-          if (iconSpan) iconSpan.textContent = '✗';
-        }
-      }
-    });
-  }
+  // --- VÝBER PREFEROVANÉHO TÍMU ---
+  const teamGroup = document.createElement('div');
+  teamGroup.style.marginBottom = '15px';
   
-  function checkPasswordMatch() {
-    const password = passwordInput.value;
-    const confirmPassword = confirmPasswordInput.value;
-    
-    // Aktualizácia pravidiel hesla
-    updatePasswordRules(password);
-    
-    if (confirmPassword.length === 0) {
-      passwordMatchMessage.style.display = 'none';
-      return true;
-    }
-    if (password === confirmPassword) {
-      passwordMatchMessage.style.display = 'none';
-      return true;
-    } else {
-      passwordMatchMessage.textContent = '❌ Heslá sa nezhodujú!';
-      passwordMatchMessage.style.display = 'block';
-      return false;
-    }
-  }
+  const teamLabel = document.createElement('label');
+  teamLabel.textContent = 'Preferovaný tím (nepovinné)';
+  teamLabel.style.display = 'block';
+  teamLabel.style.marginBottom = '5px';
+  teamLabel.style.fontWeight = 'bold';
+  teamGroup.appendChild(teamLabel);
   
-  passwordInput.addEventListener('input', checkPasswordMatch);
-  confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+  const teamInput = document.createElement('input');
+  teamInput.type = 'text';
+  teamInput.id = 'regTeamPreference';
+  teamInput.placeholder = 'Zadajte názov tímu, o ktorý máte záujem';
+  teamInput.style.width = '100%';
+  teamInput.style.padding = '12px';
+  teamInput.style.border = '1px solid #ddd';
+  teamInput.style.borderRadius = '4px';
+  teamInput.style.fontSize = '14px';
+  teamInput.style.boxSizing = 'border-box';
+  teamInput.setAttribute('autocomplete', 'off');
+  teamGroup.appendChild(teamInput);
+  
+  // Datalist pre návrhy tímov
+  const teamDatalist = document.createElement('datalist');
+  teamDatalist.id = 'teamSuggestions';
+  teamInput.setAttribute('list', 'teamSuggestions');
+  teamGroup.appendChild(teamDatalist);
+  
+  form.appendChild(teamGroup);
+  // --- KONIEC VÝBER TÍMU ---
   
   const button = document.createElement('button');
   button.type = 'submit';
@@ -4467,6 +4457,38 @@ function vytvorRegistracnyFormular() {
   
   container.appendChild(form);
   
+  // --- FUNKCIA NA AKTUALIZÁCIU NÁVRHOV TÍMOV PRE REGISTRÁCIU ---
+  function updateTeamSuggestionsForRegistration() {
+    const videa = window.app?.vsetkyVidea || [];
+    const timy = new Set();
+    
+    videa.forEach(v => {
+      if (v.domaciTim && v.domaciTim.trim()) {
+        timy.add(v.domaciTim.trim());
+      }
+      if (v.hostiaTim && v.hostiaTim.trim()) {
+        timy.add(v.hostiaTim.trim());
+      }
+    });
+    
+    const sortedTimy = [...timy].sort();
+    
+    const datalist = document.getElementById('teamSuggestions');
+    if (datalist) {
+      datalist.innerHTML = '';
+      sortedTimy.forEach(tim => {
+        const option = document.createElement('option');
+        option.value = tim;
+        datalist.appendChild(option);
+      });
+    }
+  }
+  
+  // Načítanie návrhov pri kliknutí na pole
+  teamInput.addEventListener('focus', updateTeamSuggestionsForRegistration);
+  teamInput.addEventListener('click', updateTeamSuggestionsForRegistration);
+  // --- KONIEC FUNKCIE ---
+  
   switchLink.querySelector('#switchToLogin').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('registerForm').style.display = 'none';
@@ -4477,7 +4499,6 @@ function vytvorRegistracnyFormular() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    // Kontrola všetkých pravidiel hesla
     const password = passwordInput.value;
     const allRulesPassed = /[a-z]/.test(password) && /[A-Z]/.test(password) && /[0-9]/.test(password) && password.length >= 8;
     
@@ -4494,6 +4515,7 @@ function vytvorRegistracnyFormular() {
     }
     
     const email = emailInput.value.trim();
+    const teamPreference = document.getElementById('regTeamPreference').value.trim();
     
     button.disabled = true;
     button.textContent = 'Registrujem...';
@@ -4504,14 +4526,25 @@ function vytvorRegistracnyFormular() {
     try {
       const result = await window.app.registruj(email, password);
       if (result.success) {
+        // Uloženie preferencie tímu do používateľského dokumentu
+        if (teamPreference) {
+          try {
+            await updateDoc(doc(db, 'users', result.user.uid), {
+              teamPreference: teamPreference
+            });
+          } catch (teamError) {
+            console.warn('Nepodarilo sa uložiť preferenciu tímu:', teamError);
+          }
+        }
+        
         await sendRegistrationEmail(email);
         
         const roleText = result.role === 'admin' ? 'ADMINISTRÁTOR' : 'Používateľ';
         const statusText = result.approved ? 'OKAMŽITE SCHVÁLENÝ' : 'ČAKÁ NA SCHVÁLENIE ADMINOM';
-        messageDiv.innerHTML = `✅ Registrácia úspešná!<br>📧 Email bol odoslaný na vašu adresu.<br>Vaša rola: <strong>${roleText}</strong><br>Stav: <strong>${statusText}</strong>`;
+        const teamText = teamPreference ? `<br>Preferovaný tím: <strong>${teamPreference}</strong>` : '';
+        messageDiv.innerHTML = `✅ Registrácia úspešná!<br>📧 Email bol odoslaný na vašu adresu.<br>Vaša rola: <strong>${roleText}</strong><br>Stav: <strong>${statusText}</strong>${teamText}`;
         messageDiv.style.color = result.approved ? 'green' : 'orange';
         form.reset();
-        // Reset pravidiel na pôvodný stav
         updatePasswordRules('');
         passwordMatchMessage.style.display = 'none';
         setTimeout(() => {
