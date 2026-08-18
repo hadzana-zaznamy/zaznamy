@@ -2082,22 +2082,13 @@ function zobrazPouzivatelov(pouzivatelia) {
     
     // --- ZVÝRAZNENIE RIADKU ---
     let rowStyle = '';
-    // Ak čaká na schválenie -> žlté pozadie
     if (cakaNaSchvalenie) {
       rowStyle = 'background-color:#fff8e1;border-left:4px solid #ffc107;';
-    } 
-    // Ak má nezhodu (odstránené preferencie) -> svetlo červené/oranžové pozadie
-    else if (maNezhoduFlag) {
-      rowStyle = 'background-color:#ffebee;border-left:4px solid #f44336;'; // Červené podfarbenie
+    } else if (maNezhoduFlag) {
+      rowStyle = 'background-color:#ffebee;border-left:4px solid #f44336;';
     }
     
-    // Získanie zmien v preferenciách
-    const changes = getPreferenceChanges(user);
-    
-    // Vytvorenie štítkov - vždy zobrazujeme všetky preferencie
-    let preferencesHtml = '';
-    
-    // Spracovanie preferovaných hodnôt (červené - chýbajúce)
+    // Spracovanie preferovaných hodnôt
     let preferovaneTimy = [];
     if (user.teamPreference) {
       if (Array.isArray(user.teamPreference)) {
@@ -2131,7 +2122,7 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // Spracovanie priradených hodnôt (zelené - pridané)
+    // Spracovanie priradených hodnôt
     let priradeneTimy = [];
     if (user.teamName) {
       if (Array.isArray(user.teamName)) {
@@ -2165,30 +2156,48 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // Ak je používateľ admin, nezobrazujeme preferencie
+    let preferencesHtml = '';
+    
     if (!jeAdmin) {
-      // --- ŠTÍTKY: PRIDANÉ (zelené) ---
-      if (priradeneTimy.length > 0) {
-        priradeneTimy.forEach(tim => {
+      // --- 1. PRIADENÉ hodnoty (zelené štítky) ---
+      // Zobrazíme VŠETKY priradené hodnoty bez ohľadu na to, či sú preferované
+      // Pre tie, ktoré sú aj preferované, dávame fajku, pre tie, ktoré nie sú, dávame krížik
+      
+      // TÍMY - priradené
+      priradeneTimy.forEach(tim => {
+        const jePreferovane = preferovaneTimy.includes(tim);
+        if (jePreferovane) {
+          // Pôvodná preferencia, ktorá je priradená -> ZELENÁ FAJKA
           preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#d4edda;color:#28a745;border:1px solid #c3e6cb;display:inline-block;margin:2px;">✓ ${tim}</span>`;
-        });
-      }
+        } else {
+          // Priradené, ale NIE je preferované -> ČERVENÝ KRÍŽIK (používateľ to odstránil z preferencií)
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;font-weight:bold;">✗ ${tim}</span>`;
+        }
+      });
       
-      if (priradeneSezony.length > 0) {
-        priradeneSezony.forEach(sezona => {
+      // SEZÓNY - priradené
+      priradeneSezony.forEach(sezona => {
+        const jePreferovane = preferovaneSezony.includes(sezona);
+        if (jePreferovane) {
           preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#d4edda;color:#28a745;border:1px solid #c3e6cb;display:inline-block;margin:2px;">✓ ${sezona}</span>`;
-        });
-      }
+        } else {
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;font-weight:bold;">✗ ${sezona}</span>`;
+        }
+      });
       
-      if (priradeneKategorie.length > 0) {
-        priradeneKategorie.forEach(kategoria => {
-          const displayName = categoryMap[kategoria] || kategoria;
+      // KATEGÓRIE - priradené
+      priradeneKategorie.forEach(kategoria => {
+        const jePreferovane = preferovaneKategorie.includes(kategoria);
+        const displayName = categoryMap[kategoria] || kategoria;
+        if (jePreferovane) {
           preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#d4edda;color:#28a745;border:1px solid #c3e6cb;display:inline-block;margin:2px;">✓ ${displayName}</span>`;
-        });
-      }
+        } else {
+          preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;font-weight:bold;">✗ ${displayName}</span>`;
+        }
+      });
       
-      // --- ŠTÍTKY: ODSTRÁNENÉ (červené) - toto je kľúčová časť ---
-      // Pre každú preferovanú hodnotu, ktorá NIE JE priradená, vytvoríme ČERVENÝ ŠTÍTOK
+      // --- 2. PREFEROVANÉ hodnoty, ktoré NIE SÚ priradené (červené štítky) ---
+      // Toto sú preferencie, ktoré používateľ má, ale admin mu ich nepriradil
       preferovaneTimy.forEach(tim => {
         if (!priradeneTimy.includes(tim)) {
           preferencesHtml += `<span style="padding:2px 8px;border-radius:12px;font-size:11px;background-color:#f8d7da;color:#dc3545;border:1px solid #f5c6cb;display:inline-block;margin:2px;font-weight:bold;">✗ ${tim}</span>`;
@@ -2208,7 +2217,7 @@ function zobrazPouzivatelov(pouzivatelia) {
         }
       });
       
-      // Ak nemá žiadne preferencie
+      // Ak nemá žiadne preferencie ani priradenia
       if (preferencesHtml === '') {
         preferencesHtml = '<span style="font-size:12px;color:#999;">Žiadne preferencie</span>';
       }
@@ -2218,7 +2227,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     
     let statusIcon = '';
     if (cakaNaSchvalenie) statusIcon = ' ⏳';
-    else if (maNezhoduFlag) statusIcon = ' ⚠️'; // Varovná ikona pri nezhode
+    else if (maNezhoduFlag) statusIcon = ' ⚠️';
     
     html += `
       <tr style="border-bottom:1px solid #eee;${jeAktualny ? 'background-color:#e8f5e9;' : ''}${rowStyle}">
