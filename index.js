@@ -1352,10 +1352,10 @@ function inicializujAplikaciu() {
       if (this.unsubscribeUsers) {
         this.unsubscribeUsers();
       }
-  
+
       const usersRef = collection(db, 'users');
       const q = query(usersRef, orderBy('createdAt', 'asc'));
-  
+
       this.unsubscribeUsers = onSnapshot(q, (querySnapshot) => {
         const pouzivatelia = [];
         querySnapshot.forEach((doc) => {
@@ -1370,7 +1370,9 @@ function inicializujAplikaciu() {
             teamName: data.teamName || '',
             teamPreference: data.teamPreference || '',
             sezonaPreference: data.sezonaPreference || '',
-            kategoriaPreference: data.kategoriaPreference || ''
+            kategoriaPreference: data.kategoriaPreference || '',
+            assignedSezona: data.assignedSezona || '',    // NOVÉ - priradené adminom
+            assignedKategoria: data.assignedKategoria || '' // NOVÉ - priradené adminom
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
@@ -1446,7 +1448,9 @@ function inicializujAplikaciu() {
             teamName: data.teamName || '',
             teamPreference: data.teamPreference || '',
             sezonaPreference: data.sezonaPreference || '',
-            kategoriaPreference: data.kategoriaPreference || ''
+            kategoriaPreference: data.kategoriaPreference || '',
+            assignedSezona: data.assignedSezona || '',    // NOVÉ - priradené adminom
+            assignedKategoria: data.assignedKategoria || '' // NOVÉ - priradené adminom
           });
         });
         this.vsetciPouzivatelia = pouzivatelia;
@@ -1963,7 +1967,7 @@ function zobrazPouzivatelov(pouzivatelia) {
     // --- PREFEROVANÉ HODNOTY (z registrácie) ---
     const teamPreference = user.teamPreference || '';
     
-    // Spracovanie preferovaných sezón (z registrácie) - uložené ako pole
+    // Spracovanie preferovaných sezón (z registrácie)
     let sezonaPreferences = [];
     if (user.sezonaPreference) {
       if (Array.isArray(user.sezonaPreference)) {
@@ -1986,7 +1990,7 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // --- PRIRADENÉ HODNOTY (adminom) ---
+    // --- PRIRADENÉ HODNOTY (adminom) - načítané z assignedSezona a assignedKategoria ---
     let priradeneTimy = [];
     if (user.teamName) {
       if (Array.isArray(user.teamName)) {
@@ -1998,9 +2002,8 @@ function zobrazPouzivatelov(pouzivatelia) {
       }
     }
     
-    // Priradené sezóny - samostatné pole v databáze (alebo sa dajú získať z iného zdroja)
+    // Priradené sezóny - z assignedSezona
     let priradeneSezony = [];
-    // Ak má user priradené sezóny v samostatnom poli
     if (user.assignedSezona) {
       if (Array.isArray(user.assignedSezona)) {
         priradeneSezony = user.assignedSezona;
@@ -2010,9 +2013,8 @@ function zobrazPouzivatelov(pouzivatelia) {
         priradeneSezony = [user.assignedSezona];
       }
     }
-    // Ak nemá priradené sezóny, zobrazíme "Všetky" (alebo prázdne)
     
-    // Priradené kategórie - samostatné pole v databáze
+    // Priradené kategórie - z assignedKategoria
     let priradeneKategorie = [];
     if (user.assignedKategoria) {
       if (Array.isArray(user.assignedKategoria)) {
