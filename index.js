@@ -21,6 +21,42 @@ import {
   ReCaptchaV3Provider 
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app-check.js";
 
+
+
+const EMAIL_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzEQNzSXbtn0Ecle_5e2F4nHYx8P5IHVyuaz3QrcvEyj8PH13SxGMg0xbUdcFNbDyoPtQ/exec';
+
+// Funkcia na odoslanie registračného emailu
+async function sendRegistrationEmail(email) {
+  try {
+    console.log('📧 Odosielam registračný email na:', email);
+    
+    const response = await fetch(EMAIL_WEB_APP_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email,
+        registrationDate: new Date().toISOString()
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('✅ Email úspešne odoslaný!');
+    } else {
+      console.warn('⚠️ Email nebol odoslaný:', result.error);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Chyba pri odoslaní emailu:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+
 const firebaseConfig = {
   apiKey: "AIzaSyAE-IZQGubCgQYzhtMtH6y4w1sRFOW_suI",
   authDomain: "z-a-z-n-a-m-y.firebaseapp.com",
@@ -1152,6 +1188,8 @@ function inicializujAplikaciu() {
           role: role,
           approved: approved
         });
+
+        await sendRegistrationEmail(email);
         
         return { success: true, user: user, role: role, approved: approved };
       } catch (error) {
@@ -4051,51 +4089,54 @@ function vytvorRegistracnyFormular() {
   });
   
   form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    if (!checkPasswordMatch()) {
-      passwordMatchMessage.textContent = '❌ Heslá sa nezhodujú!';
-      passwordMatchMessage.style.display = 'block';
-      return;
-    }
-    
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    
-    button.disabled = true;
-    button.textContent = 'Registrujem...';
-    button.style.opacity = '0.7';
-    messageDiv.textContent = '';
-    messageDiv.style.color = '';
-    
-    try {
-      const result = await window.app.registruj(email, password);
-      if (result.success) {
-        const roleText = result.role === 'admin' ? 'ADMINISTRÁTOR' : 'Používateľ';
-        const statusText = result.approved ? 'OKAMŽITE SCHVÁLENÝ' : 'ČAKÁ NA SCHVÁLENIE ADMINOM';
-        messageDiv.innerHTML = `✅ Registrácia úspešná!<br>Vaša rola: <strong>${roleText}</strong><br>Stav: <strong>${statusText}</strong>`;
-        messageDiv.style.color = result.approved ? 'green' : 'orange';
-        form.reset();
-        passwordMatchMessage.style.display = 'none';
-        setTimeout(() => {
-          document.getElementById('registerForm').style.display = 'none';
-          document.getElementById('loginForm').style.display = 'block';
-          vymazStatusSpravy();
-        }, 3000);
-      } else {
-        messageDiv.textContent = '❌ ' + result.error;
-        messageDiv.style.color = 'red';
+      e.preventDefault();
+      
+      if (!checkPasswordMatch()) {
+        passwordMatchMessage.textContent = '❌ Heslá sa nezhodujú!';
+        passwordMatchMessage.style.display = 'block';
+        return;
       }
-    } catch (error) {
-      messageDiv.textContent = '❌ Nastala neočakávaná chyba: ' + error.message;
-      messageDiv.style.color = 'red';
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Registrovať sa';
-      button.style.opacity = '1';
-    }
-  });
-  
+      
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      
+      button.disabled = true;
+      button.textContent = 'Registrujem...';
+      button.style.opacity = '0.7';
+      messageDiv.textContent = '';
+      messageDiv.style.color = '';
+    
+      try {
+        const result = await window.app.registruj(email, password);
+        if (result.success) {
+          // ✅ PRIDAŤ TÚTO ČASŤ - odoslanie emailu
+          await sendRegistrationEmail(email);
+          
+          const roleText = result.role === 'admin' ? 'ADMINISTRÁTOR' : 'Používateľ';
+          const statusText = result.approved ? 'OKAMŽITE SCHVÁLENÝ' : 'ČAKÁ NA SCHVÁLENIE ADMINOM';
+          messageDiv.innerHTML = `✅ Registrácia úspešná!<br>📧 Email bol odoslaný na vašu adresu.<br>Vaša rola: <strong>${roleText}</strong><br>Stav: <strong>${statusText}</strong>`;
+          messageDiv.style.color = result.approved ? 'green' : 'orange';
+          form.reset();
+          passwordMatchMessage.style.display = 'none';
+          setTimeout(() => {
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            vymazStatusSpravy();
+          }, 3000);
+        } else {
+          messageDiv.textContent = '❌ ' + result.error;
+          messageDiv.style.color = 'red';
+        }
+      } catch (error) {
+        messageDiv.textContent = '❌ Nastala neočakávaná chyba: ' + error.message;
+        messageDiv.style.color = 'red';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Registrovať sa';
+        button.style.opacity = '1';
+      }
+    });
+    
   return container;
 }
 
