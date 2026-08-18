@@ -45,6 +45,34 @@ async function sendRegistrationEmail(email) {
   }
 }
 
+// Funkcia na odoslanie e-mailu o schválení - bez CORS
+async function sendApprovalEmail(email, firstName = '', lastName = '', adminName = 'Administrátor') {
+  try {    
+    const params = new URLSearchParams({
+      email: email,
+      firstName: firstName || '',
+      lastName: lastName || '',
+      adminName: adminName,
+      type: 'approval'
+    });
+    
+    const url = `${EMAIL_WEB_APP_URL}?${params.toString()}`;
+    
+    await fetch(url, {
+      method: 'GET',
+      mode: 'no-cors'
+    });
+    
+    console.log('✅ E-mail o schválení odoslaný');
+    return { success: true };
+    
+  } catch (error) {
+    console.error('❌ Chyba pri odoslaní e-mailu o schválení:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyAE-IZQGubCgQYzhtMtH6y4w1sRFOW_suI",
@@ -1949,8 +1977,22 @@ window.schvalPouzivatela = async function(userId) {
   try {
     const result = await window.app.schvalPouzivatela(userId);
     if (result.success) {
+      // Nájdenie schváleného používateľa
+      const user = window.app.vsetciPouzivatelia.find(u => u.id === userId);
+      
+      // Odoslanie e-mailu o schválení
+      if (user) {
+        const adminName = window.app.aktualnyPouzivatel?.email || 'Administrátor';
+        await sendApprovalEmail(
+          user.email,
+          user.firstName || '',
+          user.lastName || '',
+          adminName
+        );
+      }
+      
       await showAlert(
-        'Používateľ bol úspešne schválený!<br><br>Ak bol schválený práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.',
+        'Používateľ bol úspešne schválený!<br><br>Ak bol schválený práve prihlásený používateľ, jeho stav sa automaticky aktualizuje.<br><br>📧 E-mail o schválení bol odoslaný.',
         'Úspech',
         '✅'
       );
