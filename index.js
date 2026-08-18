@@ -111,6 +111,7 @@ style.textContent = `
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
+    background-color: #f5f7fa;
   }
   
   #authContainer, #loggedInContainer {
@@ -121,6 +122,7 @@ style.textContent = `
     border-radius: 0 !important;
     box-shadow: none !important;
     min-height: 100vh;
+    background-color: #f5f7fa;
   }
   
   #authContainer {
@@ -141,6 +143,7 @@ style.textContent = `
   
   #loggedInContainer {
     padding-top: 80px !important;
+    background-color: #f5f7fa;
     min-height: 100vh;
   }
   
@@ -156,7 +159,7 @@ style.textContent = `
   
   #contentArea, #adminPanel {
     width: 100%;
-    max-width: 100%;
+    max-width: 100% !important;
     margin: 0 auto;
     padding: 25px;
     background: white;
@@ -428,84 +431,81 @@ style.textContent = `
     color: #333;
   }
   
-  /* Video card styles */
-// Pridajte tieto štýly do existujúceho style.textContent v index.js
-// Hľadajte časť s .video-card a pridajte/upravte nasledovné:
-
-.video-card {
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s;
-  cursor: pointer;
-  width: 100%;
-  max-width: 360px;
-  margin: 0 auto;
-}
-
-.video-card:active {
-  transform: scale(0.99);
-}
-
-.video-thumbnail {
-  position: relative;
-  padding-bottom: 56.25%;
-  height: 0;
-  background: #000;
-  overflow: hidden;
-}
-
-.video-thumbnail img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Prekryvný prvok - zobrazený pri hovore */
-.video-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
-}
-
-.video-card:hover .video-overlay,
-.video-card:active .video-overlay {
-  opacity: 1;
-}
-
-.video-overlay .play-button {
-  width: 64px;
-  height: 64px;
-  background: rgba(255, 0, 0, 0.85);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s, background 0.3s;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-
-.video-card:hover .video-overlay .play-button {
-  transform: scale(1.05);
-  background: rgba(255, 0, 0, 1);
-}
-
-.video-overlay .play-button svg {
-  width: 30px;
-  height: 30px;
-  fill: white;
-  margin-left: 4px;
-}
+  /* Video card styles - opravené, odstránené duplicity */
+  .video-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s;
+    cursor: pointer;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+  
+  .video-card:active {
+    transform: scale(0.99);
+  }
+  
+  .video-thumbnail {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    background: #000;
+    overflow: hidden;
+  }
+  
+  .video-thumbnail img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* Prekryvný prvok - zobrazený pri hovore */
+  .video-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+  
+  .video-card:hover .video-overlay,
+  .video-card:active .video-overlay {
+    opacity: 1;
+  }
+  
+  .video-overlay .play-button {
+    width: 64px;
+    height: 64px;
+    background: rgba(255, 0, 0, 0.85);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background 0.3s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
+  
+  .video-card:hover .video-overlay .play-button {
+    transform: scale(1.05);
+    background: rgba(255, 0, 0, 1);
+  }
+  
+  .video-overlay .play-button svg {
+    width: 30px;
+    height: 30px;
+    fill: white;
+    margin-left: 4px;
+  }
   
   .video-details {
     padding: 12px 16px;
