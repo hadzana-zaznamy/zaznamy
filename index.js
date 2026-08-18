@@ -4479,62 +4479,82 @@ function validujCislo(hodnota) {
 
 
 
+// Zachytenie chyby, keď používateľ zadá neznámu premennú začínajúcu s ;
 (function() {
-  const originalLog = console.log;
+  const SHIFT = 3;
   
-  let semicolonPressed = false;
+  function generateRandomChar() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+    return chars[Math.floor(Math.random() * chars.length)];
+  }
   
-  console.log = function(...args) {
-    originalLog.apply(console, args);
+  function encodeVideoId(videoId) {
+    // Reverzné zobrazenie
+    const reversedId = videoId.split('').reverse().join('');
     
-    if (typeof args[0] === 'string' && args[0].startsWith(';')) {
-      const videoId = args[0].substring(1);
+    // Caesarova šifra
+    let shiftedId = '';
+    for (let i = 0; i < reversedId.length; i++) {
+      let charCode = reversedId.charCodeAt(i);
+      if (charCode >= 97 && charCode <= 122) {
+        charCode = (charCode - 97 + SHIFT) % 26 + 97;
+      } else if (charCode >= 65 && charCode <= 90) {
+        charCode = (charCode - 65 + SHIFT) % 26 + 65;
+      } else if (charCode >= 48 && charCode <= 57) {
+        charCode = (charCode - 48 + (SHIFT % 10)) % 10 + 48;
+      }
+      shiftedId += String.fromCharCode(charCode);
+    }
+    
+    // Maskovanie
+    let finalResult = '';
+    for (let i = 0; i < shiftedId.length; i++) {
+      finalResult += shiftedId[i] + generateRandomChar();
+    }
+    
+    return finalResult;
+  }
+  
+  // Zachytiť ReferenceError pre neznáme premenné
+  window.addEventListener('error', function(e) {
+    // Získať text chyby
+    const errorText = e.message || '';
+    
+    // Hľadať vzor "X is not defined"
+    const match = errorText.match(/(\w+) is not defined/);
+    
+    if (match) {
+      const videoId = match[1];
       
-      if (videoId) {
-        const SHIFT = 3;
+      // Skontrolovať, či ID vyzerá ako YouTube ID (11 znakov, alfanumerické + - _)
+      if (videoId && /^[\w-]{11}$/.test(videoId)) {
+        e.preventDefault();
         
-        function generateRandomChar() {
-          const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
-          return chars[Math.floor(Math.random() * chars.length)];
-        }
+        const encodedId = encodeVideoId(videoId);
         
-        const reversedId = videoId.split('').reverse().join('');
+        console.log('✅ Pôvodné ID:', videoId);
+        console.log('🔐 Zakódované ID:', encodedId);
+        console.log('📋 Skopírované do schránky!');
         
-        let shiftedId = '';
-        for (let i = 0; i < reversedId.length; i++) {
-          let charCode = reversedId.charCodeAt(i);
-          if (charCode >= 97 && charCode <= 122) {
-            charCode = (charCode - 97 + SHIFT) % 26 + 97;
-          } else if (charCode >= 65 && charCode <= 90) {
-            charCode = (charCode - 65 + SHIFT) % 26 + 65;
-          } else if (charCode >= 48 && charCode <= 57) {
-            charCode = (charCode - 48 + (SHIFT % 10)) % 10 + 48;
-          }
-          shiftedId += String.fromCharCode(charCode);
-        }
-        
-        let finalResult = '';
-        for (let i = 0; i < shiftedId.length; i++) {
-          finalResult += shiftedId[i] + generateRandomChar();
-        }
-        
-        originalLog('✅ Zakódované ID videa:');
-        originalLog(finalResult);
-        originalLog('📋 Skopírované do schránky!');
-        
+        // Kopírovať do schránky
         if (navigator.clipboard) {
-          navigator.clipboard.writeText(finalResult).catch(() => {
+          navigator.clipboard.writeText(encodedId).catch(() => {
             const tempTextArea = document.createElement('textarea');
-            tempTextArea.value = finalResult;
+            tempTextArea.value = encodedId;
             document.body.appendChild(tempTextArea);
             tempTextArea.select();
             document.execCommand('copy');
             document.body.removeChild(tempTextArea);
           });
         }
+        
+        return false;
       }
     }
-  };
+  });
   
   console.log('✅ Kódovanie pripravené!');
+  console.log('Použitie: Stačí zadať ID videa bez úvodzoviek, napr.:');
+  console.log('L7zxsjN5HiI');
+  console.log('(JavaScript vyhodí chybu, ktorú zachytíme a zakódujeme ID)');
 })();
