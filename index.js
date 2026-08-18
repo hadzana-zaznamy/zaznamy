@@ -2049,20 +2049,28 @@ function zobrazPouzivatelov(pouzivatelia) {
   }
   
   // ZORAĎOVANIE:
-  // 1. Najprv používatelia, ktorí ČAKAJÚ NA SCHVÁLENIE (approved === false)
-  // 2. Potom používatelia s NEZHODOU preferencií
-  // 3. Potom ADMINI a ostatní používatelia (abecedne)
+  // 1. ADMIN je VŽDY na prvom mieste
+  // 2. Potom používatelia, ktorí ČAKAJÚ NA SCHVÁLENIE (approved === false)
+  // 3. Potom používatelia s NEZHODOU preferencií
+  // 4. Potom ostatní používatelia (abecedne)
   const zoradeni = [...pouzivatelia].sort((a, b) => {
-    // 1. Najprv neschválení používatelia (čakajúci na schválenie)
+    // 0. ADMIN je vždy prvý
+    const adminA = a.role === 'admin';
+    const adminB = b.role === 'admin';
+    
+    if (adminA && !adminB) return -1;
+    if (!adminA && adminB) return 1;
+    
+    // 1. Potom neschválení používatelia (čakajúci na schválenie) - okrem admina
     const cakaA = !a.approved && a.role !== 'admin';
     const cakaB = !b.approved && b.role !== 'admin';
     
     if (cakaA && !cakaB) return -1;
     if (!cakaA && cakaB) return 1;
     
-    // 2. Potom používatelia s nezhodou preferencií
-    const nezhodaA = maNezhodu(a);
-    const nezhodaB = maNezhodu(b);
+    // 2. Potom používatelia s nezhodou preferencií - okrem admina
+    const nezhodaA = maNezhodu(a) && a.role !== 'admin';
+    const nezhodaB = maNezhodu(b) && b.role !== 'admin';
     
     if (nezhodaA && !nezhodaB) return -1;
     if (!nezhodaA && nezhodaB) return 1;
