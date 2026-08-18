@@ -2147,7 +2147,13 @@ function extrahujVideoId(url) {
 }
 
 function vytvorVideoKartu(video, sOdstranenim = false) {
-  const thumbnailUrl = `https://smf-hk-zilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`;
+  // Ak video nemá ID, použijeme placeholder obrázok
+  const thumbnailUrl = video.videoId && video.videoId.trim() !== '' 
+    ? `https://smf-hk-zilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`
+    : 'https://placehold.co/640x360/1f2937/white?text=Bez+ID+videa';
+  
+  // Pre admina sOdstranenim = true, zobrazíme aj bez ID
+  // Pre používateľa sOdstranenim = false, videá bez ID sú už odfiltrované
   
   let detailsHtml = '';
   if (video.kategoria) {
@@ -2165,6 +2171,11 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
   }
   if (video.hostiaTim) {
     detailsHtml += `<p><strong>Hostia:</strong> ${video.hostiaTim || '?'}</p>`;
+  }
+  
+  // Pre admina zobrazíme indikátor, či má video ID
+  if (sOdstranenim && (!video.videoId || video.videoId.trim() === '')) {
+    detailsHtml += `<p style="color:#ff9800;font-weight:bold;">⚠️ Bez ID videa</p>`;
   }
   
   let adminButtonsHtml = '';
@@ -2187,15 +2198,22 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
     `;
   }
   
+  // Ak video nemá ID, nebude klikateľné pre používateľov
+  const onClickAttr = (video.videoId && video.videoId.trim() !== '') 
+    ? `onclick="otvorVideoModal('${video.id}')"` 
+    : '';
+  
   return `
-    <div class="video-card" data-video-id="${video.id}" onclick="otvorVideoModal('${video.id}')">
+    <div class="video-card" data-video-id="${video.id}" ${onClickAttr} style="${!video.videoId || video.videoId.trim() === '' ? 'cursor:default;' : ''}">
       <div class="video-thumbnail">
         <img src="${thumbnailUrl}" alt="${video.nazov || 'Video'}" loading="lazy" onerror="this.src='https://placehold.co/640x360/1f2937/white?text=Video'">
-        <div class="play-button">
-          <svg viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
-        </div>
+        ${video.videoId && video.videoId.trim() !== '' ? `
+          <div class="play-button">
+            <svg viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        ` : ''}
       </div>
       <div class="video-details">
         ${detailsHtml}
@@ -2222,9 +2240,11 @@ function zobrazVideaPouzivatelom(videa) {
     return;
   }
   
-  let zobrazeneVidea = videa;
+  // FILTROVANIE: Zobrazia sa len videá, ktoré majú vyplnené videoId
+  let zobrazeneVidea = videa.filter(v => v.videoId && v.videoId.trim() !== '');
+  
   if (!jeAdmin && aktualnyUserTeam) {
-    zobrazeneVidea = videa.filter(v => 
+    zobrazeneVidea = zobrazeneVidea.filter(v => 
       v.domaciTim === aktualnyUserTeam || v.hostiaTim === aktualnyUserTeam
     );
   }
@@ -2329,13 +2349,15 @@ function zobrazVideaPouzivatelom(videa) {
 
 window.aplikujFiltre = function() {
   const videa = window.filteredVidea || window.app.vsetkyVidea || [];
+  // Filtrovanie videí bez ID
+  const videaSId = videa.filter(v => v.videoId && v.videoId.trim() !== '');
   const kategoria = document.getElementById('filterKategoria')?.value || '';
   const sezona = document.getElementById('filterSezona')?.value || '';
   const sutaz = document.getElementById('filterSutaz')?.value || '';
   const tim = document.getElementById('filterTim')?.value || '';
   const mesiac = document.getElementById('filterMesiac')?.value || '';
   
-  const filtered = videa.filter(v => {
+  const filtered = videaSId.filter(v => {
     if (kategoria && v.kategoria !== kategoria) return false;
     if (sezona && v.sezona !== sezona) return false;
     if (sutaz && v.sutaz !== sutaz) return false;
@@ -2679,7 +2701,7 @@ function otvorModalVidea(video = null) {
   idGroup.style.marginBottom = '15px';
   
   const idLabel = document.createElement('label');
-  idLabel.textContent = 'ID videa *';
+  idLabel.textContent = 'ID videa (nepovinné)';
   idLabel.style.display = 'block';
   idLabel.style.marginBottom = '5px';
   idLabel.style.fontWeight = 'bold';
@@ -2688,8 +2710,8 @@ function otvorModalVidea(video = null) {
   const idInput = document.createElement('input');
   idInput.type = 'text';
   idInput.id = 'videoIdInput';
-  idInput.required = true;
-  idInput.placeholder = 'YouTube ID videa (napr. LjOBNPYv7uR0VJQcyqUOgo)';
+  idInput.required = false; // Zmenené na nepovinné
+  idInput.placeholder = 'YouTube ID videa (nepovinné)';
   idInput.value = jeUprava ? video.videoId : '';
   idInput.style.width = '100%';
   idInput.style.padding = '12px';
@@ -2806,7 +2828,8 @@ function otvorModalVidea(video = null) {
   
   const sutOptions = [
     { value: '', text: 'Vyberte súťaž' },
-    { value: '1. liga', text: '1. liga' }
+    { value: '1. liga', text: '1. liga' },
+    { value: '1. liga žien', text: '1. liga žien' }
   ];
   
   sutOptions.forEach(opt => {
@@ -3053,11 +3076,7 @@ function otvorModalVidea(video = null) {
     
     let timestamps = {};
 
-    if (!videoId) {
-      messageDiv.textContent = '❌ Prosím, zadajte ID videa.';
-      messageDiv.style.color = 'red';
-      return;
-    }
+    // ID videa už nie je povinné - odstránili sme kontrolu
     
     const tsText = document.getElementById('timestampsInput').value.trim();
     if (tsText) {
@@ -3088,7 +3107,7 @@ function otvorModalVidea(video = null) {
       }
     }
     
-    if (!videoId || !kategoria || !sezona || !sutaz || !domaciTim || !hostiaTim) {
+    if (!kategoria || !sezona || !sutaz || !domaciTim || !hostiaTim) {
       messageDiv.textContent = '❌ Prosím, vyplňte všetky povinné polia (označené *)';
       messageDiv.style.color = 'red';
       return;
@@ -3110,7 +3129,7 @@ function otvorModalVidea(video = null) {
     messageDiv.textContent = '';
     
     const videoData = {
-      videoId,
+      videoId: videoId || '', // Ak je prázdne, uloží sa prázdny reťazec
       kategoria,
       sezona,
       sutaz,
