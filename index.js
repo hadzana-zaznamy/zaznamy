@@ -2945,19 +2945,23 @@ window.otvorModalPriradeniaTimov = async function(userId) {
           
           // AK SA MENIA PREFERENCIE PRIHLÁSENÉHO POUŽÍVATEĽA - PRERENDERUJ VIDEA
           if (userId === window.app.aktualnyPouzivatel?.uid) {
+            // Aktualizácia lokálnych premenných
             window.app.aktualnyPouzivatelTeam = vybraneTimy;
             window.app.aktualnyPouzivatelSezona = vybraneSezony;
             window.app.aktualnyPouzivatelKategoria = vybraneKategorie;
             
-            // KĽÚČOVÁ ZMENA: Znovu načítame videá z databázy a prerenderujeme ich
-            if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
-              // Prerenderujeme videá pre používateľa
-              zobrazVideaPouzivatelom(window.app.vsetkyVidea);
-            } else {
-              // Ak nemáme videá načítané, načítame ich
-              await window.app.nacitajVidea();
-              zobrazVideaPouzivatelom(window.app.vsetkyVidea);
-            }
+            // PRERENDEROVANIE VIDEÍ - dôležité je zavolať funkciu s aktuálnymi videami
+            // Použijeme setTimeout aby sme sa uistili, že DOM je aktualizovaný
+            setTimeout(() => {
+              if (window.app.vsetkyVidea && window.app.vsetkyVidea.length > 0) {
+                zobrazVideaPouzivatelom(window.app.vsetkyVidea);
+              } else {
+                // Ak nemáme videá načítané, načítame ich
+                window.app.nacitajVidea().then(() => {
+                  zobrazVideaPouzivatelom(window.app.vsetkyVidea);
+                });
+              }
+            }, 100);
           }
           
           // Aktualizácia zoznamu používateľov v admin paneli
@@ -3412,8 +3416,12 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
 
 function zobrazVideaPouzivatelom(videa) {
   const container = document.getElementById('videaPrePouzivatelov');
-  if (!container) return;
+  if (!container) {
+    console.warn('Container videaPrePouzivatelov neexistuje');
+    return;
+  }
   
+  // Načítame aktuálne hodnoty priamo z window.app
   const jeAdmin = window.app.aktualnyPouzivatelRole === 'admin';
   let aktualnyUserTeam = window.app.aktualnyPouzivatelTeam || [];
   let userSezona = window.app.aktualnyPouzivatelSezona || [];
