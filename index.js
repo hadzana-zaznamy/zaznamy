@@ -255,6 +255,21 @@ style.textContent = `
     background-color: #d32f2f;
   }
   
+  .btn-edit-video {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    background-color: #2196F3;
+    color: white;
+    transition: background-color 0.3s;
+  }
+  
+  .btn-edit-video:hover {
+    background-color: #1976D2;
+  }
+  
   /* Modal styles */
   .modal-overlay {
     position: fixed;
@@ -1553,6 +1568,32 @@ function inicializujAplikaciu() {
       }
     },
 
+    upravVideo: async function(videoId, videoData) {
+      if (!this.jeAdmin()) {
+        return { success: false, error: 'Nemáte oprávnenie na úpravu videí' };
+      }
+      
+      try {
+        await updateDoc(doc(db, 'matches', videoId), {
+          videoId: videoData.videoId || '',
+          kategoria: videoData.kategoria || '',
+          sezona: videoData.sezona || '',
+          sutaz: videoData.sutaz || '',
+          tim: videoData.tim || '',
+          mesiac: videoData.mesiac || '',
+          kolo: videoData.kolo || '',
+          datumacas: videoData.datumacas || '',
+          timestamps: videoData.timestamps || {},
+          updatedAt: new Date().toISOString(),
+          updatedBy: this.aktualnyPouzivatel.uid,
+          updatedByEmail: this.aktualnyPouzivatel.email
+        });
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+
     nacitajVidea: async function() {
       try {
         const q = query(collection(db, 'matches'), orderBy('createdAt', 'desc'));
@@ -2024,11 +2065,18 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
         ${sOdstranenim ? `
           <div class="video-meta">
             <span>Pridané: ${formatujDatum(video.createdAt)}</span>
-            <button onclick="odstranVideo('${video.id}')" 
-                    class="btn-remove-user"
-                    style="padding:4px 10px;font-size:11px;">
-              🗑️ Odstrániť
-            </button>
+            <div style="display:flex;gap:5px;">
+              <button onclick="otvorModalUpravyVidea('${video.id}')" 
+                      class="btn-edit-video"
+                      style="padding:4px 10px;font-size:11px;">
+                ✏️ Upraviť
+              </button>
+              <button onclick="odstranVideo('${video.id}')" 
+                      class="btn-remove-user"
+                      style="padding:4px 10px;font-size:11px;">
+                🗑️ Odstrániť
+              </button>
+            </div>
           </div>
         ` : `
           ${video.createdAt ? `<div class="video-meta"><span>Pridané: ${formatujDatum(video.createdAt)}</span></div>` : ''}
@@ -2350,6 +2398,23 @@ window.odstranVideo = async function(videoId) {
 
 // Funkcia na otvorenie modálneho okna pre pridanie videa
 window.otvorModalPridaniaVidea = function() {
+  otvorModalVidea(null);
+};
+
+// Funkcia na otvorenie modálneho okna pre úpravu videa
+window.otvorModalUpravyVidea = function(videoId) {
+  const video = window.app.vsetkyVidea.find(v => v.id === videoId);
+  if (!video) {
+    showAlert('Video sa nenašlo', 'Chyba', '❌');
+    return;
+  }
+  otvorModalVidea(video);
+};
+
+// Univerzálna funkcia pre otvorenie modálneho okna (pridanie alebo úprava)
+function otvorModalVidea(video = null) {
+  const jeUprava = video !== null;
+  
   const modal = document.createElement('div');
   modal.className = 'modal-overlay active';
   modal.id = 'videoModalPridanie';
@@ -2372,12 +2437,12 @@ window.otvorModalPridaniaVidea = function() {
   // Icon
   const icon = document.createElement('div');
   icon.className = 'modal-icon';
-  icon.textContent = '🎥';
+  icon.textContent = jeUprava ? '✏️' : '🎥';
   modalBox.appendChild(icon);
   
   // Title
   const title = document.createElement('h3');
-  title.textContent = 'Pridať nové video';
+  title.textContent = jeUprava ? 'Upraviť video' : 'Pridať nové video';
   title.style.marginBottom = '20px';
   modalBox.appendChild(title);
   
@@ -2401,6 +2466,7 @@ window.otvorModalPridaniaVidea = function() {
   idInput.id = 'videoIdInput';
   idInput.required = true;
   idInput.placeholder = 'YouTube ID videa (napr. LjOBNPYv7uR0VJQcyqUOgo)';
+  idInput.value = jeUprava ? video.videoId : '';
   idInput.style.width = '100%';
   idInput.style.padding = '12px';
   idInput.style.border = '1px solid #ddd';
@@ -2444,6 +2510,9 @@ window.otvorModalPridaniaVidea = function() {
     const option = document.createElement('option');
     option.value = opt.value;
     option.textContent = opt.text;
+    if (jeUprava && video.kategoria === opt.value) {
+      option.selected = true;
+    }
     catSelect.appendChild(option);
   });
   
@@ -2483,6 +2552,9 @@ window.otvorModalPridaniaVidea = function() {
     const option = document.createElement('option');
     option.value = opt.value;
     option.textContent = opt.text;
+    if (jeUprava && video.sezona === opt.value) {
+      option.selected = true;
+    }
     sezSelect.appendChild(option);
   });
   
@@ -2520,6 +2592,9 @@ window.otvorModalPridaniaVidea = function() {
     const option = document.createElement('option');
     option.value = opt.value;
     option.textContent = opt.text;
+    if (jeUprava && video.sutaz === opt.value) {
+      option.selected = true;
+    }
     sutSelect.appendChild(option);
   });
   
@@ -2542,6 +2617,7 @@ window.otvorModalPridaniaVidea = function() {
   timInput.id = 'timInput';
   timInput.required = true;
   timInput.placeholder = 'Názov tímu';
+  timInput.value = jeUprava ? video.tim : '';
   timInput.style.width = '100%';
   timInput.style.padding = '12px';
   timInput.style.border = '1px solid #ddd';
@@ -2593,6 +2669,9 @@ window.otvorModalPridaniaVidea = function() {
     const option = document.createElement('option');
     option.value = opt.value;
     option.textContent = opt.text;
+    if (jeUprava && video.mesiac === opt.value) {
+      option.selected = true;
+    }
     mesSelect.appendChild(option);
   });
   
@@ -2614,6 +2693,7 @@ window.otvorModalPridaniaVidea = function() {
   koloInput.type = 'text';
   koloInput.id = 'koloInput';
   koloInput.placeholder = 'Číslo kola (napr. 22)';
+  koloInput.value = jeUprava ? video.kolo : '';
   koloInput.style.width = '100%';
   koloInput.style.padding = '12px';
   koloInput.style.border = '1px solid #ddd';
@@ -2638,6 +2718,7 @@ window.otvorModalPridaniaVidea = function() {
   datumInput.type = 'text';
   datumInput.id = 'datumacasInput';
   datumInput.placeholder = '09. 05. 2026 12:00 hod.';
+  datumInput.value = jeUprava ? video.datumacas : '';
   datumInput.style.width = '100%';
   datumInput.style.padding = '12px';
   datumInput.style.border = '1px solid #ddd';
@@ -2661,6 +2742,7 @@ window.otvorModalPridaniaVidea = function() {
   const tsTextarea = document.createElement('textarea');
   tsTextarea.id = 'timestampsInput';
   tsTextarea.placeholder = '{"Začiatok": "00:00:00", "1. polčas": "00:02:20", "Prestávka": "00:36:02", "2. polčas": "00:44:38"}';
+  tsTextarea.value = jeUprava ? JSON.stringify(video.timestamps || {}, null, 2) : '';
   tsTextarea.style.width = '100%';
   tsTextarea.style.padding = '12px';
   tsTextarea.style.border = '1px solid #ddd';
@@ -2676,10 +2758,10 @@ window.otvorModalPridaniaVidea = function() {
   // Submit button
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
-  submitBtn.textContent = '✅ Pridať video';
+  submitBtn.textContent = jeUprava ? '💾 Uložiť zmeny' : '✅ Pridať video';
   submitBtn.style.width = '100%';
   submitBtn.style.padding = '12px';
-  submitBtn.style.backgroundColor = '#4CAF50';
+  submitBtn.style.backgroundColor = jeUprava ? '#2196F3' : '#4CAF50';
   submitBtn.style.color = 'white';
   submitBtn.style.border = 'none';
   submitBtn.style.borderRadius = '4px';
@@ -2765,7 +2847,7 @@ window.otvorModalPridaniaVidea = function() {
     }
     
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Ukladám...';
+    submitBtn.textContent = jeUprava ? 'Ukladám...' : 'Pridávam...';
     submitBtn.style.opacity = '0.7';
     messageDiv.textContent = '';
     
@@ -2781,12 +2863,16 @@ window.otvorModalPridaniaVidea = function() {
       timestamps
     };
     
-    const result = await window.app.pridajVideo(videoData);
+    let result;
+    if (jeUprava) {
+      result = await window.app.upravVideo(video.id, videoData);
+    } else {
+      result = await window.app.pridajVideo(videoData);
+    }
     
     if (result.success) {
-      messageDiv.innerHTML = '✅ Video bolo úspešne pridané!';
+      messageDiv.innerHTML = jeUprava ? '✅ Video bolo úspešne upravené!' : '✅ Video bolo úspešne pridané!';
       messageDiv.style.color = 'green';
-      form.reset();
       
       // Close modal after delay
       setTimeout(() => {
@@ -2798,7 +2884,7 @@ window.otvorModalPridaniaVidea = function() {
     }
     
     submitBtn.disabled = false;
-    submitBtn.textContent = '✅ Pridať video';
+    submitBtn.textContent = jeUprava ? '💾 Uložiť zmeny' : '✅ Pridať video';
     submitBtn.style.opacity = '1';
   });
   
@@ -2808,7 +2894,7 @@ window.otvorModalPridaniaVidea = function() {
       modal.remove();
     }
   });
-};
+}
 
 // Zobrazenie správy videí (admin)
 window.zobrazSpravuVidei = function() {
