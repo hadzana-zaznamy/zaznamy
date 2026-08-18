@@ -2035,15 +2035,15 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
   if (video.tim) {
     detailsHtml += `<p><strong>Tím:</strong> ${video.tim}</p>`;
   }
-  if (video.mesiac) {
-    detailsHtml += `<p><strong>Mesiac:</strong> ${video.mesiac}</p>`;
-  }
-  if (video.kolo) {
-    detailsHtml += `<p><strong>Kolo:</strong> ${video.kolo}</p>`;
-  }
-  if (video.datumacas) {
-    detailsHtml += `<p><strong>Dátum a čas:</strong> ${video.datumacas}</p>`;
-  }
+//  if (video.mesiac) {
+//    detailsHtml += `<p><strong>Mesiac:</strong> ${video.mesiac}</p>`;
+//  }
+//  if (video.kolo) {
+//    detailsHtml += `<p><strong>Kolo:</strong> ${video.kolo}</p>`;
+//  }
+//  if (video.datumacas) {
+//    detailsHtml += `<p><strong>Dátum a čas:</strong> ${video.datumacas}</p>`;
+//  }
   
   // Pre admin zobrazenie - tlačidlá Upraviť a Odstrániť
   let adminButtonsHtml = '';
