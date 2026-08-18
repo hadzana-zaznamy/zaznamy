@@ -121,7 +121,6 @@ style.textContent = `
     border-radius: 0 !important;
     box-shadow: none !important;
     min-height: 100vh;
-    background-color: #f5f7fa;
   }
   
   #authContainer {
@@ -142,7 +141,6 @@ style.textContent = `
   
   #loggedInContainer {
     padding-top: 80px !important;
-    background-color: #f5f7fa;
     min-height: 100vh;
   }
   
