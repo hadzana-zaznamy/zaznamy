@@ -3087,7 +3087,7 @@ window.zobrazAplikaciu = function() {
   zobrazVideaPouzivatelom(window.app.vsetkyVidea);
 };
 
-window.zobrazPouzivatelovAdmin = function() {
+window.zobrazPouzivatelovAdmin = async function() {
   const contentArea = document.getElementById('contentArea');
   const adminPanel = document.getElementById('adminPanel');
   const usersList = document.getElementById('usersList');
@@ -3116,17 +3116,26 @@ window.zobrazPouzivatelovAdmin = function() {
   document.getElementById('btnVidea').style.backgroundColor = '#e0e0e0';
   document.getElementById('btnVidea').style.color = '#333';
   
-  // Načítať používateľov
+  // Najprv načítať videá, ak ešte nie sú načítané
+  if (!window.app.vsetkyVidea || window.app.vsetkyVidea.length === 0) {
+    await window.app.nacitajVidea();
+  }
+  
+  // Potom načítať používateľov
   if (window.app.vsetciPouzivatelia.length > 0) {
     zobrazPouzivatelov(window.app.vsetciPouzivatelia);
   } else {
-    window.app.nacitajVsetkychPouzivatelov().then(() => {
-      zobrazPouzivatelov(window.app.vsetciPouzivatelia);
-    });
+    const result = await window.app.nacitajVsetkychPouzivatelov();
+    if (result.success) {
+      zobrazPouzivatelov(result.pouzivatelia);
+    } else {
+      // V prípade chyby zobraziť správu
+      if (usersList) {
+        usersList.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">Chyba pri načítaní používateľov: ' + result.error + '</p>';
+      }
+    }
   }
 };
-
-// ===== Video Player Functions (from second code) =====
 
 // Premenné pre prehrávač
 let currentTimestamps = {};
