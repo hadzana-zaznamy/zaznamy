@@ -1283,7 +1283,7 @@ function inicializujAplikaciu() {
       } catch (error) {
         let errorMessage = error.message;
         if (error.code === 'auth/user-not-found') {
-          errorMessage = 'Používateľ s touto e-mailovou adresou nebol nájdený.';
+          errorMessage = 'Používateľ s touto e-mailovou adresou nebol nájdený. Prosím, pre sledovanie záznamov zápasov sa (znovu) zaregistrujte.';
         } else if (error.code === 'auth/wrong-password') {
           errorMessage = 'Nesprávne heslo. Prosím, skúste to znova.';
         } else if (error.code === 'auth/invalid-email') {
