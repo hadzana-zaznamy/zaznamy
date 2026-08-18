@@ -1372,8 +1372,6 @@ function inicializujAplikaciu() {
             datumacas: data.datumacas || '',
             timestamps: data.timestamps || {},
             createdAt: data.createdAt || '',
-            createdBy: data.createdBy || '',
-            createdByEmail: data.createdByEmail || ''
           });
         });
         this.vsetkyVidea = videa;
