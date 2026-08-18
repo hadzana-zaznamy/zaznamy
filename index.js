@@ -4014,10 +4014,16 @@ function vytvorRegistracnyFormular() {
   const passwordRules = document.createElement('div');
   passwordRules.id = 'passwordRules';
   passwordRules.style.marginBottom = '15px';
-  passwordRules.style.padding = '10px 15px';
-  passwordRules.style.backgroundColor = '#f8f9fa';
-  passwordRules.style.borderRadius = '6px';
+  passwordRules.style.padding = '8px 0 8px 0';
   passwordRules.style.fontSize = '13px';
+  
+  // Nadpis pre pravidlá
+  const rulesHeading = document.createElement('div');
+  rulesHeading.style.fontWeight = 'bold';
+  rulesHeading.style.marginBottom = '6px';
+  rulesHeading.style.color = '#333';
+  rulesHeading.textContent = 'Heslo musí obsahovať:';
+  passwordRules.appendChild(rulesHeading);
   
   const rules = [
     { id: 'ruleLowercase', text: 'aspoň jedno malé písmeno', check: (pwd) => /[a-z]/.test(pwd) },
