@@ -14,7 +14,7 @@ import {
   collection, addDoc, 
   getDocs, updateDoc, deleteDoc, 
   query, where, orderBy, limit,
-  onSnapshot
+  onSnapshotwindow.otvorVideoModal = async function(videoId) {
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 // App Check import
 import { 
@@ -2020,10 +2020,10 @@ function extrahujVideoId(url) {
   return null;
 }
 
-// Opravená funkcia pre thumbnail - tiež potrebuje dekódovanie
+// Opravená funkcia pre thumbnail - používa thumbnail worker
 function vytvorVideoKartu(video, sOdstranenim = false) {
-  // Pre thumbnail použijeme tiež worker na dekódovanie
-  const thumbnailUrl = `https://smfhkzilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`;
+  // Pre thumbnail použijeme thumbnail worker
+  const thumbnailUrl = `https://smf-hk-zilina.smfhkzilina.workers.dev/?id=${encodeURIComponent(video.videoId)}`;
   
   // Zostavenie detailov videa
   let detailsHtml = '';
@@ -2241,7 +2241,7 @@ function zobrazVideaAdmin(videa) {
   container.innerHTML = html;
 }
 
-// Opravená funkcia otvorVideoModal s dekódovaním cez worker
+// Opravená funkcia otvorVideoModal s použitím správnych workerov
 window.otvorVideoModal = async function(videoId) {
   console.log('otvorVideoModal volaný s ID:', videoId);
   
@@ -2340,7 +2340,7 @@ window.otvorVideoModal = async function(videoId) {
     
     await new Promise((resolve) => {
       let attempts = 0;
-      const maxAttempts = 25; // 5 sekúnd (25 * 200ms)
+      const maxAttempts = 50; // 10 sekúnd (50 * 200ms)
       const checkYT = setInterval(() => {
         attempts++;
         if (typeof YT !== 'undefined' && typeof YT.Player !== 'undefined') {
@@ -3130,7 +3130,7 @@ function togglePlayPause() {
   if (window.youtubePlayer.getPlayerState() === 1) {
     window.youtubePlayer.pauseVideo();
   } else {
-    if (window.youtubePlayer.getPlaybackRate() !== 1) {
+    if (typeof window.youtubePlayer.getPlaybackRate === 'function' && window.youtubePlayer.getPlaybackRate() !== 1) {
       window.youtubePlayer.setPlaybackRate(1);
       showSpeedMessage('1.0');
       const playbackSpeedDisplay = document.getElementById('playbackSpeedDisplay');
