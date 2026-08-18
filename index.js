@@ -2408,7 +2408,7 @@ function vytvorVideoKartu(video, sOdstranenim = false) {
       const rok = parsedDate.getFullYear();
       const hodiny = String(parsedDate.getHours()).padStart(2, '0');
       const minuty = String(parsedDate.getMinutes()).padStart(2, '0');
-      dateTimeHtml = `<p><strong>📅 Dátum a čas:</strong> ${den}. ${mesiac}. ${rok} ${hodiny}:${minuty}</p>`;
+      dateTimeHtml = `<p><strong>Dátum a čas:</strong> ${den}. ${mesiac}. ${rok} ${hodiny}:${minuty}</p>`;
     }
   }
   
