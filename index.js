@@ -231,9 +231,6 @@ style.textContent = `
   }
   
   #logoutBtn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
     padding: 12px 24px;
     background-color: #f44336;
     color: white;
@@ -5156,22 +5153,13 @@ function vytvorLoggedInContainer() {
     otvorModalUpravyMoichPreferencii();
   };
   
-  // Tlačidlo Odhlásiť sa
+  // Tlačidlo Odhlásiť sa - používa CSS triedu z pôvodného štýlu
   const logoutBtn = document.createElement('button');
   logoutBtn.id = 'logoutBtn';
   logoutBtn.textContent = 'Odhlásiť sa';
+  // Pridáme iba minimum inline štýlov, zvyšok je v CSS
   logoutBtn.style.cssText = `
-    padding: 12px 24px;
-    background-color: #f44336;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
-    white-space: nowrap;
+    margin: 0;
     flex-shrink: 0;
   `;
   logoutBtn.onmouseover = () => {
